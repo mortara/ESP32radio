@@ -50,7 +50,8 @@ FMTuner4735::FMTuner4735()
     _radio->setSeekAmSrnThreshold(20);
     _radio->setSeekFmRssiThreshold(5);
     _radio->setSeekFmSrnThreshold(5);
-
+    _radio->setFmSoftMuteMaxAttenuation(0);
+    _radio->setAmSoftMuteMaxAttenuation(0);
     _radio->setTuneFrequencyAntennaCapacitor(0);
     delay(100);
     _radio->setFM(8400, 10800, 10390, 10);
