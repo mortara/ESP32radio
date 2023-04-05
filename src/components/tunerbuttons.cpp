@@ -30,7 +30,7 @@ int TunerButtons::Loop()
         
     PCF8574::DigitalInput input = _pcf8754->digitalReadAll();
 
-    if(input.p0 > 0)
+    if(input.p0 == 0)
         SavePresetButtonPressed = true;
     else
         SavePresetButtonPressed = false;
@@ -38,9 +38,12 @@ int TunerButtons::Loop()
     int result = 2 * input.p1 + 4 * input.p2 + 8 * input.p3 + 16 * input.p4;
     result += 32 * input.p5 + 64 * input.p6 + 128 * input.p7;
 
-    result = 255 - result;
+    result = 254 - result;
 
-    if(result != 0)
+    //Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3));
+    //delay(300);
+
+    if(result > 1)
     {
         delay(500);
     }

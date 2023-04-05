@@ -33,11 +33,14 @@ int PreselectButtons::Loop()
     int result = input.p0 + 2 * input.p1 + 4 * input.p2 + 8 * input.p3 + 16 * input.p4;
     result += 32 * input.p5 + 64 * input.p6 + 128 * input.p7;
 
+    //Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3) +" " + String(input.p4) +" " + String(input.p5) +" " + String(input.p6) +" " + String(input.p7));
+    //delay(100);
+
     result = 255 - result;
 
     if(result != 0)
     {
-        delay(500);
+        delay(100);
     }
 
     _lastRead = millis();

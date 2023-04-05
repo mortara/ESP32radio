@@ -1,6 +1,14 @@
-#include "fmtuner.hpp"
+#include "fmtuner4735.hpp"
 
-FMTuner::FMTuner()
+#define AM_FUNCTION 1
+#define FM_FUNCTION 0
+
+#define FM_BAND_TYPE 0
+#define MW_BAND_TYPE 1
+#define SW_BAND_TYPE 2
+#define LW_BAND_TYPE 3
+
+FMTuner4735::FMTuner4735()
 {
     Serial.println("FMTuner setup ...");
 
@@ -26,67 +34,105 @@ FMTuner::FMTuner()
         channel = station_presets[current_station_preset];
     }
 
-    Serial.println("Start Si4703 ...");
+    Serial.println("Start Si4735 ...");
+    digitalWrite(RESET_PIN, HIGH);
++
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
+    //digitalWrite(RESET_PIN, HIGH);
+    radio = new SI4735();
+    
+    radio->getDeviceI2CAddress(RESET_PIN);
+    radio->setMaxDelayPowerUp(500);
+    radio->setup(RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
+    radio->setSeekFmSpacing(10);
+    radio->setSeekFmLimits(8750, 10800);
+    radio->setSeekAmRssiThreshold(50);
+    radio->setSeekAmSrnThreshold(20);
+    radio->setSeekFmRssiThreshold(5);
+    radio->setSeekFmSrnThreshold(5);
 
-    radio = new SI470X();
-    radio->setup(RESET_PIN, ESP32_I2C_SDA);
-    radio->setMono(false);
-    radio->setMute(true);
-    radio->setRds(true);
-    radio->setFmDeemphasis(1);
-    radio->setRdsMode(1);
-    radio->setSeekThreshold(35);
+    radio->setTuneFrequencyAntennaCapacitor(0);
+    delay(100);
+    radio->setFM(8400, 10800, 10390, 10);
+    radio->setFMDeEmphasis(2);
 
-    Serial.println("Chip version: " + String(radio->getChipVersion()));
-    Serial.println("Device ID: " + String(radio->getDeviceId()));
-    Serial.println("Firmware version: " + String(radio->getFirmwareVersion()));
-    Serial.println("Manufacturer: " + String(radio->getManufacturerId()));
+    radio->RdsInit();
+    radio->setRdsConfig(1, 2, 2, 2, 2);
+
+
+    delay(100);
+    
+    Serial.println("Firmware version: " + String(radio->getFirmwareCHIPREV()));
+    
     
 }
 
-void FMTuner::Start()
+void FMTuner4735::Start()
 {
     Serial.println("FMTuner start ...");
 
     // Initialize the Radio
-    
+    radio->radioPowerUp();
     radio->setFrequency(channel);
     radio->setVolume(volume);
-    radio->setMute(false);
+    
+    DisplayInfo();
 }
 
-void FMTuner::Stop()
+void FMTuner4735::Stop()
 {
     Serial.println("FMTuner stop ...");
-    radio->setMute(true);
+    radio->powerDown();
 }
 
-void FMTuner::DisplayInfo()
+void FMTuner4735::DisplayInfo()
 {
-    Serial.println("Channel: " + String(channel));
+    Serial.println("Radio info:");
+    radio->getStatus();
+    radio->getCurrentReceivedSignalQuality();
+    Serial.print("You are tuned on ");
+    if (radio->isCurrentTuneFM())
+    {
+        Serial.print(String(channel / 100.0, 2));
+        Serial.print("MHz ");
+        Serial.print((radio->getCurrentPilot()) ? "STEREO" : "MONO");
+    }
+    else
+    {
+        Serial.print(channel);
+        Serial.print("kHz");
+    }
+    Serial.print(" [SNR:");
+    Serial.print(radio->getCurrentSNR());
+    Serial.print("dB");
+
+    Serial.print(" Signal:");
+    Serial.print(radio->getCurrentRSSI());
+    Serial.println("dBuV]");
+
     Serial.println("Volume: " + String(volume));
-    Serial.println("RSSI: " + String(radio->getRssi()) + " db");
+    
     if(_savemode)
         Serial.println("Preset save mode is: on");
     else
         Serial.println("Preset save mode is: off");
 }
 
-void FMTuner::SetSaveMode(bool onoff)
+void FMTuner4735::SetSaveMode(bool onoff)
 {
     _savemode = onoff;
 }
 
-void FMTuner::SwitchPreset(int num)
+void FMTuner4735::SwitchPreset(int num)
 {
     Serial.println("FMTuner::SwitchPreset to " + String(num));
     current_station_preset = num;
     channel = station_presets[num];
     radio->setFrequency(channel);
+    DisplayInfo();
 }
 
-void FMTuner::SaveCurrentChannel(int preset)
+void FMTuner4735::SaveCurrentChannel(int preset)
 {
     Serial.println("Saving frequency " + String(channel)+ " as preset " + preset);
     station_presets[preset] = channel;
@@ -94,7 +140,7 @@ void FMTuner::SaveCurrentChannel(int preset)
     SavePresets();
 }
 
-void FMTuner::SavePresets()
+void FMTuner4735::SavePresets()
 {
     Preferences _prefs;
     _prefs.begin("esp32radio_fmtuner", false); 
@@ -110,7 +156,7 @@ void FMTuner::SavePresets()
     _prefs.end();
 }
 
-void FMTuner::Loop(char ch)
+void FMTuner4735::Loop(char ch)
 {
     bool channelchanged = false;
     long now = millis();
@@ -124,11 +170,11 @@ void FMTuner::Loop(char ch)
     switch(ch)
     {
         case 'o':
-            radio->setFrequencyUp();
+            radio->frequencyUp();
             channelchanged = true;
             break;
         case 'i':
-            radio->setFrequencyDown();
+            radio->frequencyDown();
             channelchanged = true;
             break;
         case 'O':
@@ -141,13 +187,13 @@ void FMTuner::Loop(char ch)
             break;
         case 'u':
             _seekmode = ch;
-            radio->seek(0, 1);
+            radio->seekStationUp();
             _seektimer = millis();
             channelchanged = true;
             break;
         case 'z':
             _seekmode = ch;
-            radio->seek(0, 0);
+            radio->seekStationDown();
             _seektimer = millis();
             channelchanged = true;
             break;
@@ -161,24 +207,20 @@ void FMTuner::Loop(char ch)
             DisplayInfo();
             break;
         case '+':
-            volume ++;
-            if (volume == 16) volume = 15;
-            radio->setVolume(volume);
+            radio->volumeUp();
+            volume = radio->getVolume();
             DisplayInfo();
             break;
         case '-':
-            volume --;
-            if (volume < 0) volume = 0;
-            radio->setVolume(volume);
+            radio->volumeDown();
+            volume = radio->getVolume();
             DisplayInfo();
             break;
     }
 
     if (ch == 'r')
     {
-        if(radio->getRdsReady())
-        {    
-            
+
             char *block0A = radio->getRdsText0A();
             char *block2A = radio->getRdsText2A();
             char *block2B = radio->getRdsText2B();
@@ -203,15 +245,15 @@ void FMTuner::Loop(char ch)
 
             if(block2B != NULL)
                 Serial.println("RDS 2B:" +  String(block2B));
-        }
-        else
-            Serial.println("RDS not ready yet ....");
+        
     }
-    
+
+    delay(100);    
 
     if(channelchanged)
     {
         channel = radio->getFrequency();
+        radio->setVolume(volume);
         if(_savemode)
             SaveCurrentChannel(current_station_preset);
         DisplayInfo();

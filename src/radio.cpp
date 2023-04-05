@@ -16,16 +16,25 @@ Radio::Radio()
     wifi = new WIFIManager();
     wifi->Start();
 
+    _rtc = new RTC_DS3231();
+    if(_rtc->begin(_i2cwire))
+    {
+        Serial.println("Clock found! ");
+        char buf2[] = "YYMMDD-hh:mm:ss";
+        Serial.println(_rtc->now().toString(buf2));
+        
+    }
+
     _channel = new ChannelSwitch(_i2cwire, 0x20);
     _player = new VS1053Player();
-    _fmtuner = new FMTuner();
+    _fmtuner = new FMTuner4735();
     _inetRadio = new InternetRadio(_player);
     _bluetoothplayer = new BlueToothPlayer(_player);
 
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
     
     _preselectButtons = new PreselectButtons(_i2cwire, 0x24);
-
+    _channelButtons = new ChannelButtons(_i2cwire, 0x25);
     _currentInput = 0;
 
     Serial.println("Radio setup complete!");
@@ -37,19 +46,28 @@ void Radio::ExecuteCommand(char ch)
 {
     if (ch == 'a') 
     {
-        SwitchInput(1);
+        SwitchInput(INPUT_LW);
     } else if (ch == 'b') 
     {
-        SwitchInput(2);
+        SwitchInput(INPUT_MW);
     } else if (ch == 'c') 
     {
-        SwitchInput(3);
+        SwitchInput(INPUT_SW1);
     } else if (ch == 'd') 
     {
-        SwitchInput(4);
+        SwitchInput(INPUT_SW2);
     } else if (ch == 'e') 
     {
-        SwitchInput(5);
+        SwitchInput(INPUT_SW3);
+    } else if (ch == 'f') 
+    {
+        SwitchInput(INPUT_FM);
+    } else if (ch == 'g') 
+    {
+        SwitchInput(INPUT_AUX);
+    } else if (ch == 'h') 
+    {
+        SwitchInput(INPUT_INET);
     } else if (ch == 'q') 
     {
         ESP.restart();
@@ -60,9 +78,9 @@ void Radio::ExecuteCommand(char ch)
         {
             Serial.println("Switch to preset: " + String(ch));
             _preselectLeds->SetLed(preset-1);
-            if(_currentInput == 1)
+            if(_currentInput == INPUT_FM)
                 _fmtuner->SwitchPreset(preset - 1);
-            else
+            else if(_currentInput == INPUT_INET)
                 _inetRadio->SwitchPreset(preset - 1);
         }
     }
@@ -90,6 +108,23 @@ void Radio::Loop()
         // z -> FMTuner seek down
         // o -> FMTuner step up
         // x -> FMTuner toggle save mode
+    }
+
+    int cha_btn = _channelButtons->Loop();
+    if(cha_btn != 0)
+    {
+        Serial.println("Channel button pressed: " + String(cha_btn));
+        switch(cha_btn)
+        {
+            case 1: ch = 'a'; break;  // lw
+            case 2: ch = 'b'; break;  // mw
+            case 3: ch = 'c'; break;  // sw1
+            case 4: ch = 'd'; break;  // sw2
+            case 5: ch = 'e'; break;  // sw3
+            case 6: ch = 'f'; break;  // fm
+            case 7: ch = 'g'; break;  // phono (aux)
+            case 8: ch = 'h'; break;  // tape1 (internet)
+        }
     }
 
     int pre_btn = _preselectButtons->Loop();
@@ -148,11 +183,11 @@ void Radio::Loop()
 
     wifi->Loop(ch);
 
-    if(_currentInput == 1)
+    if(_currentInput == INPUT_FM)
     {
         _fmtuner->SetSaveMode(_tunerbuttons->SavePresetButtonPressed);
         _fmtuner->Loop(ch);
-    } else if(_currentInput == 2)
+    } else if(_currentInput == INPUT_INET)
     {
         _player->ExecuteCommand(ch);
         _inetRadio->Loop(ch);
@@ -164,54 +199,61 @@ void Radio::Loop()
 }
 
 
-void Radio::SwitchInput(int newinput)
+void Radio::SwitchInput(uint8_t newinput)
 {
     if(newinput == _currentInput)
         return;
 
     Serial.println("Switch Input to  " + String(newinput));
 
-    _spk->TurnOff();
-    _channel->TurnAllOff();
+    uint8_t new_output = _currentOutput;
+    switch(newinput)
+    {
+        case INPUT_FM:
+        case INPUT_MW:
+        case INPUT_SW1:
+        case INPUT_SW2:
+        case INPUT_SW3:
+        case INPUT_LW:
+            new_output = OUTPUT_SI47XX;
+            break;
+        case INPUT_AUX:
+            new_output = OUTPUT_AUX;
+            break;
+        case INPUT_INET:
+            new_output = OUTPUT_VS1053;
+            break;
+    }
 
-    if(_currentInput == 1)
-        _fmtuner->Stop();
+    if(new_output != _currentOutput)
+    {
+        if(_currentOutput == OUTPUT_SI47XX)
+            _fmtuner->Stop();
 
-    if(_currentInput == 2)
-        _inetRadio->Stop();
+        if(_currentOutput == OUTPUT_VS1053)
+            _inetRadio->Stop();
+    }
 
-    if(_currentInput == 3)
-        _bluetoothplayer->Stop();
-
-    _currentInput = newinput;
-
-    if(_currentInput == 1)
+    
+    if(new_output == OUTPUT_SI47XX)
     {
         _fmtuner->Start();
-        _channel->SetChannel(2);
     }
 
-    if(_currentInput == 2)
+    if(new_output == OUTPUT_VS1053)
     {
         _inetRadio->Start();
-        _channel->SetChannel(1);
     }
 
-    if(_currentInput == 3)
+    if(new_output != _currentOutput)
     {
-        _bluetoothplayer->Start();
-        _channel->SetChannel(1);
+        _spk->TurnOff();
+        _channel->SetChannel(_currentOutput);
+        _currentOutput = new_output;
+        _spk->TurnOn();
     }
 
-    if(_currentInput == 4)
-    {
-        _channel->SetChannel(3);
-    }
-
-    if(_currentInput == 5)
-    {
-        _channel->SetChannel(4);
-    }
-
-    _spk->TurnOn();
+    _currentInput = newinput;
+    delay(50);
+    
 }

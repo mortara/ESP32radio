@@ -6,18 +6,18 @@ ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr)
     _address = adr;
 
     _i2cwire = twowire;
-    _pcf8754 = new PCF8574(_i2cwire,_address);
-    _pcf8754->begin();
+    _relais = new PCF8574(_i2cwire,_address);
+    _relais->begin();
     _running = true;
 
-    _pcf8754->pinMode(P0, OUTPUT, offval);
-    _pcf8754->pinMode(P1, OUTPUT, offval);
-    _pcf8754->pinMode(P2, OUTPUT, offval);
-    _pcf8754->pinMode(P3, OUTPUT, offval);
-    _pcf8754->pinMode(P4, OUTPUT, offval);
-    _pcf8754->pinMode(P5, OUTPUT, offval);
-    _pcf8754->pinMode(P6, OUTPUT, offval);
-    _pcf8754->pinMode(P7, OUTPUT, offval);
+    _relais->pinMode(P0, OUTPUT, offval);
+    _relais->pinMode(P1, OUTPUT, offval);
+    _relais->pinMode(P2, OUTPUT, offval);
+    _relais->pinMode(P3, OUTPUT, offval);
+    _relais->pinMode(P4, OUTPUT, offval);
+    _relais->pinMode(P5, OUTPUT, offval);
+    _relais->pinMode(P6, OUTPUT, offval);
+    _relais->pinMode(P7, OUTPUT, offval);
 
 }
 
@@ -36,7 +36,7 @@ void ChannelSwitch::TurnAllOff()
     digitalInput.p6 = offval;
     digitalInput.p7 = offval;
 
-    _pcf8754->digitalWriteAll(digitalInput);
+    _relais->digitalWriteAll(digitalInput);
 }
 
 void ChannelSwitch::SetChannel(uint8_t channel)
@@ -83,7 +83,7 @@ void ChannelSwitch::SetChannel(uint8_t channel)
             break;
     }
 
-    _pcf8754->digitalWriteAll(digitalInput);
+    _relais->digitalWriteAll(digitalInput);
 
     _channel = channel;
 
