@@ -14,32 +14,17 @@ Radio::Radio()
     }
 
     wifi = new WIFIManager();
-    wifi->Start();
-
-    _rtc = new RTC_DS3231();
-    if(_rtc->begin(_i2cwire))
-    {
-        Serial.println("Clock found! ");
-        char buf2[] = "YYMMDD-hh:mm:ss";
-        Serial.println(_rtc->now().toString(buf2));
-        
-    }
-
+    _clock = new Clock(_i2cwire);
     _channel = new ChannelSwitch(_i2cwire, 0x20);
     _player = new VS1053Player();
     _fmtuner = new FMTuner4735();
     _inetRadio = new InternetRadio(_player);
     _bluetoothplayer = new BlueToothPlayer(_player);
-
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
-    
     _preselectButtons = new PreselectButtons(_i2cwire, 0x24);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
-    _currentInput = 0;
-
+    
     Serial.println("Radio setup complete!");
-
-    SwitchInput(1);
 }
 
 void Radio::ExecuteCommand(char ch)
@@ -78,7 +63,7 @@ void Radio::ExecuteCommand(char ch)
         {
             Serial.println("Switch to preset: " + String(ch));
             _preselectLeds->SetLed(preset-1);
-            if(_currentInput == INPUT_FM)
+            if(_currentOutput == OUTPUT_SI47XX)
                 _fmtuner->SwitchPreset(preset - 1);
             else if(_currentInput == INPUT_INET)
                 _inetRadio->SwitchPreset(preset - 1);
@@ -207,6 +192,8 @@ void Radio::SwitchInput(uint8_t newinput)
     Serial.println("Switch Input to  " + String(newinput));
 
     uint8_t new_output = _currentOutput;
+    uint8_t new_player = _currentPlayer;
+
     switch(newinput)
     {
         case INPUT_FM:
@@ -216,43 +203,61 @@ void Radio::SwitchInput(uint8_t newinput)
         case INPUT_SW3:
         case INPUT_LW:
             new_output = OUTPUT_SI47XX;
+            new_player = PLAYER_SI47XX;
             break;
         case INPUT_AUX:
             new_output = OUTPUT_AUX;
+            new_player = PLAYER_EXT;
             break;
+        case INPUT_BT:
+            new_player = PLAYER_BT;
+            new_output = OUTPUT_VS1053;
         case INPUT_INET:
+            new_player = PLAYER_WEBRADIO;
             new_output = OUTPUT_VS1053;
             break;
     }
 
-    if(new_output != _currentOutput)
+    if(new_player != _currentPlayer)
     {
-        if(_currentOutput == OUTPUT_SI47XX)
+        // Stopping the currently running player
+        if(_currentPlayer == PLAYER_SI47XX)
             _fmtuner->Stop();
 
-        if(_currentOutput == OUTPUT_VS1053)
+        if(_currentPlayer == PLAYER_BT)
+            _bluetoothplayer->Stop();
+
+        if(_currentPlayer == PLAYER_WEBRADIO)
             _inetRadio->Stop();
+        
+        // Starting the new player
+        if(new_player == PLAYER_SI47XX)
+            _fmtuner->Start();
+
+        if(new_player == PLAYER_BT)
+            _bluetoothplayer->Start();
+
+        if(new_player == PLAYER_WEBRADIO)
+        {
+            if(!wifi->IsConnected())
+                wifi->Connect();
+
+            _inetRadio->Start();
+        }
     }
 
-    
-    if(new_output == OUTPUT_SI47XX)
-    {
-        _fmtuner->Start();
-    }
-
-    if(new_output == OUTPUT_VS1053)
-    {
-        _inetRadio->Start();
-    }
+    if(new_player == PLAYER_SI47XX)
+        _fmtuner->SwitchBand(newinput);
 
     if(new_output != _currentOutput)
     {
         _spk->TurnOff();
-        _channel->SetChannel(_currentOutput);
+        _channel->SetChannel(new_output);
         _currentOutput = new_output;
         _spk->TurnOn();
     }
 
+    _currentPlayer = new_player;
     _currentInput = newinput;
     delay(50);
     

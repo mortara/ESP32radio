@@ -19,9 +19,10 @@ class WIFIManager
 
     public:
 
-        void Start();
+        WIFIManager();
         void Connect();
         void Disconnect();
         void Loop(char ch);
         void DisplayInfo();
+        bool IsConnected();
 };

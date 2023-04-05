@@ -1,13 +1,12 @@
 #include "wifimanager.hpp"
 
 
-void WIFIManager::Start()
+WIFIManager::WIFIManager()
 {
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(true);
     
-    Connect();
-   
+    //Connect();
 }
 
 void WIFIManager::Connect()
@@ -50,6 +49,11 @@ void WIFIManager::DisplayInfo(){
     Serial.print("[+] ESP32 IP : ");
     Serial.println(WiFi.localIP());
     
+}
+
+bool WIFIManager::IsConnected()
+{
+    return connected;
 }
 
 void WIFIManager::Loop(char ch)

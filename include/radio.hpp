@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Preferences.h>
-#include "RTClib.h"
+#include "clock.hpp"
 #include "SPIFFS.h"
 #include "ESPAsyncWebServer.h"
 #include "speaker.hpp"
@@ -25,6 +25,12 @@
 #define INPUT_FM 6
 #define INPUT_AUX 7
 #define INPUT_INET 8
+#define INPUT_BT 9
+
+#define PLAYER_SI47XX 1
+#define PLAYER_WEBRADIO 2
+#define PLAYER_BT 3
+#define PLAYER_EXT 4
 
 #define OUTPUT_SI47XX 2
 #define OUTPUT_VS1053 1
@@ -47,10 +53,11 @@ class Radio
         PreselectLeds *_preselectLeds;
         PreselectButtons *_preselectButtons;
         ChannelButtons *_channelButtons;
-        RTC_DS3231 *_rtc;
+        Clock *_clock;
         
         uint8_t _currentInput = 0;  // The input button pressed on the radio
-        uint8_t _currentOutput = 0; // The selected player or audio source
+        uint8_t _currentPlayer = 0; // The selected player or audio source
+        uint8_t _currentOutput = 0; // The selected output channel
 
     public:
         Radio();
