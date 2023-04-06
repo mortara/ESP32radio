@@ -59,6 +59,12 @@ void InternetRadio::Stop()
     _http->end();
 }
 
+String InternetRadio::GetFreqDisplayText()
+{
+    Station st = stationlist[current_station_preset];
+    return st.name;
+}
+
 void InternetRadio::Loop(char ch)
 {
     if(_client != NULL && _client->connected())
@@ -83,9 +89,9 @@ void InternetRadio::Loop(char ch)
         }  
 
     } 
-    else
+    else if(WiFi.isConnected())
     {
-        delay(1000);
+        delay(500);
         StartStream(stationlist[current_station_preset]);
     }
     

@@ -14,6 +14,7 @@ Radio::Radio()
     }
 
     wifi = new WIFIManager();
+    _freq_display = new FrequencyDisplay();
     _clock = new Clock(_i2cwire);
     _channel = new ChannelSwitch(_i2cwire, 0x20);
     _player = new VS1053Player();
@@ -168,19 +169,28 @@ void Radio::Loop()
 
     wifi->Loop(ch);
 
-    if(_currentInput == INPUT_FM)
+    if(_currentPlayer == PLAYER_SI47XX)
     {
         _fmtuner->SetSaveMode(_tunerbuttons->SavePresetButtonPressed);
         _fmtuner->Loop(ch);
-    } else if(_currentInput == INPUT_INET)
+    } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
+        if(!wifi->IsConnected() && millis() - wifi->LastConnectionTry() > 30000)
+            if(!wifi->Connect())
+            {
+                Serial.println("Could not connect to WIFI network!");
+            }
+
         _player->ExecuteCommand(ch);
         _inetRadio->Loop(ch);
-    } else if(_currentInput == 3)
+        _freq_display->DisplayText(_inetRadio->GetFreqDisplayText(),0);
+    } else if(_currentPlayer == PLAYER_BT)
     {
         _player->ExecuteCommand(ch);
         _bluetoothplayer->Loop(ch);
     }
+    _clock->Loop();
+    _freq_display->Loop();
 }
 
 
@@ -188,7 +198,7 @@ void Radio::SwitchInput(uint8_t newinput)
 {
     if(newinput == _currentInput)
         return;
-
+        
     Serial.println("Switch Input to  " + String(newinput));
 
     uint8_t new_output = _currentOutput;
@@ -239,10 +249,14 @@ void Radio::SwitchInput(uint8_t newinput)
 
         if(new_player == PLAYER_WEBRADIO)
         {
-            if(!wifi->IsConnected())
-                wifi->Connect();
-
             _inetRadio->Start();
+
+            if(!wifi->IsConnected())
+                if(!wifi->Connect())
+                {
+                    Serial.println("Could not connect to WIFI network!");
+                }
+                    
         }
     }
 

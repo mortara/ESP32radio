@@ -9,11 +9,12 @@ WIFIManager::WIFIManager()
     //Connect();
 }
 
-void WIFIManager::Connect()
+bool WIFIManager::Connect()
 {
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
     Serial.println("Connecting to WiFi ..");
-    int timeout = 10;
+    _lastConnectionTry = millis();
+    int timeout = 20;
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
         delay(1000);
@@ -21,11 +22,12 @@ void WIFIManager::Connect()
         if(timeout == 0)
         {
             Serial.println("WIFI timeout ......");
-            return;
+            return false;
         }
     }
     connected = true;
     Serial.println(WiFi.localIP());
+    return true;
 }
 
 void WIFIManager::Disconnect()
@@ -54,6 +56,11 @@ void WIFIManager::DisplayInfo(){
 bool WIFIManager::IsConnected()
 {
     return connected;
+}
+
+unsigned long WIFIManager::LastConnectionTry()
+{
+    return _lastConnectionTry;
 }
 
 void WIFIManager::Loop(char ch)

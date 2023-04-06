@@ -45,4 +45,6 @@ class InternetRadio
         void Start();
         void StartStream(Station station);
         void SwitchPreset(int num);
+
+        String GetFreqDisplayText();
 };

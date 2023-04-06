@@ -40,30 +40,16 @@ FMTuner4735::FMTuner4735()
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
     //digitalWrite(RESET_PIN, HIGH);
     _radio = new SI4735();
-    
+
     _radio->getDeviceI2CAddress(RESET_PIN);
     _radio->setMaxDelayPowerUp(500);
     _radio->setup(RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
-    _radio->setSeekFmSpacing(10);
-    _radio->setSeekFmLimits(8750, 10800);
-    _radio->setSeekAmRssiThreshold(50);
-    _radio->setSeekAmSrnThreshold(20);
-    _radio->setSeekFmRssiThreshold(5);
-    _radio->setSeekFmSrnThreshold(5);
-    _radio->setFmSoftMuteMaxAttenuation(0);
-    _radio->setAmSoftMuteMaxAttenuation(0);
-    _radio->setTuneFrequencyAntennaCapacitor(0);
-    delay(100);
-    _radio->setFM(8400, 10800, 10390, 10);
-    _radio->setFMDeEmphasis(2);
-
-    _radio->RdsInit();
-    _radio->setRdsConfig(1, 2, 2, 2, 2);
-
-
-    delay(100);
     
-    Serial.println("Firmware version: " + String(_radio->getFirmwareCHIPREV()));
+    
+    
+    
+
+    delay(100);
     
     
 }
@@ -73,16 +59,36 @@ void FMTuner4735::Start()
     Serial.println("FMTuner start ...");
 
     // Initialize the Radio
-    _radio->radioPowerUp();
+    //_radio->radioPowerUp();
+
+    _radio->setup(RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
+
+    _radio->setSeekAmRssiThreshold(50);
+    _radio->setSeekAmSrnThreshold(20);
+    _radio->setSeekFmRssiThreshold(5);
+    _radio->setSeekFmSrnThreshold(5);
+    _radio->setFmSoftMuteMaxAttenuation(0);
+    _radio->setAmSoftMuteMaxAttenuation(0);
+    _radio->setTuneFrequencyAntennaCapacitor(0);
+    _radio->setFMDeEmphasis(2);
+    _radio->RdsInit();
+    
     _radio->setVolume(_volume);
     
     DisplayInfo();
+}
+
+void FMTuner4735::Stop()
+{
+    Serial.println("FMTuner stop ...");
+    //_radio->powerDown();
 }
 
 void FMTuner4735::useBand(int bandIdx)
 {
   if (_bands[bandIdx].bandType == FM_BAND_TYPE)
   {
+    Serial.println("... FM Mode band " + String(_bands[bandIdx].bandName));
     currentMode = FM;
     _radio->setTuneFrequencyAntennaCapacitor(0);
     _radio->setFM(_bands[bandIdx].minimumFreq, _bands[bandIdx].maximumFreq, _bands[bandIdx].currentFreq, tabFmStep[_bands[bandIdx].currentStepIdx]);
@@ -92,10 +98,12 @@ void FMTuner4735::useBand(int bandIdx)
     
     bwIdxFM = _bands[bandIdx].bandwidthIdx;
     _radio->setFmBandwidth(bandwidthFM[bwIdxFM].idx);    
+    _radio->setAutomaticGainControl(disableAgc, agcNdx);
+    _radio->setFmSoftMuteMaxAttenuation(softMuteMaxAttIdx);
   }
   else
   {
-
+    Serial.println("... AM Mode band " + String(_bands[bandIdx].bandName));
     disableAgc = _bands[bandIdx].disableAgc;
     agcIdx = _bands[bandIdx].agcIdx;
     agcNdx = _bands[bandIdx].agcNdx;
@@ -130,6 +138,7 @@ void FMTuner4735::useBand(int bandIdx)
 
 void FMTuner4735::SwitchBand(uint8_t band)
 {
+    Serial.println("Switch to band " + String(band));
     switch(band)
     {
         case 1: // LW
@@ -157,11 +166,7 @@ void FMTuner4735::SwitchBand(uint8_t band)
     band = band;
 }
 
-void FMTuner4735::Stop()
-{
-    Serial.println("FMTuner stop ...");
-    _radio->powerDown();
-}
+
 
 void FMTuner4735::DisplayInfo()
 {
@@ -242,7 +247,7 @@ void FMTuner4735::Loop(char ch)
     if(_seekmode != '0' && (now - _seektimer) > 2000)
     {
         Serial.println("Seek still going on ....");
-        ch = _seekmode;
+        //ch = _seekmode;
     }
 
     switch(ch)
@@ -264,13 +269,13 @@ void FMTuner4735::Loop(char ch)
             channelchanged = true;
             break;
         case 'u':
-            _seekmode = ch;
+            //_seekmode = ch;
             _radio->seekStation(1, 1);
             _seektimer = millis();
             channelchanged = true;
             break;
         case 'z':
-            _seekmode = ch;
+            //_seekmode = ch;
             _radio->seekStation(0, 1);
             _seektimer = millis();
             channelchanged = true;
@@ -331,6 +336,8 @@ void FMTuner4735::Loop(char ch)
     if(channelchanged)
     {
         currentFrequency = _radio->getFrequency();
+        _radio->setVolume(0);
+        _radio->setVolume(30);
         _radio->setVolume(_volume);
 
         if(_savemode)

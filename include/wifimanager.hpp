@@ -15,14 +15,16 @@ class WIFIManager
         WIFICreds _credentials = {"WELAHN2G", "dukommsthiernichtrein"};
         unsigned long previousMillis = 0;
         unsigned long interval = 15000;
+        unsigned long _lastConnectionTry;
         TaskHandle_t Task1;
 
     public:
 
         WIFIManager();
-        void Connect();
+        bool Connect();
         void Disconnect();
         void Loop(char ch);
         void DisplayInfo();
         bool IsConnected();
+        unsigned long LastConnectionTry();
 };

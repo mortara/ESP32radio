@@ -16,6 +16,7 @@
 #include "preselect_leds.hpp"
 #include "preselect_buttons.hpp"
 #include "channelbuttons.hpp"
+#include "frequency_display.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -54,6 +55,7 @@ class Radio
         PreselectButtons *_preselectButtons;
         ChannelButtons *_channelButtons;
         Clock *_clock;
+        FrequencyDisplay *_freq_display;
         
         uint8_t _currentInput = 0;  // The input button pressed on the radio
         uint8_t _currentPlayer = 0; // The selected player or audio source

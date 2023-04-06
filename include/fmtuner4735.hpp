@@ -3,7 +3,7 @@
 #include <SI4735.h>
 #include <Preferences.h>
 
-#define RESET_PIN 13              // GPIO12
+#define RESET_PIN 26              // GPIO12
 
 // I2C bus pin on ESP32
 #define ESP32_I2C_SDA 21     // GPIO21

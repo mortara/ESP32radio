@@ -14,7 +14,7 @@ Speaker::Speaker(int pin)
 
 void Speaker::TurnOn()
 {
-    Serial.println("Speaker LOW");
+    Serial.println("Speaker ON");
     //GPIO.out 
     digitalWrite(_relaispin, LOW);
     _onoff = true;
@@ -22,7 +22,7 @@ void Speaker::TurnOn()
 
 void Speaker::TurnOff()
 {
-    Serial.println("Speaker HIGH");
+    Serial.println("Speaker OFF");
     digitalWrite(_relaispin, HIGH);
     _onoff = false;
 }
