@@ -173,6 +173,7 @@ void Radio::Loop()
     {
         _fmtuner->SetSaveMode(_tunerbuttons->SavePresetButtonPressed);
         _fmtuner->Loop(ch);
+        _freq_display->DisplayText(_fmtuner->GetFreqDisplayText(),1);
     } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
         if(!wifi->IsConnected() && millis() - wifi->LastConnectionTry() > 30000)
@@ -242,7 +243,7 @@ void Radio::SwitchInput(uint8_t newinput)
         
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
-            _fmtuner->Start();
+            _fmtuner->Start(newinput);
 
         if(new_player == PLAYER_BT)
             _bluetoothplayer->Start();

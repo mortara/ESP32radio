@@ -15,10 +15,21 @@ class FrequencyDisplay
         unsigned int _start_x = 0;
         bool _update = false;
 
-        uint8_t _xoffset = 1;
-        uint8_t _yoffset = 8;
-        uint8_t _fontwidth = 5;
-        uint8_t _currentFont = -1;
+        typedef struct
+        {  
+            uint8_t _xoffset;
+            uint8_t _yoffset;
+            uint8_t _fontwidth;
+            uint8_t _maxchars;
+            const uint8_t *_font; 
+        } FontSetting;
+
+        FontSetting _fontsettings[2] = {
+            {1, 7, 5, 7, (const uint8_t *)u8g2_font_5x7_tf},
+            {1, 8, 6, 6, (const uint8_t *)u8g2_font_spleen6x12_me},
+        };
+
+        FontSetting _currentFont;
 
         void updateScreen();
     public:

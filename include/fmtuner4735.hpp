@@ -3,11 +3,17 @@
 #include <SI4735.h>
 #include <Preferences.h>
 
+#ifndef FMTUNER4735_H
+#define FMTUNER4735_H
+
 #define SI7435_RESET_PIN 26              // GPIO12
 
 // I2C bus pin on ESP32
 #define ESP32_I2C_SDA 21     // GPIO21
 #define ESP32_I2C_SCL 22     // GPIO22 
+
+#define AM_FUNCTION 1
+#define FM_FUNCTION 0
 
 
 #define FM_BAND_TYPE 0
@@ -21,12 +27,14 @@
 #define AM 3
 #define LW 4
 
+
+
 class FMTuner4735
 {
     private:
         SI4735  *_radio;
         uint8_t _band = 6;
-        uint16_t currentFrequency;
+        uint16_t currentFrequency = 0;
         uint16_t previousFrequency = 0;
         uint8_t currentMode = FM;
 
@@ -45,7 +53,7 @@ class FMTuner4735
         int8_t softMuteMaxAttIdx = 4;
         int8_t avcIdx;
 
-        uint8_t _currentBand = -1;
+        uint8_t _currentBand = 99;
         
         typedef struct
         {
@@ -143,4 +151,7 @@ class FMTuner4735
         void SetSaveMode(bool onoff);
         void SavePresets();
         void LoadPresets();
+        String GetFreqDisplayText();
 };
+
+#endif

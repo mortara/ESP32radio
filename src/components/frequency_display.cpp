@@ -9,7 +9,7 @@ FrequencyDisplay::FrequencyDisplay()
     _u8g2->begin();
     _u8g2->clearBuffer();					// clear the internal memory
     SetFont(0);
-    _u8g2->drawStr(_xoffset,_yoffset,"1234567890");
+    _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"1234567890");
     _u8g2->sendBuffer();
 
     _lastUpdate = millis();
@@ -19,25 +19,8 @@ void FrequencyDisplay::SetFont(int fontindx)
 {
     Serial.println("Freq. display set font " + String(fontindx));
 
-    if(fontindx == _currentFont)
-        return;
-
-    switch(fontindx)
-    {
-        case 1:
-            _u8g2->setFont(u8g2_font_5x7_tf);
-            _max_chars = 6;
-            _fontwidth = 5;
-            break;
-        default:
-            _u8g2->setFont(u8g2_font_spleen6x12_me);
-            _max_chars = 5;
-            _fontwidth = 6;
-            break;
-    }   
-
-    _currentFont = fontindx;    
-    
+    _currentFont = _fontsettings[fontindx];
+    _u8g2->setFont(_currentFont._font);
 }
 
 void FrequencyDisplay::DisplayText(String text, int font)
@@ -68,7 +51,7 @@ void FrequencyDisplay::updateScreen()
 {
     //Serial.println("Updating display .... x:" + String(_start_x) + " t:" + _displayText);
     _u8g2->clearBuffer();					// clear the internal memory
-    _u8g2->drawStr(_xoffset - _start_x, _yoffset,_displayText.c_str());
+    _u8g2->drawStr(_currentFont._xoffset - _start_x, _currentFont._yoffset,_displayText.c_str());
     _u8g2->sendBuffer();
 }
 
@@ -84,7 +67,7 @@ void FrequencyDisplay::Loop()
         if((now - _lastMarqueeUpdate) > (_marquee_update_interval - _displayText_original.length() * 10))
         {
             _start_x ++;
-            if(_start_x > ((_displayText_original.length() + 1) * _fontwidth))
+            if(_start_x > ((_displayText_original.length() + 1) * _currentFont._fontwidth))
                 _start_x = 0;
 
             _lastMarqueeUpdate = now;

@@ -1,12 +1,6 @@
 #include "fmtuner4735.hpp"
 
-#define AM_FUNCTION 1
-#define FM_FUNCTION 0
-
-#define FM_BAND_TYPE 0
-#define MW_BAND_TYPE 1
-#define SW_BAND_TYPE 2
-#define LW_BAND_TYPE 3
+SI4735 *rx = NULL;
 
 FMTuner4735::FMTuner4735()
 {
@@ -16,11 +10,12 @@ FMTuner4735::FMTuner4735()
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
    
     _radio = new SI4735();
-
+    rx = _radio;
     _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
     _radio->setMaxDelayPowerUp(500);
-    //_radio->setup(SI7435_RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
-  
+   
+    _radio->setup(SI7435_RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 0, 0);
+
     delay(100);
 }
 
@@ -34,7 +29,8 @@ void FMTuner4735::Start(uint8_t band)
     //_radio->radioPowerUp();
     digitalWrite(SI7435_RESET_PIN, HIGH);
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
-    _radio->setMaxDelaySetFrequency(50);
+    _radio->setMaxDelaySetFrequency(150);
+    _radio->setMaxDelayPowerUp(500);
     _radio->setup(SI7435_RESET_PIN,0, b.bandType, SI473X_ANALOG_AUDIO, 1, 0);
 
     _radio->setSeekAmRssiThreshold(50);
@@ -83,8 +79,9 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
         Serial.println("... FM Mode band " + String(b.bandName));
         currentMode = FM;
         _radio->setTuneFrequencyAntennaCapacitor(0);
-        _radio->setFM(_b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
+        _radio->setFM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
         _radio->setSeekFmLimits(b.minimumFreq, b.maximumFreq);
+        
         _radio->setRdsConfig(1, 2, 2, 2, 2);
         _radio->setFifoCount(1);
         
@@ -161,6 +158,16 @@ void FMTuner4735::DisplayInfo()
         Serial.println("Preset save mode is: off");
 }
 
+String FMTuner4735::GetFreqDisplayText()
+{
+    if (_radio->isCurrentTuneFM())
+    {
+        return String(currentFrequency / 100.0, 2) + "MHz";
+    }
+    
+    return String(currentFrequency) + "kHz";
+}
+
 void FMTuner4735::SetSaveMode(bool onoff)
 {
     _savemode = onoff;
@@ -185,9 +192,17 @@ void FMTuner4735::SaveCurrentChannel(int preset)
 
 void FMTuner4735::LoadPresets()
 {
+    Serial.println("Load presets");
+    if(_currentBand < 0 || _currentBand > 7)
+    {
+        Serial.println(" ... invalid band");
+        return; 
+    }    
+
+    
     Band b = _bands[_currentBand];
     Preferences _prefs;
-    String prefname = "esp32radio_tuner_" + String(b.bandName);
+    String prefname = "radio_tuner_" + String(b.bandName);
     if(!_prefs.begin(prefname.c_str(), false)) 
     {
         Serial.println("unable to open preferences");
@@ -212,10 +227,23 @@ void FMTuner4735::LoadPresets()
 
 void FMTuner4735::SavePresets()
 {
+    Serial.println("Save presets band " + String(_currentBand));
+    if(_currentBand < 0 || _currentBand > 7)
+    {
+        Serial.println(" ... invalid band");
+        return; 
+    } 
+
     Band b = _bands[_currentBand];
+
     Preferences _prefs;
-    String prefname = "esp32radio_tuner_" + String(b.bandName);
-    _prefs.begin(prefname.c_str(), false); 
+    String prefname = "radio_tuner_" + String(b.bandName);
+    Serial.println(prefname);
+    if(!_prefs.begin(prefname.c_str(), false))
+    {
+        Serial.println("Could not open reset file " + prefname);
+        return;
+    }
     _prefs.putUShort("PRESET_0", _station_presets[0]);
     _prefs.putUShort("PRESET_1", _station_presets[1]);
     _prefs.putUShort("PRESET_2", _station_presets[2]);
@@ -226,6 +254,26 @@ void FMTuner4735::SavePresets()
     _prefs.putUShort("PRESET_7", _station_presets[7]);
     _prefs.putUShort("LASTPRESET", _current_station_preset);
     _prefs.end();
+}
+
+
+
+void showFrequency(uint16_t freq ) {
+
+    if(rx == NULL)
+        return;
+
+    if (rx->isCurrentTuneFM())
+    {
+        Serial.print(String(freq / 100.0, 2));
+        Serial.println("MHz ");
+    }
+    else
+    {
+        Serial.print(freq);
+        Serial.println("kHz");
+    }
+  
 }
 
 void FMTuner4735::Loop(char ch)
@@ -239,33 +287,43 @@ void FMTuner4735::Loop(char ch)
         //ch = _seekmode;
     }
 
+    uint16_t newfreq = 0;
+
     switch(ch)
     {
         case 'o':
             _radio->frequencyUp();
             channelchanged = true;
+            Serial.println("Frequency up");
             break;
         case 'i':
             _radio->frequencyDown();
             channelchanged = true;
+            Serial.println("Frequency down");
             break;
         case 'O':
-            _radio->setFrequency(currentFrequency + 25);          
+            newfreq = currentFrequency + 25;
+            _radio->setFrequency(newfreq);          
             channelchanged = true;
             break;
         case 'I':
-            _radio->setFrequency(currentFrequency - 25);
+            newfreq = currentFrequency - 25;
+            _radio->setFrequency(newfreq);
             channelchanged = true;
             break;
         case 'u':
             //_seekmode = ch;
-            _radio->seekStation(1, 1);
+            //_radio->seekStation(1, 1);
+            _radio->seekStationProgress(showFrequency,1);
             _seektimer = millis();
             channelchanged = true;
+            Serial.println("Start seek up");
             break;
         case 'z':
             //_seekmode = ch;
-            _radio->seekStation(0, 1);
+            Serial.println("Start seek down");
+            _radio->seekStationProgress(showFrequency,0);
+            //_radio->seekStation(0, 1);
             _seektimer = millis();
             channelchanged = true;
             break;
@@ -322,9 +380,12 @@ void FMTuner4735::Loop(char ch)
 
     delay(100);    
 
-    if(channelchanged)
+    currentFrequency = _radio->getCurrentFrequency();
+    if(previousFrequency != currentFrequency) 
     {
-        currentFrequency = _radio->getFrequency();
+        delay(100);
+        previousFrequency = currentFrequency;
+        
         _radio->setVolume(0);
         _radio->setVolume(30);
         _radio->setVolume(_volume);
