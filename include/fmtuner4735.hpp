@@ -3,7 +3,7 @@
 #include <SI4735.h>
 #include <Preferences.h>
 
-#define RESET_PIN 26              // GPIO12
+#define SI7435_RESET_PIN 26              // GPIO12
 
 // I2C bus pin on ESP32
 #define ESP32_I2C_SDA 21     // GPIO21
@@ -44,8 +44,9 @@ class FMTuner4735
         int8_t agcNdx = 0;
         int8_t softMuteMaxAttIdx = 4;
         int8_t avcIdx;
-        void useBand(int bandindx);
 
+        uint8_t _currentBand = -1;
+        
         typedef struct
         {
             uint8_t idx;      // SI473X device bandwidth index
@@ -134,11 +135,12 @@ class FMTuner4735
         FMTuner4735();
         void Loop(char ch);
         void Stop();
-        void Start();
+        void Start(uint8_t band);
+        void SwitchPreset(int num);
         void SwitchBand(uint8_t band);
         void DisplayInfo();
         void SaveCurrentChannel(int preset);
-        void SwitchPreset(int num);
         void SetSaveMode(bool onoff);
         void SavePresets();
+        void LoadPresets();
 };

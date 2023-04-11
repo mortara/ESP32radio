@@ -10,58 +10,32 @@
 
 FMTuner4735::FMTuner4735()
 {
-    Serial.println("FMTuner setup ...");
-
-    Preferences _prefs;
-    if(!_prefs.begin("esp32radio", false))
-    {
-        Serial.println("unable to open preferences");
-    }
-    else
-    {
-        Serial.println("Loading presets from SPIIFFS");
-        _station_presets[0] = _prefs.getUShort("FMPRESET_0", 9870);
-        _station_presets[1] = _prefs.getUShort("FMPRESET_1", 10390);
-        _station_presets[2] = _prefs.getUShort("FMPRESET_2", 0);
-        _station_presets[3] = _prefs.getUShort("FMPRESET_3", 0);
-        _station_presets[4] = _prefs.getUShort("FMPRESET_4", 0);
-        _station_presets[5] = _prefs.getUShort("FMPRESET_5", 0);
-        _station_presets[6] = _prefs.getUShort("FMPRESET_6", 0);
-        _station_presets[7] = _prefs.getUShort("FMPRESET_7", 0);
-        _current_station_preset = _prefs.getUShort("LASTPRESET", 0);
-        _prefs.end();
-
-        currentFrequency = _station_presets[_current_station_preset];
-    }
-
     Serial.println("Start Si4735 ...");
-    digitalWrite(RESET_PIN, HIGH);
+    
 +
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
-    //digitalWrite(RESET_PIN, HIGH);
+   
     _radio = new SI4735();
 
-    _radio->getDeviceI2CAddress(RESET_PIN);
+    _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
     _radio->setMaxDelayPowerUp(500);
-    _radio->setup(RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
-    
-    
-    
-    
-
+    //_radio->setup(SI7435_RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
+  
     delay(100);
-    
-    
 }
 
-void FMTuner4735::Start()
+void FMTuner4735::Start(uint8_t band)
 {
     Serial.println("FMTuner start ...");
 
+    Band b = _bands[band]; 
+
     // Initialize the Radio
     //_radio->radioPowerUp();
-
-    _radio->setup(RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
+    digitalWrite(SI7435_RESET_PIN, HIGH);
+    Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
+    _radio->setMaxDelaySetFrequency(50);
+    _radio->setup(SI7435_RESET_PIN,0, b.bandType, SI473X_ANALOG_AUDIO, 1, 0);
 
     _radio->setSeekAmRssiThreshold(50);
     _radio->setSeekAmSrnThreshold(20);
@@ -70,9 +44,12 @@ void FMTuner4735::Start()
     _radio->setFmSoftMuteMaxAttenuation(0);
     _radio->setAmSoftMuteMaxAttenuation(0);
     _radio->setTuneFrequencyAntennaCapacitor(0);
+    
     _radio->setFMDeEmphasis(2);
     _radio->RdsInit();
     
+    SwitchBand(band);
+
     _radio->setVolume(_volume);
     
     DisplayInfo();
@@ -84,89 +61,72 @@ void FMTuner4735::Stop()
     //_radio->powerDown();
 }
 
-void FMTuner4735::useBand(int bandIdx)
+void FMTuner4735::SwitchBand(uint8_t bandIdx)
 {
-  if (_bands[bandIdx].bandType == FM_BAND_TYPE)
-  {
-    Serial.println("... FM Mode band " + String(_bands[bandIdx].bandName));
-    currentMode = FM;
-    _radio->setTuneFrequencyAntennaCapacitor(0);
-    _radio->setFM(_bands[bandIdx].minimumFreq, _bands[bandIdx].maximumFreq, _bands[bandIdx].currentFreq, tabFmStep[_bands[bandIdx].currentStepIdx]);
-    _radio->setSeekFmLimits(_bands[bandIdx].minimumFreq, _bands[bandIdx].maximumFreq);
-    _radio->setRdsConfig(1, 2, 2, 2, 2);
-    _radio->setFifoCount(1);
-    
-    bwIdxFM = _bands[bandIdx].bandwidthIdx;
-    _radio->setFmBandwidth(bandwidthFM[bwIdxFM].idx);    
-    _radio->setAutomaticGainControl(disableAgc, agcNdx);
-    _radio->setFmSoftMuteMaxAttenuation(softMuteMaxAttIdx);
-  }
-  else
-  {
-    Serial.println("... AM Mode band " + String(_bands[bandIdx].bandName));
-    disableAgc = _bands[bandIdx].disableAgc;
-    agcIdx = _bands[bandIdx].agcIdx;
-    agcNdx = _bands[bandIdx].agcNdx;
-    avcIdx = _bands[bandIdx].avcIdx;
+    Band b = _bands[bandIdx];
 
-    // char str[100];
-    // sprintf(str,"Pos %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", bandIdx, disableAgc, agcIdx, agcNdx, avcIdx );
-    // Serial.println(str);
+    Serial.println("Switch to band " + String(b.bandName));
 
-    
-    // set the tuning capacitor for SW or MW/LW
-    _radio->setTuneFrequencyAntennaCapacitor((_bands[bandIdx].bandType == MW_BAND_TYPE || _bands[bandIdx].bandType == LW_BAND_TYPE) ? 0 : 1);
-
-    currentMode = AM;
-    _radio->setAM(_bands[bandIdx].minimumFreq, _bands[bandIdx].maximumFreq, _bands[bandIdx].currentFreq, tabAmStep[_bands[bandIdx].currentStepIdx]);
-
-    bwIdxAM = _bands[bandIdx].bandwidthIdx;
-    _radio->setBandwidth(bandwidthAM[bwIdxAM].idx, 1);
-    _radio->setAmSoftMuteMaxAttenuation(softMuteMaxAttIdx); // Soft Mute for AM or SSB
-    _radio->setAutomaticGainControl(disableAgc, agcNdx);
-
-    
-    _radio->setSeekAmLimits(_bands[bandIdx].minimumFreq, _bands[bandIdx].maximumFreq); // Consider the range all defined current band
-    _radio->setSeekAmSpacing(5); // Max 10kHz for spacing
-    _radio->setAvcAmMaxGain(avcIdx);
-  }
-  delay(100);
-  currentFrequency = _bands[bandIdx].currentFreq;
-  currentStepIdx = _bands[bandIdx].currentStepIdx;
-
-}
-
-void FMTuner4735::SwitchBand(uint8_t band)
-{
-    Serial.println("Switch to band " + String(band));
-    switch(band)
+    if(bandIdx == _currentBand)
     {
-        case 1: // LW
-            useBand(0);
-            break;
-        case 2: // MW
-            useBand(1);
-            break;
-        case 3: // SW1
-            useBand(2);
-            break;
-        case 4: // SW2
-            useBand(3);
-            break;
-        case 5: // SW3
-            useBand(4);
-            break;
-        case 6:  // FM 
-            useBand(5);
-            break;
+        Serial.println("Band already active!");
+        return;
     }
 
+    if(_currentBand != -1)
+    {
+        SavePresets();
+    }
+
+    if (b.bandType == FM_BAND_TYPE)
+    {
+        Serial.println("... FM Mode band " + String(b.bandName));
+        currentMode = FM;
+        _radio->setTuneFrequencyAntennaCapacitor(0);
+        _radio->setFM(_b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
+        _radio->setSeekFmLimits(b.minimumFreq, b.maximumFreq);
+        _radio->setRdsConfig(1, 2, 2, 2, 2);
+        _radio->setFifoCount(1);
+        
+        bwIdxFM = b.bandwidthIdx;
+        _radio->setFmBandwidth(bandwidthFM[bwIdxFM].idx);    
+        _radio->setAutomaticGainControl(disableAgc, agcNdx);
+        _radio->setFmSoftMuteMaxAttenuation(softMuteMaxAttIdx);
+    }
+    else
+    {
+        Serial.println("... AM Mode band " + String(b.bandName));
+        disableAgc = b.disableAgc;
+        agcIdx = b.agcIdx;
+        agcNdx = b.agcNdx;
+        avcIdx = b.avcIdx;
+
+        // char str[100];
+        // sprintf(str,"Pos %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", bandIdx, disableAgc, agcIdx, agcNdx, avcIdx );
+        // Serial.println(str);
+
+        
+        // set the tuning capacitor for SW or MW/LW
+        _radio->setTuneFrequencyAntennaCapacitor((b.bandType == MW_BAND_TYPE || b.bandType == LW_BAND_TYPE) ? 0 : 1);
+
+        currentMode = AM;
+        _radio->setAM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabAmStep[b.currentStepIdx]);
+
+        bwIdxAM = b.bandwidthIdx;
+        _radio->setBandwidth(bandwidthAM[bwIdxAM].idx, 1);
+        _radio->setAmSoftMuteMaxAttenuation(softMuteMaxAttIdx); // Soft Mute for AM or SSB
+        _radio->setAutomaticGainControl(disableAgc, agcNdx);
+
+        
+        _radio->setSeekAmLimits(b.minimumFreq, b.maximumFreq); // Consider the range all defined current band
+        _radio->setSeekAmSpacing(5); // Max 10kHz for spacing
+        _radio->setAvcAmMaxGain(avcIdx);
+    }
     delay(100);
-
-    band = band;
+    currentFrequency = b.currentFreq;
+    currentStepIdx = b.currentStepIdx;
+    _currentBand = bandIdx;
 }
-
-
 
 void FMTuner4735::DisplayInfo()
 {
@@ -223,18 +183,47 @@ void FMTuner4735::SaveCurrentChannel(int preset)
     SavePresets();
 }
 
+void FMTuner4735::LoadPresets()
+{
+    Band b = _bands[_currentBand];
+    Preferences _prefs;
+    String prefname = "esp32radio_tuner_" + String(b.bandName);
+    if(!_prefs.begin(prefname.c_str(), false)) 
+    {
+        Serial.println("unable to open preferences");
+    }
+    else
+    {
+        Serial.println("Loading presets from SPIIFFS");
+        _station_presets[0] = _prefs.getUShort("PRESET_0", b.currentFreq);
+        _station_presets[1] = _prefs.getUShort("PRESET_1", 0);
+        _station_presets[2] = _prefs.getUShort("PRESET_2", 0);
+        _station_presets[3] = _prefs.getUShort("PRESET_3", 0);
+        _station_presets[4] = _prefs.getUShort("PRESET_4", 0);
+        _station_presets[5] = _prefs.getUShort("PRESET_5", 0);
+        _station_presets[6] = _prefs.getUShort("PRESET_6", 0);
+        _station_presets[7] = _prefs.getUShort("PRESET_7", 0);
+        _current_station_preset = _prefs.getUShort("LASTPRESET", 0);
+        _prefs.end();
+
+        currentFrequency = _station_presets[_current_station_preset];
+    }
+}
+
 void FMTuner4735::SavePresets()
 {
+    Band b = _bands[_currentBand];
     Preferences _prefs;
-    _prefs.begin("esp32radio_fmtuner", false); 
-    _prefs.putUShort("FMPRESET_0", _station_presets[0]);
-    _prefs.putUShort("FMPRESET_1", _station_presets[1]);
-    _prefs.putUShort("FMPRESET_2", _station_presets[2]);
-    _prefs.putUShort("FMPRESET_3", _station_presets[3]);
-    _prefs.putUShort("FMPRESET_4", _station_presets[4]);
-    _prefs.putUShort("FMPRESET_5", _station_presets[5]);
-    _prefs.putUShort("FMPRESET_6", _station_presets[6]);
-    _prefs.putUShort("FMPRESET_7", _station_presets[7]);
+    String prefname = "esp32radio_tuner_" + String(b.bandName);
+    _prefs.begin(prefname.c_str(), false); 
+    _prefs.putUShort("PRESET_0", _station_presets[0]);
+    _prefs.putUShort("PRESET_1", _station_presets[1]);
+    _prefs.putUShort("PRESET_2", _station_presets[2]);
+    _prefs.putUShort("PRESET_3", _station_presets[3]);
+    _prefs.putUShort("PRESET_4", _station_presets[4]);
+    _prefs.putUShort("PRESET_5", _station_presets[5]);
+    _prefs.putUShort("PRESET_6", _station_presets[6]);
+    _prefs.putUShort("PRESET_7", _station_presets[7]);
     _prefs.putUShort("LASTPRESET", _current_station_preset);
     _prefs.end();
 }
