@@ -45,14 +45,7 @@ class FMTuner4735
         uint16_t _current_station_preset = 0;
         uint16_t _station_presets[8];
         bool _savemode = false;
-        uint8_t bandwidthIdx = 0;
-
-        int8_t agcIdx = 0;
-        int8_t disableAgc = 0;
-        int8_t agcNdx = 0;
-        int8_t softMuteMaxAttIdx = 4;
-        int8_t avcIdx;
-
+       
         uint8_t _currentBand = 99;
         
         typedef struct
@@ -61,20 +54,6 @@ class FMTuner4735
             const char *desc; // bandwidth description
         } Bandwidth;
 
-        int8_t bwIdxSSB = 4;
-        const int8_t maxSsbBw = 5;
-        Bandwidth bandwidthSSB[6] = {
-            {4, "0.5"},
-            {5, "1.0"},
-            {0, "1.2"},
-            {1, "2.2"},
-            {2, "3.0"},
-            {3, "4.0"}
-        };
-
-
-        int8_t bwIdxAM = 4;
-        const int8_t maxAmBw = 6;
         Bandwidth bandwidthAM[7] = {
             {4, "1.0"},
             {5, "1.8"},
@@ -84,9 +63,6 @@ class FMTuner4735
             {1, "4.0"},
             {0, "6.0"}
         };
-
-        int8_t bwIdxFM = 0;
-        const int8_t maxFmBw = 4;
 
         Bandwidth bandwidthFM[5] = {
             {0, "AUT"}, // Automatic - default
@@ -109,8 +85,7 @@ class FMTuner4735
 
         int tabFmStep[3] = {5, 10, 20};
         const int lastFmStep = (sizeof tabFmStep / sizeof(int)) - 1;
-        int idxFmStep = 1;
-
+        
         uint16_t currentStepIdx = 1;
 
         const char *bandwidth[7] = {"6", "4", "3", "2", "1", "1.8", "2.5"};
@@ -127,16 +102,17 @@ class FMTuner4735
             int8_t agcIdx;
             int8_t agcNdx;
             int8_t avcIdx; 
+            int8_t softMuteMaxAttenuation;
         } Band;
 
         Band _bands[7] = {
-            {"LW", LW_BAND_TYPE, 150, 279, 150, 3, 4, 0, 0, 0, 32},
-            {"MW", MW_BAND_TYPE, 300, 3500, 783, 2, 4, 0, 0, 0, 32},
-            {"SW1", SW_BAND_TYPE, 4000, 5500, 4885, 1, 4, 1, 0, 0, 32},
-            {"SW2", SW_BAND_TYPE, 5500, 6500, 6000, 1, 4, 1, 0, 0, 32},
-            {"SW3", SW_BAND_TYPE, 7200, 8000, 7200, 1, 4, 1, 0, 0, 40},
-            {"UKW", FM_BAND_TYPE, 8790, 10800, 10390, 1, 0, 1, 0, 0, 0},
-            {"ALL", SW_BAND_TYPE, 150, 30000, 15000, 0, 4, 1, 0, 0, 48} // All band. LW, MW and SW (from 150kHz to 30MHz)
+            {"LW", LW_BAND_TYPE, 150, 279, 150, 3, 4, 0, 0, 0, 32, 0},
+            {"MW", MW_BAND_TYPE, 300, 3500, 783, 2, 4, 0, 0, 0, 32, 0},
+            {"SW1", SW_BAND_TYPE, 4000, 5500, 4885, 1, 4, 1, 0, 0, 32, 0},
+            {"SW2", SW_BAND_TYPE, 5500, 6500, 6000, 1, 4, 1, 0, 0, 32, 0},
+            {"SW3", SW_BAND_TYPE, 7200, 8000, 7200, 1, 4, 1, 0, 0, 40, 0},
+            {"UKW", FM_BAND_TYPE, 8790, 10800, 10390, 1, 0, 1, 0, 0, 0, 0},
+            {"ALL", SW_BAND_TYPE, 150, 30000, 15000, 0, 4, 1, 0, 0, 48, 0} // All band. LW, MW and SW (from 150kHz to 30MHz)
 };
 
     public:

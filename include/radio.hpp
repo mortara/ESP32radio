@@ -17,6 +17,7 @@
 #include "preselect_buttons.hpp"
 #include "channelbuttons.hpp"
 #include "frequency_display.hpp"
+#include "clock_display.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -58,11 +59,13 @@ class Radio
         ChannelButtons *_channelButtons;
         Clock *_clock;
         FrequencyDisplay *_freq_display;
-        
+        ClockDisplay *_clockDisplay;
+
         uint8_t _currentInput = 0;  // The input button pressed on the radio
         uint8_t _currentPlayer = 0; // The selected player or audio source
         uint8_t _currentOutput = 0; // The selected output channel
 
+        uint16_t _lastClockUpdate;
     public:
         Radio();
         void Loop();

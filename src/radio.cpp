@@ -24,6 +24,9 @@ Radio::Radio()
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x24);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
+    _clockDisplay = new ClockDisplay();
+    _clockDisplay->DisplayText("HALLO!");
+    _lastClockUpdate = millis();
     
     Serial.println("Radio setup complete!");
 }
@@ -192,6 +195,14 @@ void Radio::Loop()
     }
     _clock->Loop();
     _freq_display->Loop();
+
+    uint16_t now = millis();
+    if(now - _lastClockUpdate >= 1000)
+    {
+        _lastClockUpdate = now;
+        char buf2[] = "DD.MM.YYYY hh:mm:ss";
+        _clockDisplay->DisplayText(_clock->Now().toString(buf2));
+    }
 }
 
 
@@ -243,7 +254,7 @@ void Radio::SwitchInput(uint8_t newinput)
         
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
-            _fmtuner->Start(newinput);
+            _fmtuner->Start(newinput - 1);
 
         if(new_player == PLAYER_BT)
             _bluetoothplayer->Start();
@@ -262,7 +273,7 @@ void Radio::SwitchInput(uint8_t newinput)
     }
 
     if(new_player == PLAYER_SI47XX)
-        _fmtuner->SwitchBand(newinput);
+        _fmtuner->SwitchBand(newinput - 1);
 
     if(new_output != _currentOutput)
     {

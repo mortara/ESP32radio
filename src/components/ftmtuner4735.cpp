@@ -6,16 +6,27 @@ FMTuner4735::FMTuner4735()
 {
     Serial.println("Start Si4735 ...");
     
-+
+    digitalWrite(SI7435_RESET_PIN, HIGH);
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
    
     _radio = new SI4735();
     rx = _radio;
     _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
     _radio->setMaxDelayPowerUp(500);
-   
-    _radio->setup(SI7435_RESET_PIN,0, FM_FUNCTION, SI473X_ANALOG_AUDIO, 0, 0);
-
+    _radio->setMaxDelaySetFrequency(150);
+    _radio->setTuneFrequencyAntennaCapacitor(0);
+    _radio->setRefClock(32768);
+    _radio->setup(SI7435_RESET_PIN,0,FM_FUNCTION, SI473X_ANALOG_AUDIO, 1, 0);
+    _radio->setSeekAmRssiThreshold(50);
+    _radio->setSeekAmSNRThreshold(20);
+    _radio->setSeekFmRssiThreshold(5);
+    _radio->setSeekFmSNRThreshold(20);
+    _radio->setFmSoftMuteMaxAttenuation(0);
+    _radio->setAmSoftMuteMaxAttenuation(0);
+    _radio->setTuneFrequencyAntennaCapacitor(0);
+    
+    _radio->setFMDeEmphasis(2);
+    _radio->RdsInit();
     delay(100);
 }
 
@@ -25,24 +36,15 @@ void FMTuner4735::Start(uint8_t band)
 
     Band b = _bands[band]; 
 
+    Serial.println("Band " + String(b.bandName));
+
     // Initialize the Radio
     //_radio->radioPowerUp();
-    digitalWrite(SI7435_RESET_PIN, HIGH);
-    Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
-    _radio->setMaxDelaySetFrequency(150);
-    _radio->setMaxDelayPowerUp(500);
-    _radio->setup(SI7435_RESET_PIN,0, b.bandType, SI473X_ANALOG_AUDIO, 1, 0);
+    //digitalWrite(SI7435_RESET_PIN, HIGH);
+    //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
+    //_radio->setup(SI7435_RESET_PIN,0, b.bandType, SI473X_ANALOG_AUDIO, 0, 0);
 
-    _radio->setSeekAmRssiThreshold(50);
-    _radio->setSeekAmSrnThreshold(20);
-    _radio->setSeekFmRssiThreshold(5);
-    _radio->setSeekFmSrnThreshold(5);
-    _radio->setFmSoftMuteMaxAttenuation(0);
-    _radio->setAmSoftMuteMaxAttenuation(0);
-    _radio->setTuneFrequencyAntennaCapacitor(0);
-    
-    _radio->setFMDeEmphasis(2);
-    _radio->RdsInit();
+
     
     SwitchBand(band);
 
@@ -78,25 +80,20 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     {
         Serial.println("... FM Mode band " + String(b.bandName));
         currentMode = FM;
-        _radio->setTuneFrequencyAntennaCapacitor(0);
-        _radio->setFM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
-        _radio->setSeekFmLimits(b.minimumFreq, b.maximumFreq);
         
-        _radio->setRdsConfig(1, 2, 2, 2, 2);
+        _radio->setFM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
+        
+        /*_radio->setRdsConfig(1, 2, 2, 2, 2);
         _radio->setFifoCount(1);
         
-        bwIdxFM = b.bandwidthIdx;
-        _radio->setFmBandwidth(bandwidthFM[bwIdxFM].idx);    
-        _radio->setAutomaticGainControl(disableAgc, agcNdx);
-        _radio->setFmSoftMuteMaxAttenuation(softMuteMaxAttIdx);
+        char str[200];
+        sprintf(str,"Pos %2.2d | Min %2.2d | Max %2.2d | Step %2.2d | Bw %2.2d |disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", bandIdx, b.minimumFreq, b.maximumFreq, tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+        Serial.println(str);*/
     }
     else
     {
         Serial.println("... AM Mode band " + String(b.bandName));
-        disableAgc = b.disableAgc;
-        agcIdx = b.agcIdx;
-        agcNdx = b.agcNdx;
-        avcIdx = b.avcIdx;
+        b.disableAgc = b.disableAgc;
 
         // char str[100];
         // sprintf(str,"Pos %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", bandIdx, disableAgc, agcIdx, agcNdx, avcIdx );
@@ -109,15 +106,14 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
         currentMode = AM;
         _radio->setAM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabAmStep[b.currentStepIdx]);
 
-        bwIdxAM = b.bandwidthIdx;
-        _radio->setBandwidth(bandwidthAM[bwIdxAM].idx, 1);
-        _radio->setAmSoftMuteMaxAttenuation(softMuteMaxAttIdx); // Soft Mute for AM or SSB
-        _radio->setAutomaticGainControl(disableAgc, agcNdx);
+        _radio->setBandwidth(bandwidthAM[b.bandwidthIdx].idx, 1);
+        _radio->setAmSoftMuteMaxAttenuation(b.softMuteMaxAttenuation); // Soft Mute for AM or SSB
+        _radio->setAutomaticGainControl(b.disableAgc, b.agcNdx);
 
         
         _radio->setSeekAmLimits(b.minimumFreq, b.maximumFreq); // Consider the range all defined current band
         _radio->setSeekAmSpacing(5); // Max 10kHz for spacing
-        _radio->setAvcAmMaxGain(avcIdx);
+        _radio->setAvcAmMaxGain(b.avcIdx);
     }
     delay(100);
     currentFrequency = b.currentFreq;
@@ -313,8 +309,8 @@ void FMTuner4735::Loop(char ch)
             break;
         case 'u':
             //_seekmode = ch;
-            //_radio->seekStation(1, 1);
-            _radio->seekStationProgress(showFrequency,1);
+            _radio->seekStationUp();
+            //_radio->seekStationProgress(showFrequency,1);
             _seektimer = millis();
             channelchanged = true;
             Serial.println("Start seek up");
@@ -322,8 +318,8 @@ void FMTuner4735::Loop(char ch)
         case 'z':
             //_seekmode = ch;
             Serial.println("Start seek down");
-            _radio->seekStationProgress(showFrequency,0);
-            //_radio->seekStation(0, 1);
+            //_radio->seekStationProgress(showFrequency,0);
+            _radio->seekStationDown();
             _seektimer = millis();
             channelchanged = true;
             break;
