@@ -6,9 +6,11 @@ class ClockDisplay
 {
     private:
         LiquidCrystal_I2C *_lcd;
+        String _texts[2];
+
     public:
         ClockDisplay();
-        void DisplayText(String text);
+        void DisplayText(String text, uint8_t row);
         void Loop();
 
 };

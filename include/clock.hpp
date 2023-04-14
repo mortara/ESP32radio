@@ -1,9 +1,8 @@
 #include <Arduino.h>
 #include "RTClib.h"
 #include <WiFi.h>
-#include <NTPClient.h>
-#include <WiFi.h>
 #include <WiFiUdp.h>
+#include <time.h>
 
 class Clock
 {

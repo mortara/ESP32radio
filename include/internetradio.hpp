@@ -12,7 +12,10 @@ class InternetRadio
         VS1053Player  *_player ;
 
         long bytes_served = 0;
-        int current_station_preset = 0;
+        uint8_t current_station_preset = 0;
+
+        uint8_t clockdisplaypage = 0;
+        uint16_t clockdisplaypagetimer = 0;
 
         // https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high
         // http://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3
@@ -44,7 +47,8 @@ class InternetRadio
         void Stop();
         void Start();
         void StartStream(Station station);
-        void SwitchPreset(int num);
+        void SwitchPreset(uint8_t num);
 
         String GetFreqDisplayText();
+        String GetClockDisplayText();
 };

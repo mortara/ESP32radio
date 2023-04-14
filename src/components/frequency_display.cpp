@@ -4,9 +4,9 @@ FrequencyDisplay::FrequencyDisplay()
 {
     Serial.println("Setup frequency display ...");
 
-    _u8g2 = new U8G2_MAX7219_32X8_F_4W_SW_SPI(U8G2_R0, /* clock=*/ 14, /* data=*/ 13, /* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
-
+    _u8g2 = new U8G2_MAX7219_32X8_F_4W_SW_SPI(U8G2_R2, /* clock=*/ 14, /* data=*/ 13, /* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     _u8g2->begin();
+    _u8g2->setContrast(10);
     _u8g2->clearBuffer();					// clear the internal memory
     SetFont(0);
     _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"1234567890");
@@ -31,8 +31,6 @@ void FrequencyDisplay::DisplayText(String text, int font)
     Serial.println("Displaytext: " + text);
 
     SetFont(font);
-
-    
 
     _displayText_original = text;
 

@@ -40,8 +40,8 @@ int TunerButtons::Loop()
 
     result = 254 - result;
 
-    //Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3));
-    //delay(300);
+    /*Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3));
+    delay(300);*/
 
     if(result > 1)
     {

@@ -24,9 +24,11 @@ class FrequencyDisplay
             const uint8_t *_font; 
         } FontSetting;
 
-        FontSetting _fontsettings[2] = {
+        FontSetting _fontsettings[3] = {
             {1, 8, 6, 6, (const uint8_t *)u8g2_font_spleen6x12_me},
             {1, 7, 5, 7, (const uint8_t *)u8g2_font_5x7_tf},
+            {1, 7, 5, 9, (const uint8_t *)u8g2_font_profont10_tn        },
+            
             
         };
 

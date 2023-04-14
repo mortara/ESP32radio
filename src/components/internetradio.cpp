@@ -11,7 +11,7 @@ InternetRadio::InternetRadio(VS1053Player *player)
     _http->setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 }
 
-void InternetRadio::SwitchPreset(int num)
+void InternetRadio::SwitchPreset(uint8_t num)
 {
     Serial.print("InternetRadio::SwitchPreset to " + String(num));
     current_station_preset = num;
@@ -65,8 +65,47 @@ String InternetRadio::GetFreqDisplayText()
     return st.name;
 }
 
+String InternetRadio::GetClockDisplayText()
+{
+    if(clockdisplaypage == 0)
+    {
+        Station st = stationlist[current_station_preset];
+        return st.name;
+    }
+
+    if(clockdisplaypage == 1)
+    {
+        
+        return WiFi.SSID();
+    }
+
+    if(clockdisplaypage == 2)
+    {
+        
+        return WiFi.localIP().toString();
+    }
+
+    if(clockdisplaypage == 3)
+    {
+        
+        return " RSSI: " + String(WiFi.RSSI()) + " dB";
+    }
+
+    return "";
+}
+
 void InternetRadio::Loop(char ch)
 {
+    uint16_t now = millis();
+    if((now - clockdisplaypagetimer) > 5000)
+    {
+        clockdisplaypage++;
+        if(clockdisplaypage == 4)
+            clockdisplaypage = 0;
+        
+        clockdisplaypagetimer = now;
+    }
+
     if(_client != NULL && _client->connected())
     {
         if (_client->available() > 0) {

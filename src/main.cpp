@@ -5,7 +5,8 @@
 
 
 Radio *_radio;
-
+unsigned long _loopStart;
+int _loopCount;
 
 void ScanI2C()
 {
@@ -50,18 +51,26 @@ void ScanI2C()
 void setup()
 {
   Serial.begin(57600);
-
-  
-  ScanI2C();
+  //ScanI2C();
   _radio = new Radio();
 
 }
 
-
-
 // Main
 void loop()
 {
+  _loopCount++;
+  if(_loopCount == 5000)
+  {
+      unsigned long end = millis();
+      float duration = (float)(end - _loopStart) / (float)5000.0;
+      //Serial.print(duration);
+      Serial.println("loop: " + String(duration) + "ms");
+      _loopCount = 0;
+      _loopStart = end;
+  }
+
+  delay(10);
   _radio->Loop();
 }
 

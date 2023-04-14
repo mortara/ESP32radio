@@ -7,25 +7,22 @@ Radio::Radio()
     _i2cwire = new TwoWire(1);
     _i2cwire->begin(33,32, 10000);
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
-
-    // Initialize SPIFFS
-    if(!SPIFFS.begin(true)){
-        Serial.println("An Error has occurred while mounting SPIFFS");
-    }
-
+    _preselectLeds->SetLed(0);
     wifi = new WIFIManager();
     _freq_display = new FrequencyDisplay();
     _clock = new Clock(_i2cwire);
     _channel = new ChannelSwitch(_i2cwire, 0x20);
     _player = new VS1053Player();
-    _fmtuner = new FMTuner4735();
+    _pwm_indicator_freq = new PWMIndicator(26, 8800,10800, 8800);
+    _pwm_indicator_signal = new PWMIndicator(25, 0,5, 0);
+    _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal);
     _inetRadio = new InternetRadio(_player);
     _bluetoothplayer = new BlueToothPlayer(_player);
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x24);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
     _clockDisplay = new ClockDisplay();
-    _clockDisplay->DisplayText("HALLO!");
+    _clockDisplay->DisplayText("HALLO!",0);
     _lastClockUpdate = millis();
     
     Serial.println("Radio setup complete!");
@@ -176,7 +173,8 @@ void Radio::Loop()
     {
         _fmtuner->SetSaveMode(_tunerbuttons->SavePresetButtonPressed);
         _fmtuner->Loop(ch);
-        _freq_display->DisplayText(_fmtuner->GetFreqDisplayText(),1);
+        _freq_display->DisplayText(_fmtuner->GetFreqDisplayText(),2);
+        _clockDisplay->DisplayText(_fmtuner->GetClockDisplayText(), 0);
     } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
         if(!wifi->IsConnected() && millis() - wifi->LastConnectionTry() > 30000)
@@ -187,6 +185,7 @@ void Radio::Loop()
 
         _player->ExecuteCommand(ch);
         _inetRadio->Loop(ch);
+        _clockDisplay->DisplayText(_inetRadio->GetClockDisplayText(), 0);
         _freq_display->DisplayText(_inetRadio->GetFreqDisplayText(),0);
     } else if(_currentPlayer == PLAYER_BT)
     {
@@ -200,8 +199,8 @@ void Radio::Loop()
     if(now - _lastClockUpdate >= 1000)
     {
         _lastClockUpdate = now;
-        char buf2[] = "DD.MM.YYYY hh:mm:ss";
-        _clockDisplay->DisplayText(_clock->Now().toString(buf2));
+        char buf2[] = "DD.MM.YYYY hh:mm";
+        _clockDisplay->DisplayText(_clock->Now().toString(buf2), 1);
     }
 }
 

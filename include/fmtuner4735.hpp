@@ -2,11 +2,12 @@
 #include <Wire.h>
 #include <SI4735.h>
 #include <Preferences.h>
+#include "pwmindicator.hpp"
 
 #ifndef FMTUNER4735_H
 #define FMTUNER4735_H
 
-#define SI7435_RESET_PIN 26              // GPIO12
+#define SI7435_RESET_PIN 2              // GPIO12
 
 // I2C bus pin on ESP32
 #define ESP32_I2C_SDA 21     // GPIO21
@@ -33,12 +34,14 @@ class FMTuner4735
 {
     private:
         SI4735  *_radio;
+        PWMIndicator *_pwmindicator_freq;
+        PWMIndicator *_pwmindicator_signal;
         uint8_t _band = 6;
         uint16_t currentFrequency = 0;
         uint16_t previousFrequency = 0;
         uint8_t currentMode = FM;
 
-        uint16_t _volume = 55;
+        uint16_t _volume = 63;
         char _seekmode = '0';
         long _seektimer = 0;
         char _rdsBuffer[10];
@@ -47,7 +50,11 @@ class FMTuner4735
         bool _savemode = false;
        
         uint8_t _currentBand = 99;
+        uint8_t _smallstep = 5;
+        uint8_t _step = 10;
         
+        void setFrequency(u_int16_t freq);
+
         typedef struct
         {
             uint8_t idx;      // SI473X device bandwidth index
@@ -113,10 +120,10 @@ class FMTuner4735
             {"SW3", SW_BAND_TYPE, 7200, 8000, 7200, 1, 4, 1, 0, 0, 40, 0},
             {"UKW", FM_BAND_TYPE, 8790, 10800, 10390, 1, 0, 1, 0, 0, 0, 0},
             {"ALL", SW_BAND_TYPE, 150, 30000, 15000, 0, 4, 1, 0, 0, 48, 0} // All band. LW, MW and SW (from 150kHz to 30MHz)
-};
+        };
 
     public:
-        FMTuner4735();
+        FMTuner4735(PWMIndicator *freq, PWMIndicator *signal);
         void Loop(char ch);
         void Stop();
         void Start(uint8_t band);
@@ -128,6 +135,9 @@ class FMTuner4735
         void SavePresets();
         void LoadPresets();
         String GetFreqDisplayText();
+        String GetClockDisplayText();
+        uint16_t GetBandMin();
+        uint16_t GetBandMax();
 };
 
 #endif
