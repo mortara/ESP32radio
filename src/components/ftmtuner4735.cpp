@@ -2,13 +2,13 @@
 
 SI4735 *rx = NULL;
 
-FMTuner4735::FMTuner4735(PWMIndicator *freq, PWMIndicator *signal)
+FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
 {
     Serial.println("Start Si4735 ...");
     
     _pwmindicator_freq = freq;
     _pwmindicator_signal = signal;
-    _pwmindicator_signal->SetRange(0, 60);
+    _pwmindicator_signal->SetRange(0, 127);
 
     digitalWrite(SI7435_RESET_PIN, HIGH);
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
@@ -178,6 +178,9 @@ void FMTuner4735::DisplayInfo()
     Serial.print(" Signal:");
     Serial.print(_radio->getCurrentRSSI());
     Serial.println("dBuV]");
+
+    uint8_t offset = _radio->getCurrentSignedFrequencyOffset();
+    Serial.println(" SignedFrequencyOffset: " + String(offset) + " kHz");
 
     Serial.println("Volume: " + String(_volume));
     

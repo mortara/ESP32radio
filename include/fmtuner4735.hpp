@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <SI4735.h>
 #include <Preferences.h>
-#include "pwmindicator.hpp"
+#include "dacindicator.hpp"
 
 #ifndef FMTUNER4735_H
 #define FMTUNER4735_H
@@ -34,8 +34,8 @@ class FMTuner4735
 {
     private:
         SI4735  *_radio;
-        PWMIndicator *_pwmindicator_freq;
-        PWMIndicator *_pwmindicator_signal;
+        DACIndicator *_pwmindicator_freq;
+        DACIndicator *_pwmindicator_signal;
         uint8_t _band = 6;
         uint16_t currentFrequency = 0;
         uint16_t previousFrequency = 0;
@@ -123,7 +123,7 @@ class FMTuner4735
         };
 
     public:
-        FMTuner4735(PWMIndicator *freq, PWMIndicator *signal);
+        FMTuner4735(DACIndicator *freq, DACIndicator *signal);
         void Loop(char ch);
         void Stop();
         void Start(uint8_t band);

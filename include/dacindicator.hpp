@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <driver/dac.h>
 
-#ifndef PWMINDICATOR_H
-#define PWMINDICATOR_H
+#ifndef DACINDICATOR_H
+#define DACINDICATOR_H
 
 
-class PWMIndicator
+class DACIndicator
 {
     private:
         long _max;
@@ -14,7 +14,7 @@ class PWMIndicator
         uint8_t _pin;
 
     public:
-        PWMIndicator(uint8_t pwmpin, long minvalue, long maxvalue, long startvalue);
+        DACIndicator(uint8_t pwmpin, long minvalue, long maxvalue, long startvalue);
 
         void SetValue(long val);
         void SetRange(long min, long max);

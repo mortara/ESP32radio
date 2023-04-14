@@ -13,8 +13,8 @@ Radio::Radio()
     _clock = new Clock(_i2cwire);
     _channel = new ChannelSwitch(_i2cwire, 0x20);
     _player = new VS1053Player();
-    _pwm_indicator_freq = new PWMIndicator(26, 8800,10800, 8800);
-    _pwm_indicator_signal = new PWMIndicator(25, 0,5, 0);
+    _pwm_indicator_freq = new DACIndicator(26, 8800,10800, 8800);
+    _pwm_indicator_signal = new DACIndicator(25, 0,5, 0);
     _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal);
     _inetRadio = new InternetRadio(_player);
     _bluetoothplayer = new BlueToothPlayer(_player);
