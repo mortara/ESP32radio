@@ -1,12 +1,8 @@
 #include "clock.hpp"
 
-
 Clock::Clock(TwoWire *wire)
 {
     _rtc = new RTC_DS3231();
-
-
-    
 
     if(_rtc->begin(wire))
     {

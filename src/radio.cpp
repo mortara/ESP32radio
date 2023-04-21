@@ -24,6 +24,8 @@ Radio::Radio()
     _clockDisplay = new ClockDisplay();
     _clockDisplay->DisplayText("HALLO!",0);
     _lastClockUpdate = millis();
+
+    wifi->Connect();
     
     Serial.println("Radio setup complete!");
 }
@@ -87,6 +89,7 @@ void Radio::Loop()
         // 1,2,3,4,5,6,7,8 -> Select preset channel
         // q -> Restart ESP
         // w -> Display WIFI status
+        // y -> Display DAC Status
         // v -> Reconnect WIFI
         // r -> Display RDS data
         // u -> FMTuner seek up
@@ -173,7 +176,7 @@ void Radio::Loop()
     {
         _fmtuner->SetSaveMode(_tunerbuttons->SavePresetButtonPressed);
         _fmtuner->Loop(ch);
-        _freq_display->DisplayText(_fmtuner->GetFreqDisplayText(),2);
+        _freq_display->DisplayText(_fmtuner->GetFreqDisplayText(),1);
         _clockDisplay->DisplayText(_fmtuner->GetClockDisplayText(), 0);
     } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
@@ -194,6 +197,8 @@ void Radio::Loop()
     }
     _clock->Loop();
     _freq_display->Loop();
+    _pwm_indicator_freq->Loop(ch);
+    _pwm_indicator_signal->Loop(ch);
 
     uint16_t now = millis();
     if(now - _lastClockUpdate >= 1000)
@@ -203,7 +208,6 @@ void Radio::Loop()
         _clockDisplay->DisplayText(_clock->Now().toString(buf2), 1);
     }
 }
-
 
 void Radio::SwitchInput(uint8_t newinput)
 {
@@ -241,33 +245,30 @@ void Radio::SwitchInput(uint8_t newinput)
 
     if(new_player != _currentPlayer)
     {
+        Serial.println("Stopping old player");
         // Stopping the currently running player
         if(_currentPlayer == PLAYER_SI47XX)
             _fmtuner->Stop();
-
-        if(_currentPlayer == PLAYER_BT)
+        else if(_currentPlayer == PLAYER_BT)
             _bluetoothplayer->Stop();
-
-        if(_currentPlayer == PLAYER_WEBRADIO)
+        else if(_currentPlayer == PLAYER_WEBRADIO)
             _inetRadio->Stop();
         
+        Serial.println("Starting new player");
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
             _fmtuner->Start(newinput - 1);
-
-        if(new_player == PLAYER_BT)
+        else if(new_player == PLAYER_BT)
             _bluetoothplayer->Start();
-
-        if(new_player == PLAYER_WEBRADIO)
+        else if(new_player == PLAYER_WEBRADIO)
         {
-            _inetRadio->Start();
-
             if(!wifi->IsConnected())
                 if(!wifi->Connect())
                 {
                     Serial.println("Could not connect to WIFI network!");
                 }
                     
+            _inetRadio->Start();
         }
     }
 
@@ -285,5 +286,5 @@ void Radio::SwitchInput(uint8_t newinput)
     _currentPlayer = new_player;
     _currentInput = newinput;
     delay(50);
-    
+    Serial.println("Input switch done!");
 }

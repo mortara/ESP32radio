@@ -24,10 +24,11 @@ TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr)
 
 int TunerButtons::Loop()
 {
-    long now = millis();
+    unsigned long now = millis();
     if(now - _lastRead < 100)
         return 0;
-        
+    _lastRead = now;    
+    
     PCF8574::DigitalInput input = _pcf8754->digitalReadAll();
 
     if(input.p0 == 0)
@@ -42,13 +43,6 @@ int TunerButtons::Loop()
 
     /*Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3));
     delay(300);*/
-
-    if(result > 1)
-    {
-        delay(500);
-    }
-
-    _lastRead = millis();
 
     return result;
 }

@@ -27,6 +27,7 @@ int PreselectButtons::Loop()
     long now = millis();
     if(now - _lastRead < 100)
         return 0;
+    _lastRead = now;
         
     PCF8574::DigitalInput input = _pcf8754->digitalReadAll();
 
@@ -37,13 +38,5 @@ int PreselectButtons::Loop()
     //delay(100);
 
     result = 255 - result;
-
-    if(result != 0)
-    {
-        delay(100);
-    }
-
-    _lastRead = millis();
-
     return result;
 }

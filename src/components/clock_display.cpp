@@ -19,12 +19,20 @@ void ClockDisplay::DisplayText(String text, uint8_t row)
     _texts[row] = text;
 
     //Serial.println("Clock display: " + text);
-    _lcd->clear();
+    //_lcd->clear();
+
+    String t1 = _texts[0];
+    while(t1.length() < 16)
+        t1 = t1 + " ";
+
+    String t2 = _texts[1];
+    while(t2.length() < 16)
+        t2 = t2 + " ";
+
     _lcd->setCursor(0,0);
-    _lcd->print(_texts[0]);
+    _lcd->print(t1);
     _lcd->setCursor(0,1);
-    _lcd->print(_texts[1]);
-    delay(100);
+    _lcd->print(t2);
     
 }
 

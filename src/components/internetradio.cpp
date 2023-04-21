@@ -1,9 +1,11 @@
 #include "internetradio.hpp"
 
+#define MP3buffersize 32
+
 InternetRadio::InternetRadio(VS1053Player *player)
 {
     Serial.println("InternetRadio setup ...");
-    _mp3buff = new uint8_t[32]();
+    _mp3buff = new uint8_t[MP3buffersize]();
     _player = player;
 
     _http = new HTTPClient();
@@ -62,7 +64,7 @@ void InternetRadio::Stop()
 String InternetRadio::GetFreqDisplayText()
 {
     Station st = stationlist[current_station_preset];
-    return st.name;
+    return String(st.name);
 }
 
 String InternetRadio::GetClockDisplayText()
@@ -70,7 +72,7 @@ String InternetRadio::GetClockDisplayText()
     if(clockdisplaypage == 0)
     {
         Station st = stationlist[current_station_preset];
-        return st.name;
+        return String(st.name);
     }
 
     if(clockdisplaypage == 1)
@@ -88,7 +90,7 @@ String InternetRadio::GetClockDisplayText()
     if(clockdisplaypage == 3)
     {
         
-        return " RSSI: " + String(WiFi.RSSI()) + " dB";
+        return (" RSSI: " + String(WiFi.RSSI()) + " dB");
     }
 
     return "";
@@ -113,13 +115,13 @@ void InternetRadio::Loop(char ch)
             if (_player->ReadyForData()) {
                 //Serial.println("playing data");
                 // The buffer size 64 seems to be optimal. At 32 and 128 the sound might be brassy.
-                uint8_t bytesread = _client->read(_mp3buff, 32);
+                uint8_t bytesread = _client->read(_mp3buff, MP3buffersize);
                 bytes_served += bytesread;
                 if(bytesread > 0)
                 {
                     _player->PlayData(_mp3buff, bytesread);
-                    if(bytesread != 32)
-                        Serial.println("Data buffer != 32 bytes");
+                    if(bytesread != MP3buffersize)
+                        Serial.println("Data buffer != " + String(MP3buffersize) + " bytes");
                 }
                 else
                     Serial.println("no data in buffer");
@@ -130,7 +132,7 @@ void InternetRadio::Loop(char ch)
     } 
     else if(WiFi.isConnected())
     {
-        delay(500);
+        delay(100);
         StartStream(stationlist[current_station_preset]);
     }
     

@@ -15,7 +15,7 @@ FrequencyDisplay::FrequencyDisplay()
     _lastUpdate = millis();
 }
 
-void FrequencyDisplay::SetFont(int fontindx)
+void FrequencyDisplay::SetFont(uint8_t fontindx)
 {
     Serial.println("Freq. display set font " + String(fontindx));
 
@@ -23,7 +23,7 @@ void FrequencyDisplay::SetFont(int fontindx)
     _u8g2->setFont(_currentFont._font);
 }
 
-void FrequencyDisplay::DisplayText(String text, int font)
+void FrequencyDisplay::DisplayText(String text, uint8_t font)
 {
     if(text == _displayText_original)
         return;

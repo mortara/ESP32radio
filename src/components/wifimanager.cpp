@@ -5,7 +5,6 @@ WIFIManager::WIFIManager()
 {
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(true);
-    
     //Connect();
 }
 
@@ -14,7 +13,7 @@ bool WIFIManager::Connect()
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
     Serial.println("Connecting to WiFi ..");
     _lastConnectionTry = millis();
-    int timeout = 20;
+    /*int timeout = 20;
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
         delay(1000);
@@ -26,7 +25,7 @@ bool WIFIManager::Connect()
         }
     }
     connected = true;
-    Serial.println(WiFi.localIP());
+    Serial.println(WiFi.localIP());*/
     return true;
 }
 
@@ -65,6 +64,8 @@ unsigned long WIFIManager::LastConnectionTry()
 
 void WIFIManager::Loop(char ch)
 {
+    connected = WiFi.isConnected();
+
     if (ch == 'w') 
     {
         DisplayInfo();    

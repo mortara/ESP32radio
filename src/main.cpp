@@ -70,7 +70,7 @@ void loop()
       _loopStart = end;
   }
 
-  delay(10);
+  
   _radio->Loop();
 }
 

@@ -11,7 +11,7 @@ class InternetRadio
         HTTPClient *_http;
         VS1053Player  *_player ;
 
-        long bytes_served = 0;
+        unsigned long bytes_served = 0;
         uint8_t current_station_preset = 0;
 
         uint8_t clockdisplaypage = 0;
@@ -23,8 +23,8 @@ class InternetRadio
 
         //structure for station list
         typedef struct {
-            String url;  //stream url
-            String name; //stations name
+            const char *url;  //stream url
+            const char *name; //stations name
         } Station;
 
         #define STATIONS 8 //number of stations in the list

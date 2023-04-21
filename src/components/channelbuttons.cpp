@@ -57,6 +57,7 @@ int ChannelButtons::Loop()
     unsigned long now = millis();
     if(now - _lastRead < 100)
         return 0;
+    _lastRead = now;
 
     int result = 0;
     int channel = readInputs();
@@ -69,12 +70,10 @@ int ChannelButtons::Loop()
         if(channel != currentchannel)
         {
             Serial.println("Channel button switched from " + String(currentchannel) + " to " + String(channel));
-            delay(100);
             currentchannel = channel;
             result = channel;
         }
     }
 
-    _lastRead = millis();
     return result;
 }

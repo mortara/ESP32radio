@@ -1,7 +1,5 @@
 #include "fmtuner4735.hpp"
 
-SI4735 *rx = NULL;
-
 FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
 {
     Serial.println("Start Si4735 ...");
@@ -14,7 +12,6 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
    
     _radio = new SI4735();
-    rx = _radio;
     _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
 
     //_radio->setMaxDelaySetFrequency(50);
@@ -29,6 +26,7 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
     _radio->setFMDeEmphasis(2);
     _radio->RdsInit();
     delay(100);
+    _lastRDSUpdate = _lastUpdate = millis();
 }
 
 void FMTuner4735::Start(uint8_t band)
@@ -45,8 +43,6 @@ void FMTuner4735::Start(uint8_t band)
     //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
     //_radio->setup(SI7435_RESET_PIN,0, b.bandType, SI473X_ANALOG_AUDIO, 0, 0);
 
-
-    
     SwitchBand(band);
 
     _radio->setVolume(_volume);
@@ -62,15 +58,14 @@ void FMTuner4735::Stop()
 
 void FMTuner4735::SwitchBand(uint8_t bandIdx)
 {
-    Band b = _bands[bandIdx];
-
-    Serial.println("Switch to band " + String(b.bandName));
-
+    Serial.println("Switch to band " + bandIdx);
     if(bandIdx == _currentBand)
     {
         Serial.println("Band already active!");
         return;
     }
+
+    Band b = _bands[bandIdx];
 
     if(_currentBand != -1)
     {
@@ -84,8 +79,9 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
         
         _radio->setFM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
         
-        _radio->setRdsConfig(1, 2, 2, 2, 2);
+        _radio->setRdsConfig(1, 0,0,0,0);
         _radio->setFifoCount(1);
+        
         
         /*char str[200];
         sprintf(str,"Pos %2.2d | Min %2.2d | Max %2.2d | Step %2.2d | Bw %2.2d |disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", bandIdx, b.minimumFreq, b.maximumFreq, tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
@@ -152,6 +148,7 @@ void FMTuner4735::setFrequency(u_int16_t freq)
         freq = b.maximumFreq;
 
     _radio->setFrequency(freq);
+    _pwmindicator_freq->SetValue(currentFrequency);
 }
 
 void FMTuner4735::DisplayInfo()
@@ -189,23 +186,28 @@ void FMTuner4735::DisplayInfo()
     else
         Serial.println("Preset save mode is: off");
 
-    _pwmindicator_signal->SetValue(_radio->getCurrentRSSI());
+    
 }
 
 String FMTuner4735::GetFreqDisplayText()
 {
     if (_radio->isCurrentTuneFM())
-    {
-        return String(currentFrequency / 100.0, 2) ;
-    }
-    
+        return String((double)currentFrequency / 100.0, 2);
+
+
     return String(currentFrequency);
 }
 
 String FMTuner4735::GetClockDisplayText()
 {
+    if(clockdisplaypage == 1 && RDSMessage.length() > 0)
+    {
+        return RDSMessage;
+    }
+
+
     uint8_t rssi = _radio->getCurrentRSSI();
-    return String(currentFrequency / 100.00) + "  RSSI: " + rssi+ " ";
+    return GetFreqDisplayText() + "  RSSI: " + String(rssi) + " ";
 }
 
 void FMTuner4735::SetSaveMode(bool onoff)
@@ -213,7 +215,7 @@ void FMTuner4735::SetSaveMode(bool onoff)
     _savemode = onoff;
 }
 
-void FMTuner4735::SwitchPreset(int num)
+void FMTuner4735::SwitchPreset(uint8_t num)
 {
     Serial.println("FMTuner::SwitchPreset to " + String(num));
     _current_station_preset = num;
@@ -222,7 +224,7 @@ void FMTuner4735::SwitchPreset(int num)
     DisplayInfo();
 }
 
-void FMTuner4735::SaveCurrentChannel(int preset)
+void FMTuner4735::SaveCurrentChannel(uint8_t preset)
 {
     Serial.println("Saving frequency " + String(currentFrequency)+ " as preset " + preset);
     _station_presets[preset] = currentFrequency;
@@ -239,7 +241,6 @@ void FMTuner4735::LoadPresets()
         return; 
     }    
 
-    
     Band b = _bands[_currentBand];
     Preferences _prefs;
     String prefname = "radio_tuner_" + String(b.bandName);
@@ -296,30 +297,79 @@ void FMTuner4735::SavePresets()
     _prefs.end();
 }
 
+String UpdateRDSMessage(String oldmsg, char * newmsg)
+{
+    String newstr = String(newmsg);
+    newstr.trim();
 
+    if(oldmsg.length() == 0)
+        return newstr;
 
-void showFrequency(uint16_t freq ) {
+    if(newstr.length() > oldmsg.length())
+        return newstr;
 
-    if(rx == NULL)
-        return;
+    if(oldmsg.endsWith(newstr) || oldmsg.startsWith(newstr))
+        return oldmsg;
 
-    if (rx->isCurrentTuneFM())
+    return newstr;
+}
+
+void FMTuner4735::checkRDS()
+{
+  _radio->getRdsStatus();
+  if (_radio->getRdsReceived())
+  {
+    if (_radio->getRdsSync() && _radio->getRdsSyncFound())
     {
-        Serial.print(String(freq / 100.0, 2));
-        Serial.println("MHz ");
+      rdsMsg = _radio->getRdsText2A();
+      stationName = _radio->getRdsText0A();
+      rdsTime = _radio->getRdsTime();
+
+      String msg = UpdateRDSMessage(RDSMessage, rdsMsg);
+      if(msg != RDSMessage && msg != "")
+      {
+        RDSMessage = msg;
+        Serial.println("RDS Message: '" + RDSMessage + "'");
+      }
+
+      String stationname = UpdateRDSMessage(RDSStationName, stationName);
+      if(stationname != RDSStationName && stationname != "")
+      {
+        RDSStationName = stationname;
+        Serial.println("RDS Stationname: '" + RDSStationName+ "'");
+      }
+
+      String time = UpdateRDSMessage(RDSTime, rdsTime);
+      if(time != RDSTime && time != "")
+      {
+        RDSTime = time;
+        Serial.println("RDS Time: '" + RDSTime+ "'");
+      }
     }
-    else
-    {
-        Serial.print(freq);
-        Serial.println("kHz");
-    }
-  
+  }
 }
 
 void FMTuner4735::Loop(char ch)
 {
     bool channelchanged = false;
     long now = millis();
+
+    if((now - clockdisplaypagetimer) > 15000)
+    {
+        clockdisplaypage++;
+        if(clockdisplaypage == 2)
+            clockdisplaypage = 0;
+        
+        clockdisplaypagetimer = now;
+    }
+
+    if(now - _lastUpdate > 100)
+    {
+        _radio->getStatus();
+        _radio->getCurrentReceivedSignalQuality();
+        _pwmindicator_signal->SetValue(_radio->getCurrentRSSI());
+        _lastUpdate = now;
+    }
 
     if(_seekmode != '0' && ch != 't')
     {
@@ -405,49 +455,40 @@ void FMTuner4735::Loop(char ch)
     }
 
     if (ch == 'r')
-    {
-        _radio->getRdsStatus();
-        if (_radio->getRdsReceived())
-        {
-            Serial.println("RDS Data received ...");
-            if (_radio->getRdsSync() && _radio->getRdsSyncFound() && !_radio->getRdsSyncLost() && !_radio->getGroupLost() )
-            {
-                char *block0A = _radio->getRdsText0A();
-                char *block2A = _radio->getRdsText2A();
-                char *block2B = _radio->getRdsText2B();
-                char *time = _radio->getRdsTime();
-                char *text = _radio->getRdsText();
+    {   
+        if(rdsMsg != NULL && rdsMsg[0] != '\0')
+            Serial.println("Msg: " + String(rdsMsg));
 
-                if(_radio->getRdsSync())
-                    Serial.println("RDS is synchronized!");
+        if(stationName != NULL && stationName[0] != '\0')    
+            Serial.println("Station: " + String(stationName));
 
+        if(rdsTime != NULL && rdsTime[0] != '\0')
+            Serial.println("Time" + String(rdsTime));
 
-                if(time != NULL)
-                    Serial.println("RDS Time:" +  String(time));
-
-                if(text != NULL)
-                    Serial.println("RDS Text:" +  String(text));
-
-                if(block0A != NULL)
-                    Serial.println("RDS 0A:" +  String(block0A));
-
-                if(block2A != NULL)
-                    Serial.println("RDS 2A:" +  String(block2A));
-
-                if(block2B != NULL)
-                    Serial.println("RDS 2B:" +  String(block2B));
-            }
-        }
     }
 
     currentFrequency = _radio->getCurrentFrequency();
     if(previousFrequency != currentFrequency) 
     {
+        Serial.println("Frequency changed!");
         previousFrequency = currentFrequency;
-        _pwmindicator_freq->SetValue((long)currentFrequency);
+        
         if(_savemode)
             SaveCurrentChannel(_current_station_preset);
 
         DisplayInfo();
+        RDSMessage.clear();
+        RDSStationName.clear();
+        RDSTime.clear();
+        
+    }
+
+    if(_bands[_currentBand].bandType == FM_BAND_TYPE)
+    {
+        if(now - _lastRDSUpdate > 10)
+        {
+            checkRDS();
+            _lastRDSUpdate = now;
+        }
     }
 }
