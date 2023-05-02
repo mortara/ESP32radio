@@ -51,7 +51,7 @@ void ScanI2C()
 void setup()
 {
   Serial.begin(57600);
-  //ScanI2C();
+  ScanI2C();
   _radio = new Radio();
 
 }

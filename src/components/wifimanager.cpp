@@ -13,7 +13,7 @@ bool WIFIManager::Connect()
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
     Serial.println("Connecting to WiFi ..");
     _lastConnectionTry = millis();
-    /*int timeout = 20;
+    int timeout = 20;
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
         delay(1000);
@@ -25,7 +25,7 @@ bool WIFIManager::Connect()
         }
     }
     connected = true;
-    Serial.println(WiFi.localIP());*/
+    DisplayInfo();
     return true;
 }
 
@@ -44,11 +44,13 @@ void WIFIManager::DisplayInfo(){
     Serial.println("[+] BSSID : " + WiFi.BSSIDstr());
     Serial.print("[+] Gateway IP : ");
     Serial.println(WiFi.gatewayIP());
-    Serial.print("[+] Subnet Mask : ");
-    Serial.println(WiFi.subnetMask());
+    Serial.print("[+] DNS IP : ");
+    Serial.println(WiFi.dnsIP());   
     Serial.println((String)"[+] RSSI : " + String(WiFi.RSSI()) + " dB");
     Serial.print("[+] ESP32 IP : ");
     Serial.println(WiFi.localIP());
+    Serial.print("[+] Subnet Mask : ");
+    Serial.println(WiFi.subnetMask());
     
 }
 

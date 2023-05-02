@@ -9,7 +9,7 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
     _pwmindicator_signal->SetRange(0, 127);
 
     digitalWrite(SI7435_RESET_PIN, HIGH);
-    Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
+    Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
    
     _radio = new SI4735();
     _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
@@ -200,14 +200,18 @@ String FMTuner4735::GetFreqDisplayText()
 
 String FMTuner4735::GetClockDisplayText()
 {
-    if(clockdisplaypage == 1 && RDSMessage.length() > 0)
+    if(clockdisplaypage == 1)
     {
         return RDSMessage;
     }
 
 
     uint8_t rssi = _radio->getCurrentRSSI();
-    return GetFreqDisplayText() + "  RSSI: " + String(rssi) + " ";
+    String t = GetFreqDisplayText() + "  RSSI: " + String(rssi) + " ";
+    if(t.length() > 16)
+        t = t.substring(0,16);
+
+    return t;
 }
 
 void FMTuner4735::SetSaveMode(bool onoff)
@@ -369,6 +373,8 @@ void FMTuner4735::Loop(char ch)
         _radio->getCurrentReceivedSignalQuality();
         _pwmindicator_signal->SetValue(_radio->getCurrentRSSI());
         _lastUpdate = now;
+        clockdisplaypagetimer = now;
+        clockdisplaypage = 0;
     }
 
     if(_seekmode != '0' && ch != 't')
