@@ -4,29 +4,48 @@ Radio::Radio()
 {
     _spk = new Speaker(27);
 
+    _clockDisplay = new ClockDisplay();
+    _clockDisplay->DisplayText("HALLO!",0);
+
+    _clockDisplay->DisplayText("Starte I2C Bus 2 ...",0);
     _i2cwire = new TwoWire(1);
     _i2cwire->begin(33,32, 10000);
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
+
+    _clockDisplay->DisplayText("Starte WIFI ...",0);
     wifi = new WIFIManager();
     _freq_display = new FrequencyDisplay();
+
+    _clockDisplay->DisplayText("Starte RTC ...",0);
     _clock = new Clock(_i2cwire);
     _channel = new ChannelSwitch(_i2cwire, 0x20);
+
+    _clockDisplay->DisplayText("Starte VS1053 ...",0);
     _player = new VS1053Player();
     _pwm_indicator_freq = new DACIndicator(26, 8800,10800, 8800);
     _pwm_indicator_signal = new DACIndicator(25, 0,5, 0);
+
+    _clockDisplay->DisplayText("Starte Si4735 ...",0);
     _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal);
-    _inetRadio = new InternetRadio(_player);
+
+    _clockDisplay->DisplayText("Starte Internetradio ...",0);
+    _inetRadio = new InternetRadio(_player, _pwm_indicator_freq, _pwm_indicator_signal);
+
+    _clockDisplay->DisplayText("Starte Bluetooth ...",0);
     _bluetoothplayer = new BlueToothPlayer(_player);
+
+    _clockDisplay->DisplayText("Starte Frontelemente ...",0);
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x24);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
-    _clockDisplay = new ClockDisplay();
-    _clockDisplay->DisplayText("HALLO!",0);
+    
+    _rotary1 = new RotaryEncoder(34,35,39);
     _lastClockUpdate = millis();
 
     wifi->Connect();
     
+    _clockDisplay->DisplayText("Fertig!",0);
     Serial.println("Radio setup complete!");
 }
 
@@ -199,7 +218,9 @@ void Radio::Loop()
     _freq_display->Loop();
     _pwm_indicator_freq->Loop(ch);
     _pwm_indicator_signal->Loop(ch);
-
+    _clockDisplay->Loop();
+    _rotary1->Loop();
+    
     uint16_t now = millis();
     if(now - _lastClockUpdate >= 1000)
     {
