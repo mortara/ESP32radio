@@ -19,6 +19,7 @@
 #include "frequency_display.hpp"
 #include "clock_display.hpp"
 #include "dacindicator.hpp"
+#include "rotary_encoder.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -63,6 +64,7 @@ class Radio
         ClockDisplay *_clockDisplay;
         DACIndicator *_pwm_indicator_freq;
         DACIndicator *_pwm_indicator_signal;
+        RotaryEncoder *_rotary1;
 
         uint8_t _currentInput = 0;  // The input button pressed on the radio
         uint8_t _currentPlayer = 0; // The selected player or audio source
