@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "vs1053.hpp"
-
+#include "dacindicator.hpp"
 
 class InternetRadio
 {
@@ -10,12 +10,16 @@ class InternetRadio
         WiFiClient *_client;
         HTTPClient *_http;
         VS1053Player  *_player ;
+        DACIndicator *_pwmindicator_freq;
+        DACIndicator *_pwmindicator_signal;
 
         unsigned long bytes_served = 0;
         uint8_t current_station_preset = 0;
 
         uint8_t clockdisplaypage = 0;
         uint16_t clockdisplaypagetimer = 0;
+
+        uint16_t _signaltimer = 0;
 
         // https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high
         // http://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3
@@ -42,7 +46,7 @@ class InternetRadio
         
         uint8_t *_mp3buff;
     public:
-        InternetRadio(VS1053Player *player);
+        InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndicator *signal);
         void Loop(char ch);
         void Stop();
         void Start();

@@ -4,10 +4,19 @@
 VS1053Player::VS1053Player()
 {
     Serial.println("Creating vs1053 object");
-    _player = new Adafruit_VS1053_FilePlayer(BREAKOUT_RESET, BREAKOUT_CS, BREAKOUT_DCS, DREQ, -1);
-    _player->begin();
+    _player = new Adafruit_VS1053_FilePlayer(BREAKOUT_RESET, BREAKOUT_MP3_CS, BREAKOUT_XDCS, BREAKOUT_DREQ, BREAKOUT_SD_CS);
+    if (! _player->begin()) { // initialise the music player
+        Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
+    }
     _player->setVolume(100, 100);
     //_player->softReset();
+
+    if (!SD.begin(BREAKOUT_SD_CS)) {
+        Serial.println(F("SD failed, or not present"));
+    }
+    else
+        Serial.println("SD OK!");
+
 }
 
 void VS1053Player::Begin()

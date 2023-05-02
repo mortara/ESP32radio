@@ -8,12 +8,13 @@
 #define MISO 19      // Input data, from VS1053/SD card
 #define MOSI 23      // Output data, to VS1053/SD card
 
-#define BREAKOUT_RESET  17     // VS1053 reset pin (output)
-#define BREAKOUT_CS     5     // VS1053 chip select pin (output)
-#define BREAKOUT_DCS    16    // VS1053 Data/command select pin (output)
+#define BREAKOUT_RESET  -1     // VS1053 reset pin (output)
+#define BREAKOUT_XDCS    16    // VS1053 Data/command select pin (output)
+#define BREAKOUT_SD_CS    17
+#define BREAKOUT_MP3_CS    5
 
 // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
-#define DREQ 4       // VS1053 Data request, ideally an Interrupt pin
+#define BREAKOUT_DREQ 4       // VS1053 Data request, ideally an Interrupt pin
 
 class VS1053Player
 {
