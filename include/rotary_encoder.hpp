@@ -22,4 +22,5 @@ class RotaryEncoder
         void Loop();
 
         bool SwitchPressed = false;
+        int GetCounter();
 };
