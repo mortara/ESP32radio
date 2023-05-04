@@ -10,7 +10,7 @@ class PreselectButtons
         PCF8574 *_pcf8754;
         TwoWire *_i2cwire;
         unsigned long _lastRead = 0;
-        
+        bool _active = false;
     public:
         PreselectButtons(TwoWire *twowire, uint8_t adr);
         int Loop();

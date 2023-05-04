@@ -3,11 +3,6 @@
 #include <SPI.h>
 #include "PCF8574.h"
 
-/*
-    
-
-*/
-
 class ChannelButtons
 {
     private:
@@ -16,7 +11,7 @@ class ChannelButtons
         TwoWire *_i2cwire;
         unsigned long _lastRead = 0;
         int currentchannel = 0;
-
+        bool _active = false;
         int readInputs();
     public:
         ChannelButtons(TwoWire *twowire, uint8_t adr);

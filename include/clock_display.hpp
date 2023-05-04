@@ -10,6 +10,7 @@ class ClockDisplay
 
         unsigned long _scroll_row1_timer;
         uint8_t _scroll_row1_offset;
+        bool _active = false;
 
     public:
         ClockDisplay();

@@ -11,7 +11,8 @@ class Clock
         
         bool _timeset = false;
         unsigned long _lastUpdate; 
-
+        bool _active = false;
+        
     public:
         Clock(TwoWire *wire);
 

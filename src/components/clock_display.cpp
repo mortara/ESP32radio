@@ -3,18 +3,28 @@
 ClockDisplay::ClockDisplay()
 {
     Serial.println("Initialize clock display");
+
+    Wire.beginTransmission(0x27);
+    uint8_t error = Wire.endTransmission();
+    if (error != 0)
+    {
+        Serial.println("Clock display not found!");
+        return;
+    }
+
     _lcd = new LiquidCrystal_I2C(0x27,16,2);
-
     _lcd->init();                      // initialize the lcd 
-
     // Print a message to the LCD.
     _lcd->backlight();
  
+    _active = true;
 }
 
 void ClockDisplay::DisplayText(String text, uint8_t row)
 {
-    
+    if(!_active)
+        return;
+
     if(text == _texts[row])
         return;
     _texts[row] = text;
@@ -35,6 +45,9 @@ void ClockDisplay::DisplayText(String text, uint8_t row)
 
 void ClockDisplay::Loop()
 {
+    if(!_active)
+        return;
+
     unsigned long _now = millis();
 
     if(_texts[0].length() > 16)

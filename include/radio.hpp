@@ -20,6 +20,8 @@
 #include "clock_display.hpp"
 #include "dacindicator.hpp"
 #include "rotary_encoder.hpp"
+#include "mqtt.hpp"
+#include "temperature_sensor.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -65,6 +67,8 @@ class Radio
         DACIndicator *_pwm_indicator_freq;
         DACIndicator *_pwm_indicator_signal;
         RotaryEncoder *_rotary1;
+        TemperatureSensor *_tempSensor1;
+        MQTTConnector *_mqttConnector;
 
         uint8_t _currentInput = 0;  // The input button pressed on the radio
         uint8_t _currentPlayer = 0; // The selected player or audio source

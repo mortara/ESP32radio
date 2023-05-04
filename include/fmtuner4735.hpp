@@ -34,6 +34,8 @@ class FMTuner4735
 {
     private:
         SI4735  *_radio;
+        bool _active = false;
+
         DACIndicator *_pwmindicator_freq;
         DACIndicator *_pwmindicator_signal;
         uint8_t _band = 6;

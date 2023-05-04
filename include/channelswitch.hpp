@@ -13,6 +13,7 @@ class ChannelSwitch
         TwoWire *_i2cwire;
         const uint8_t offval = HIGH;
         const uint8_t onval = LOW;
+        bool _active = false;
     public:
         ChannelSwitch(TwoWire *twowire, uint8_t adr_relais);
 

@@ -41,7 +41,7 @@ void PreselectLeds::SetLed(uint8_t num)
     if(num < 0 || num > 8)
         return;
 
-    delay(100);
+    delay(10);
     switch(num)
     {
         case 0:

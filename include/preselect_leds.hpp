@@ -7,6 +7,7 @@ class PreselectLeds
 {
     private:
         PCF8574 *_pcf8754;
+        bool _active = false;
         
     public:
         PreselectLeds(TwoWire *twowire, uint8_t adr);

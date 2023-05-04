@@ -21,6 +21,7 @@ class BlueToothPlayer
 
         #define BUFFSIZE 32 
         uint8_t *_mp3buff;
+        bool _active = false;
 
     public:
         BlueToothPlayer(VS1053Player *player);

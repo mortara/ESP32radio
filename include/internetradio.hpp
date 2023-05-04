@@ -12,7 +12,7 @@ class InternetRadio
         VS1053Player  *_player ;
         DACIndicator *_pwmindicator_freq;
         DACIndicator *_pwmindicator_signal;
-
+        bool _active = false;
         unsigned long bytes_served = 0;
         uint8_t current_station_preset = 0;
 

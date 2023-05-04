@@ -10,13 +10,21 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
 
     digitalWrite(SI7435_RESET_PIN, HIGH);
     Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
-   
+
+    Wire.beginTransmission(0x11);
+    uint8_t error = Wire.endTransmission();
+    if (error != 0)
+    {
+        Serial.println("Tuner module not found!");
+        
+        return;
+    }
+    
     _radio = new SI4735();
     _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
 
     //_radio->setMaxDelaySetFrequency(50);
     _radio->setTuneFrequencyAntennaCapacitor(0);
-
     _radio->setup(SI7435_RESET_PIN,0,FM_FUNCTION, SI473X_ANALOG_AUDIO, XOSCEN_CRYSTAL, 0);
 
     _radio->setFmSoftMuteMaxAttenuation(0);
@@ -25,12 +33,15 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
     _radio->setFmStereoOn();
     _radio->setFMDeEmphasis(2);
     _radio->RdsInit();
-    delay(100);
+    _active = true;
     _lastRDSUpdate = _lastUpdate = millis();
 }
 
 void FMTuner4735::Start(uint8_t band)
 {
+    if(!_active)
+        return;
+
     Serial.println("FMTuner start ...");
 
     Band b = _bands[band]; 
@@ -58,6 +69,9 @@ void FMTuner4735::Stop()
 
 void FMTuner4735::SwitchBand(uint8_t bandIdx)
 {
+    if(!_active)
+        return;
+
     Serial.println("Switch to band " + bandIdx);
     if(bandIdx == _currentBand)
     {
@@ -140,6 +154,9 @@ uint16_t FMTuner4735::GetBandMax()
 
 void FMTuner4735::setFrequency(u_int16_t freq)
 {
+    if(!_active)
+        return;
+
     Band b = _bands[_currentBand];
     if(freq < b.minimumFreq)
         freq = b.minimumFreq;
@@ -153,6 +170,9 @@ void FMTuner4735::setFrequency(u_int16_t freq)
 
 void FMTuner4735::DisplayInfo()
 {
+    if(!_active)
+        return;
+
     Serial.println("Radio info:");
     _radio->getStatus();
     _radio->getCurrentReceivedSignalQuality();
@@ -191,6 +211,9 @@ void FMTuner4735::DisplayInfo()
 
 String FMTuner4735::GetFreqDisplayText()
 {
+    if(!_active)
+        return "No tuner!";
+
     if (_radio->isCurrentTuneFM())
         return String((double)currentFrequency / 100.0, 2);
 
@@ -200,6 +223,11 @@ String FMTuner4735::GetFreqDisplayText()
 
 String FMTuner4735::GetClockDisplayText()
 {
+    if(!_active)
+    {
+        return "Tuner not found!";
+    }
+
     if(clockdisplaypage == 1)
     {
         return RDSMessage;
@@ -320,6 +348,9 @@ String UpdateRDSMessage(String oldmsg, char * newmsg)
 
 void FMTuner4735::checkRDS()
 {
+    if(!_active)
+        return;
+
   _radio->getRdsStatus();
   if (_radio->getRdsReceived())
   {
@@ -357,6 +388,9 @@ void FMTuner4735::Loop(char ch)
 {
     bool channelchanged = false;
     long now = millis();
+
+    if(!_active)
+        return;
 
     if((now - clockdisplaypagetimer) > 15000)
     {

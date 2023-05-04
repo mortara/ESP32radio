@@ -8,8 +8,7 @@ Speaker::Speaker(int pin)
     Serial.println("\n\nSetup speaker");
     digitalWrite(_relaispin, HIGH);
     pinMode(_relaispin, OUTPUT);
-
-    TurnOff();
+    _onoff = false;
 }
 
 void Speaker::TurnOn()

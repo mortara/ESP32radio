@@ -21,7 +21,8 @@ class VS1053Player
     private:
         Adafruit_VS1053_FilePlayer  *_player;
         uint8_t _volume = 10;
-
+        bool _active = false;
+        
     public:
         VS1053Player();
 

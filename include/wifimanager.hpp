@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-
+#include "secrets.h"
 
 typedef struct {
     String SSID;  //stream url
@@ -12,7 +12,7 @@ class WIFIManager
     private:
 
         bool connected = false;
-        WIFICreds _credentials = {"WELAHN2G", "dukommsthiernichtrein"};
+        WIFICreds _credentials = {WIFISSID, WIFIPASS};
         unsigned long previousMillis = 0;
         unsigned long interval = 15000;
         unsigned long _lastConnectionTry;

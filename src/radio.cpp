@@ -19,7 +19,9 @@ Radio::Radio()
 
     _clockDisplay->DisplayText("Starte RTC ...",0);
     _clock = new Clock(_i2cwire);
-    _channel = new ChannelSwitch(_i2cwire, 0x20);
+
+    _clockDisplay->DisplayText("Starte Kanelrelais ...",0);
+    _channel = new ChannelSwitch(_i2cwire, 0x24);
 
     _clockDisplay->DisplayText("Starte VS1053 ...",0);
     _player = new VS1053Player();
@@ -37,11 +39,19 @@ Radio::Radio()
 
     _clockDisplay->DisplayText("Starte Frontelemente ...",0);
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
-    _preselectButtons = new PreselectButtons(_i2cwire, 0x24);
+    _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
     
     _rotary1 = new RotaryEncoder(34,35,39);
     _lastClockUpdate = millis();
+
+    _clockDisplay->DisplayText("Starte MQTT ...",0);
+    _mqttConnector = new MQTTConnector();
+
+    _clockDisplay->DisplayText("Starte Temperatursensor ...",0);
+    _tempSensor1 = new TemperatureSensor(_mqttConnector);
+
+    
 
     wifi->Connect();
     
@@ -220,6 +230,8 @@ void Radio::Loop()
     _pwm_indicator_signal->Loop(ch);
     _clockDisplay->Loop();
     _rotary1->Loop();
+    _tempSensor1->Loop();
+    _mqttConnector->Loop();
     
     uint16_t now = millis();
     if(now - _lastClockUpdate >= 1000)

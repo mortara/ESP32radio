@@ -13,7 +13,7 @@ class DACIndicator
         uint16_t _current;
         uint8_t _current_voltage;
         uint8_t _pin;
-
+        
     public:
         DACIndicator(uint8_t pwmpin, uint16_t minvalue, uint16_t maxvalue, uint16_t startvalue);
 
