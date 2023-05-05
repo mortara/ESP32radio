@@ -1,7 +1,14 @@
 #include "channelswitch.hpp"
 
-ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr)
+ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
+    if(!isActive())
+    {
+        Serial.println("Channel switch not found");
+        _running = false;
+        return;
+    }
+
     Serial.println("Initializing Channel switcher");
     _address = adr;
 
@@ -24,6 +31,8 @@ ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr)
 void ChannelSwitch::TurnAllOff()
 {
     Serial.println("Turn off all input channels");
+    if(!_running)
+        return;
 
     PCF8574::DigitalInput digitalInput;
 

@@ -2,16 +2,17 @@
 #include <Adafruit_BMP085.h>
 #include <WiFi.h>
 #include "mqtt.hpp"
+#include "i2cdevice.hpp"
 
-class TemperatureSensor
+class TemperatureSensor : i2cdevice
 {
     private:
-        Adafruit_BMP085 *_bmp;
-        MQTTConnector *_mqtt;
+        Adafruit_BMP085 *_bmp = NULL;
+        MQTTConnector *_mqtt = NULL; 
         unsigned long _lastRead;
         bool setupmqtt = false;
 
-        void mqttSetup();
+        bool mqttSetup();
 
     public:
         TemperatureSensor(MQTTConnector *mqtt);

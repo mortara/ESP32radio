@@ -1,8 +1,14 @@
 #include "preselect_buttons.hpp"
 
 
-PreselectButtons::PreselectButtons(TwoWire *twowire, uint8_t adr)
+PreselectButtons::PreselectButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
+    if(!isActive())
+    {
+        Serial.println("preselect buttons not found!");
+        return;
+    }
+
     Serial.println("Initializing preselect buttons");
     _address = adr;
 
@@ -24,6 +30,9 @@ PreselectButtons::PreselectButtons(TwoWire *twowire, uint8_t adr)
 
 int PreselectButtons::Loop()
 {
+    if(!isActive())
+        return 0;
+
     long now = millis();
     if(now - _lastRead < 100)
         return 0;

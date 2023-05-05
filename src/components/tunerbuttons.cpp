@@ -1,8 +1,14 @@
 #include "tunerbuttons.hpp"
 
 
-TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr)
+TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
+    if(!isActive())
+    {
+        Serial.println("Tuner buttons not found!");
+        return;
+    }
+
     Serial.println("Initializing tuner buttons switcher");
     _address = adr;
 
@@ -24,6 +30,9 @@ TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr)
 
 int TunerButtons::Loop()
 {
+    if(!isActive())
+        return 0;
+
     unsigned long now = millis();
     if(now - _lastRead < 100)
         return 0;

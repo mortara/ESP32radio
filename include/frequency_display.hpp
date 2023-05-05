@@ -5,7 +5,7 @@
 class FrequencyDisplay
 {
     private:
-        U8G2_MAX7219_32X8_F_4W_HW_SPI *_u8g2;
+        U8G2_MAX7219_32X8_F_4W_SW_SPI *_u8g2;
         String _displayText;
         String _displayText_original;
         unsigned int _max_chars = 6;

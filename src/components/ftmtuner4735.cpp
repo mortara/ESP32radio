@@ -1,24 +1,16 @@
 #include "fmtuner4735.hpp"
 
-FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
+FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal, MQTTConnector *mqtt)
 {
     Serial.println("Start Si4735 ...");
-    
+    _mqtt = mqtt;
     _pwmindicator_freq = freq;
     _pwmindicator_signal = signal;
     _pwmindicator_signal->SetRange(0, 127);
 
     digitalWrite(SI7435_RESET_PIN, HIGH);
-    Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
+    //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
 
-    Wire.beginTransmission(0x11);
-    uint8_t error = Wire.endTransmission();
-    if (error != 0)
-    {
-        Serial.println("Tuner module not found!");
-        
-        return;
-    }
     
     _radio = new SI4735();
     _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
@@ -35,6 +27,48 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
     _radio->RdsInit();
     _active = true;
     _lastRDSUpdate = _lastUpdate = millis();
+}
+
+void FMTuner4735::setupMQTT()
+{
+    if(mqttsetup)
+        return;
+
+    Serial.println("Setting up si4735 MQTT client");
+
+    if(!_mqtt->SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave"))
+    {
+        Serial.println("Could not setup frequency sensor!");
+        return;
+    }
+
+    if(!_mqtt->SetupSensor("Station", "sensor", "SI4735", "", "", "mdi:radio"))
+    {
+        Serial.println("Could not setup station sensor!");
+        return;
+    }
+
+    if(!_mqtt->SetupSensor("Band", "text", "SI4735", "", "", "mdi:radio"))
+    {
+        Serial.println("Could not setup band sensor!");
+        return;
+    }
+
+    if(!_mqtt->SetupSensor("RSSI", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower"))
+    {
+        Serial.println("Could not setup RSSI sensor!");
+        return;
+    }
+
+    if(!_mqtt->SetupSensor("RDSMSG", "text", "SI4735", "", "", "mdi:message-processing"))
+    {
+        Serial.println("Could not setup RDSMsg sensor!");
+        return;
+    }
+
+    Serial.println("si4735 Sensor mqtt setup done!");
+
+    mqttsetup = true;
 }
 
 void FMTuner4735::Start(uint8_t band)
@@ -72,7 +106,7 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     if(!_active)
         return;
 
-    Serial.println("Switch to band " + bandIdx);
+    Serial.println("Switch to band " + String(bandIdx));
     if(bandIdx == _currentBand)
     {
         Serial.println("Band already active!");
@@ -387,10 +421,13 @@ void FMTuner4735::checkRDS()
 void FMTuner4735::Loop(char ch)
 {
     bool channelchanged = false;
-    long now = millis();
+    unsigned long now = millis();
 
     if(!_active)
         return;
+
+    if(_mqtt->isActive() && !mqttsetup)
+        setupMQTT();
 
     if((now - clockdisplaypagetimer) > 15000)
     {
@@ -399,6 +436,15 @@ void FMTuner4735::Loop(char ch)
             clockdisplaypage = 0;
         
         clockdisplaypagetimer = now;
+
+        if(mqttsetup)
+        {   
+            Band b = _bands[_currentBand];
+            uint8_t rssi = _radio->getCurrentRSSI();
+            uint16_t frq = _radio->getCurrentFrequency();
+            String payload ="{ \"Frequency\": " + String(frq) + ", \"RSSI\": " + String(rssi) + ", \"Band\": \"" + String(b.bandName) + "\", \"Station\": " + String(_current_station_preset) + ", \"RDSMSG\": \"" + RDSMessage + "\"}";
+            _mqtt->PublishSensor(payload, "SI4735");
+        }
     }
 
     if(now - _lastUpdate > 100)
@@ -407,8 +453,6 @@ void FMTuner4735::Loop(char ch)
         _radio->getCurrentReceivedSignalQuality();
         _pwmindicator_signal->SetValue(_radio->getCurrentRSSI());
         _lastUpdate = now;
-        clockdisplaypagetimer = now;
-        clockdisplaypage = 0;
     }
 
     if(_seekmode != '0' && ch != 't')

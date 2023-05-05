@@ -10,6 +10,9 @@ WIFIManager::WIFIManager()
 
 bool WIFIManager::Connect()
 {
+    if(WiFi.status() == WL_CONNECTED)
+        return true;
+
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
     Serial.println("Connecting to WiFi ..");
     _lastConnectionTry = millis();

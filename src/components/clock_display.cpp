@@ -1,15 +1,12 @@
 #include "clock_display.hpp"
 
-ClockDisplay::ClockDisplay()
+ClockDisplay::ClockDisplay() : i2cdevice(0x27)
 {
-    Serial.println("Initialize clock display");
-
-    Wire.beginTransmission(0x27);
-    uint8_t error = Wire.endTransmission();
-    if (error != 0)
+    if(isActive())
+        Serial.println("Initialize clock display");
+    else
     {
-        Serial.println("Clock display not found!");
-        return;
+        Serial.println("clock display not found");
     }
 
     _lcd = new LiquidCrystal_I2C(0x27,16,2);
@@ -22,12 +19,15 @@ ClockDisplay::ClockDisplay()
 
 void ClockDisplay::DisplayText(String text, uint8_t row)
 {
-    if(!_active)
-        return;
-
     if(text == _texts[row])
         return;
     _texts[row] = text;
+    
+    if(!_active)
+    {
+        Serial.println(String(row) + ": " + text);
+        return;
+    }
 
     //Serial.println("Clock display: " + text);
     //_lcd->clear();

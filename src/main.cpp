@@ -60,10 +60,10 @@ void setup()
 void loop()
 {
   _loopCount++;
-  if(_loopCount == 5000)
+  if(_loopCount == 15000)
   {
       unsigned long end = millis();
-      float duration = (float)(end - _loopStart) / (float)5000.0;
+      float duration = (float)(end - _loopStart) / (float)15000.0;
       //Serial.print(duration);
       Serial.println("loop: " + String(duration) + "ms");
       _loopCount = 0;

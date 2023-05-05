@@ -2,8 +2,9 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "PCF8574.h"
+#include "i2cdevice.hpp"
 
-class PreselectButtons
+class PreselectButtons : i2cdevice
 {
     private:
         uint8_t _address;

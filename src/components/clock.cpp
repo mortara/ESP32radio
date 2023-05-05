@@ -1,6 +1,6 @@
 #include "clock.hpp"
 
-Clock::Clock(TwoWire *wire)
+Clock::Clock(TwoWire *wire) : i2cdevice(wire, 0x68)
 {
     _rtc = new RTC_DS3231();
 
@@ -9,7 +9,7 @@ Clock::Clock(TwoWire *wire)
         Serial.println("Clock found! ");
         char buf2[] = "DD.MM.YYYY hh:mm:ss";
         Serial.println(_rtc->now().toString(buf2));
-        
+        _active = true;
     }
     
     _lastUpdate = millis();
@@ -32,6 +32,9 @@ bool Clock::SetByNTP()
         return false;
     }
 
+    if(_active)
+        return true;
+
     DateTime now(time.tm_year, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
 
     _rtc->adjust(now); 
@@ -42,6 +45,9 @@ bool Clock::SetByNTP()
 
 DateTime Clock::Now()
 {
+    if(!_active)
+        return DateTime();
+
     return _rtc->now();
 }
 

@@ -3,6 +3,7 @@
 #include <SI4735.h>
 #include <Preferences.h>
 #include "dacindicator.hpp"
+#include "mqtt.hpp"
 
 #ifndef FMTUNER4735_H
 #define FMTUNER4735_H
@@ -38,6 +39,10 @@ class FMTuner4735
 
         DACIndicator *_pwmindicator_freq;
         DACIndicator *_pwmindicator_signal;
+        MQTTConnector *_mqtt;
+        bool mqttsetup = false;
+        void setupMQTT();
+
         uint8_t _band = 6;
         uint16_t currentFrequency = 0;
         uint16_t previousFrequency = 0;
@@ -68,7 +73,7 @@ class FMTuner4735
         unsigned long _lastRDSUpdate;
         
         uint8_t clockdisplaypage = 0;
-        uint16_t clockdisplaypagetimer = 0;
+        unsigned long clockdisplaypagetimer = 0;
 
         void checkRDS();
 
@@ -140,7 +145,7 @@ class FMTuner4735
         };
 
     public:
-        FMTuner4735(DACIndicator *freq, DACIndicator *signal);
+        FMTuner4735(DACIndicator *freq, DACIndicator *signal, MQTTConnector *mqtt);
         void Loop(char ch);
         void Stop();
         void Start(uint8_t band);

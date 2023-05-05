@@ -3,24 +3,28 @@
 Radio::Radio()
 {
     _spk = new Speaker(27);
-
+    Wire.begin();
+    _freq_display = new FrequencyDisplay();
     _clockDisplay = new ClockDisplay();
-    _clockDisplay->DisplayText("HALLO!",0);
-
     _clockDisplay->DisplayText("Starte I2C Bus 2 ...",0);
+
     _i2cwire = new TwoWire(1);
     _i2cwire->begin(33,32, 10000);
+
+    
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
 
     _clockDisplay->DisplayText("Starte WIFI ...",0);
     wifi = new WIFIManager();
-    _freq_display = new FrequencyDisplay();
 
+    _clockDisplay->DisplayText("Starte MQTT ...",0);
+    _mqttConnector = new MQTTConnector();
+    
     _clockDisplay->DisplayText("Starte RTC ...",0);
     _clock = new Clock(_i2cwire);
 
-    _clockDisplay->DisplayText("Starte Kanelrelais ...",0);
+    _clockDisplay->DisplayText("Starte Kanalrelais ...",0);
     _channel = new ChannelSwitch(_i2cwire, 0x24);
 
     _clockDisplay->DisplayText("Starte VS1053 ...",0);
@@ -29,7 +33,7 @@ Radio::Radio()
     _pwm_indicator_signal = new DACIndicator(25, 0,5, 0);
 
     _clockDisplay->DisplayText("Starte Si4735 ...",0);
-    _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal);
+    _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal, _mqttConnector);
 
     _clockDisplay->DisplayText("Starte Internetradio ...",0);
     _inetRadio = new InternetRadio(_player, _pwm_indicator_freq, _pwm_indicator_signal);
@@ -45,15 +49,12 @@ Radio::Radio()
     _rotary1 = new RotaryEncoder(34,35,39);
     _lastClockUpdate = millis();
 
-    _clockDisplay->DisplayText("Starte MQTT ...",0);
-    _mqttConnector = new MQTTConnector();
+    
 
     _clockDisplay->DisplayText("Starte Temperatursensor ...",0);
     _tempSensor1 = new TemperatureSensor(_mqttConnector);
 
-    
-
-    wifi->Connect();
+    //wifi->Connect();
     
     _clockDisplay->DisplayText("Fertig!",0);
     Serial.println("Radio setup complete!");
@@ -200,6 +201,11 @@ void Radio::Loop()
     }
 
     wifi->Loop(ch);
+    if(!wifi->IsConnected() && millis() - wifi->LastConnectionTry() > 10000)
+    if(!wifi->Connect())
+    {
+        Serial.println("Could not connect to WIFI network!");
+    }
 
     if(_currentPlayer == PLAYER_SI47XX)
     {
@@ -209,12 +215,6 @@ void Radio::Loop()
         _clockDisplay->DisplayText(_fmtuner->GetClockDisplayText(), 0);
     } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
-        if(!wifi->IsConnected() && millis() - wifi->LastConnectionTry() > 30000)
-            if(!wifi->Connect())
-            {
-                Serial.println("Could not connect to WIFI network!");
-            }
-
         _player->ExecuteCommand(ch);
         _inetRadio->Loop(ch);
         _clockDisplay->DisplayText(_inetRadio->GetClockDisplayText(), 0);

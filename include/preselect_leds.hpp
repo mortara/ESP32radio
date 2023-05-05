@@ -2,8 +2,9 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "PCF8574.h"
+#include "i2cdevice.hpp"
 
-class PreselectLeds
+class PreselectLeds : i2cdevice
 {
     private:
         PCF8574 *_pcf8754;

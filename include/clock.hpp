@@ -3,8 +3,9 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <time.h>
+#include "i2cdevice.hpp"
 
-class Clock
+class Clock : i2cdevice
 {
     private:
         RTC_DS3231 *_rtc;

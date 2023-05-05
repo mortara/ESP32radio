@@ -1,8 +1,14 @@
 #include "channelbuttons.hpp"
 
 
-ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr)
+ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
+    if(!isActive())
+    {
+        Serial.println("channel buttons not found!");
+        return;
+    }
+
     Serial.println("Initializing channel buttons");
     _address = adr;
 
@@ -24,6 +30,9 @@ ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr)
 
 int ChannelButtons::readInputs()
 {
+    if(!isActive())
+        return 0;
+
     PCF8574::DigitalInput input = _pcf8754->digitalReadAll();
 
     int channel = 0;
