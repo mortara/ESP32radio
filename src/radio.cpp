@@ -11,7 +11,6 @@ Radio::Radio()
     _i2cwire = new TwoWire(1);
     _i2cwire->begin(33,32, 10000);
 
-    
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
 
@@ -45,19 +44,21 @@ Radio::Radio()
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
-    
+    _clockButtons = new ClockButtons(&Wire, 0x20);
     _rotary1 = new RotaryEncoder(34,35,39);
-    _lastClockUpdate = millis();
-
     
-
     _clockDisplay->DisplayText("Starte Temperatursensor ...",0);
     _tempSensor1 = new TemperatureSensor(_mqttConnector);
 
+    _clockDisplay->DisplayText("Starte Energiesensor ...",0);
+    _powerSensor = new PowerSensor(0x40, _mqttConnector);
     //wifi->Connect();
     
     _clockDisplay->DisplayText("Fertig!",0);
-    Serial.println("Radio setup complete!");
+
+    _lastClockUpdate = millis();
+
+    WebSerialLogger.println("Radio setup complete!");
 }
 
 void Radio::ExecuteCommand(char ch)
@@ -94,7 +95,7 @@ void Radio::ExecuteCommand(char ch)
         int preset = ch - '0';
         if(preset > 0 && preset < 9)
         {
-            Serial.println("Switch to preset: " + String(ch));
+            WebSerialLogger.println("Switch to preset: " + String(ch));
             _preselectLeds->SetLed(preset-1);
             if(_currentOutput == OUTPUT_SI47XX)
                 _fmtuner->SwitchPreset(preset - 1);
@@ -126,13 +127,19 @@ void Radio::Loop()
         // i -> FMTuner step down
         // z -> FMTuner seek down
         // o -> FMTuner step up
+        // t -> Stop Tuner seek
         // x -> FMTuner toggle save mode
+        // n -> Display current Time of RTC
+        // j -> Display Powersensor info
     }
+
+    if(ch == ' ')
+        ch = WebSerialLogger.GetInput();
 
     int cha_btn = _channelButtons->Loop();
     if(cha_btn != 0)
     {
-        Serial.println("Channel button pressed: " + String(cha_btn));
+        WebSerialLogger.println("Channel button pressed: " + String(cha_btn));
         switch(cha_btn)
         {
             case 1: ch = 'a'; break;  // lw
@@ -147,10 +154,9 @@ void Radio::Loop()
     }
 
     int pre_btn = _preselectButtons->Loop();
-
     if(pre_btn != 0)
     {
-        Serial.println("Preselect button pressed: " + String(pre_btn));
+        WebSerialLogger.println("Preselect button pressed: " + String(pre_btn));
         switch(pre_btn)
         {
             case 1: ch = '1'; break;
@@ -167,7 +173,7 @@ void Radio::Loop()
     int btn = _tunerbuttons->Loop();
     if(btn != 0)
     {
-        Serial.println("Tunerbutton pressed: " + String(btn));
+        WebSerialLogger.println("Tunerbutton pressed: " + String(btn));
         switch(btn)
         {
             case 16: // ??
@@ -194,6 +200,13 @@ void Radio::Loop()
         }
     }
 
+    int clockbtns = _clockButtons->Loop();
+    if(clockbtns != 0)
+    {
+
+
+    }
+
     if(ch != ' ')
     {
         ExecuteCommand(ch);
@@ -202,9 +215,12 @@ void Radio::Loop()
 
     wifi->Loop(ch);
     if(!wifi->IsConnected() && millis() - wifi->LastConnectionTry() > 10000)
-    if(!wifi->Connect())
     {
-        Serial.println("Could not connect to WIFI network!");
+        _clockDisplay->DisplayText("Verbinde WIFI ...",0);
+        if(!wifi->Connect())
+        {
+            WebSerialLogger.println("Could not connect to WIFI network!");
+        }
     }
 
     if(_currentPlayer == PLAYER_SI47XX)
@@ -224,15 +240,16 @@ void Radio::Loop()
         _player->ExecuteCommand(ch);
         _bluetoothplayer->Loop(ch);
     }
-    _clock->Loop();
+    _clock->Loop(ch);
     _freq_display->Loop();
     _pwm_indicator_freq->Loop(ch);
     _pwm_indicator_signal->Loop(ch);
     _clockDisplay->Loop();
     _rotary1->Loop();
     _tempSensor1->Loop();
+    _powerSensor->Loop(ch);
     _mqttConnector->Loop();
-    
+    WebSerialLogger.Loop(ch);
     uint16_t now = millis();
     if(now - _lastClockUpdate >= 1000)
     {
@@ -247,7 +264,7 @@ void Radio::SwitchInput(uint8_t newinput)
     if(newinput == _currentInput)
         return;
         
-    Serial.println("Switch Input to  " + String(newinput));
+    WebSerialLogger.println("Switch Input to  " + String(newinput));
 
     uint8_t new_output = _currentOutput;
     uint8_t new_player = _currentPlayer;
@@ -278,7 +295,7 @@ void Radio::SwitchInput(uint8_t newinput)
 
     if(new_player != _currentPlayer)
     {
-        Serial.println("Stopping old player");
+        WebSerialLogger.println("Stopping old player");
         // Stopping the currently running player
         if(_currentPlayer == PLAYER_SI47XX)
             _fmtuner->Stop();
@@ -287,7 +304,7 @@ void Radio::SwitchInput(uint8_t newinput)
         else if(_currentPlayer == PLAYER_WEBRADIO)
             _inetRadio->Stop();
         
-        Serial.println("Starting new player");
+        WebSerialLogger.println("Starting new player");
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
             _fmtuner->Start(newinput - 1);
@@ -298,7 +315,7 @@ void Radio::SwitchInput(uint8_t newinput)
             if(!wifi->IsConnected())
                 if(!wifi->Connect())
                 {
-                    Serial.println("Could not connect to WIFI network!");
+                    WebSerialLogger.println("Could not connect to WIFI network!");
                 }
                     
             _inetRadio->Start();
@@ -319,5 +336,5 @@ void Radio::SwitchInput(uint8_t newinput)
     _currentPlayer = new_player;
     _currentInput = newinput;
     delay(50);
-    Serial.println("Input switch done!");
+    WebSerialLogger.println("Input switch done!");
 }

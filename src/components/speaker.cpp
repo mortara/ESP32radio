@@ -5,7 +5,7 @@ Speaker::Speaker(int pin)
 {
     _relaispin = pin;
 
-    Serial.println("\n\nSetup speaker");
+    WebSerialLogger.println("\n\nSetup speaker");
     digitalWrite(_relaispin, HIGH);
     pinMode(_relaispin, OUTPUT);
     _onoff = false;
@@ -13,7 +13,7 @@ Speaker::Speaker(int pin)
 
 void Speaker::TurnOn()
 {
-    Serial.println("Speaker ON");
+    WebSerialLogger.println("Speaker ON");
     //GPIO.out 
     digitalWrite(_relaispin, LOW);
     _onoff = true;
@@ -21,7 +21,7 @@ void Speaker::TurnOn()
 
 void Speaker::TurnOff()
 {
-    Serial.println("Speaker OFF");
+    WebSerialLogger.println("Speaker OFF");
     digitalWrite(_relaispin, HIGH);
     _onoff = false;
 }

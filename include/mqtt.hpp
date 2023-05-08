@@ -4,6 +4,7 @@
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
 #include "secrets.h"
+#include "webserial.hpp"
 
 #ifndef MQTTCONNECTOR_H
 #define MQTTCONNECTOR_H

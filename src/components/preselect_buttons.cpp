@@ -5,11 +5,11 @@ PreselectButtons::PreselectButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(tw
 {
     if(!isActive())
     {
-        Serial.println("preselect buttons not found!");
+        WebSerialLogger.println("preselect buttons not found!");
         return;
     }
 
-    Serial.println("Initializing preselect buttons");
+    WebSerialLogger.println("Initializing preselect buttons");
     _address = adr;
 
     _i2cwire = twowire;

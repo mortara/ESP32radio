@@ -2,13 +2,13 @@
 
 FrequencyDisplay::FrequencyDisplay()
 {
-    Serial.println("Setup frequency display ...");
+    WebSerialLogger.println("Setup frequency display ...");
 
     _u8g2 = new U8G2_MAX7219_32X8_F_4W_SW_SPI(U8G2_R2, /* clock=*/ 14, /* data=*/ 13, /* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     //_u8g2 = new U8G2_MAX7219_32X8_F_4W_HW_SPI(U8G2_R2,/* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     if(!_u8g2->begin())
     {
-        Serial.println("display not found!");
+        WebSerialLogger.println("display not found!");
         return;
     }
     _active = true;
@@ -26,7 +26,7 @@ void FrequencyDisplay::SetFont(uint8_t fontindx)
     if(!_active)
         return;
 
-    Serial.println("Freq. display set font " + String(fontindx));
+    WebSerialLogger.println("Freq. display set font " + String(fontindx));
 
     _currentFont = _fontsettings[fontindx];
     _u8g2->setFont(_currentFont._font);
@@ -40,7 +40,7 @@ void FrequencyDisplay::DisplayText(String text, uint8_t font)
     if(text == _displayText_original)
         return;
 
-    Serial.println("Displaytext: " + text);
+    WebSerialLogger.println("Displaytext: " + text);
 
     SetFont(font);
 

@@ -5,11 +5,11 @@ PreselectLeds::PreselectLeds(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire,
 {
     if(!isActive())
     {
-        Serial.println("preselect led strip not found!");
+        WebSerialLogger.println("preselect led strip not found!");
         return;
     }
 
-    Serial.println("Initializing preselect led strip");
+    WebSerialLogger.println("Initializing preselect led strip");
     
     _pcf8754 = new PCF8574(twowire,adr);
     _pcf8754->begin();
@@ -32,7 +32,7 @@ void PreselectLeds::SetLed(uint8_t num)
     if(!isActive())
         return;
 
-    Serial.println("preselect led on: " + String(num));
+    WebSerialLogger.println("preselect led on: " + String(num));
 
     PCF8574::DigitalInput digitalInput;
 

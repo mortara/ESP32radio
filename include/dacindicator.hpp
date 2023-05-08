@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <driver/dac.h>
+#include "webserial.hpp"
 
 #ifndef DACINDICATOR_H
 #define DACINDICATOR_H

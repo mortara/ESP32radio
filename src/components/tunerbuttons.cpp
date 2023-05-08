@@ -5,11 +5,11 @@ TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, a
 {
     if(!isActive())
     {
-        Serial.println("Tuner buttons not found!");
+        WebSerialLogger.println("Tuner buttons not found!");
         return;
     }
 
-    Serial.println("Initializing tuner buttons switcher");
+    WebSerialLogger.println("Initializing tuner buttons switcher");
     _address = adr;
 
     _i2cwire = twowire;

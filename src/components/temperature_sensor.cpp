@@ -5,11 +5,11 @@ TemperatureSensor::TemperatureSensor(MQTTConnector *mqtt) : i2cdevice(0x77)
 {
     if(!isActive())
     {
-        Serial.println("temperature sensor not found!");     
+        WebSerialLogger.println("temperature sensor not found!");     
         return;   
     }
 
-    Serial.println("Initializing temperature sensor");
+    WebSerialLogger.println("Initializing temperature sensor");
     _bmp = new Adafruit_BMP085();
     _bmp->begin();
 
@@ -23,18 +23,18 @@ bool TemperatureSensor::mqttSetup()
     if(setupmqtt)
         return false;
 
-    Serial.println("Setting up MQTT client");
+    WebSerialLogger.println("Setting up MQTT client");
 
     if(!_mqtt->SetupSensor("Temperature", "sensor", "BMP180", "temperature", "*C", "mdi:temperature-celsius"))
     {
-        Serial.println("Could not setup temperature sensor!");
+        WebSerialLogger.println("Could not setup temperature sensor!");
         return false;
     }
 
     _mqtt->SetupSensor("Pressure", "sensor", "BMP180", "pressure", " Pa", "mdi:air-filter");
     setupmqtt = true;
 
-    Serial.println("Temperature Sensor mqtt setup done!");
+    WebSerialLogger.println("Temperature Sensor mqtt setup done!");
     return true;
 }
 
@@ -53,14 +53,14 @@ void TemperatureSensor::Loop() {
         mqttSetup();
 
     float _temperature = _bmp->readTemperature();
-    Serial.print("Temperature = ");
-    Serial.print(String(_temperature));
-    Serial.println(" *C");
+    WebSerialLogger.print("Temperature = ");
+    WebSerialLogger.print(String(_temperature));
+    WebSerialLogger.println(" *C");
 
     float _pressure = _bmp->readPressure();
-    Serial.print("Pressure = ");
-    Serial.print(String(_pressure));
-    Serial.println(" Pa");
+    WebSerialLogger.print("Pressure = ");
+    WebSerialLogger.print(String(_pressure));
+    WebSerialLogger.println(" Pa");
     
     if(setupmqtt)
     {

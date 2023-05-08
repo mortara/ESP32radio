@@ -22,6 +22,9 @@
 #include "rotary_encoder.hpp"
 #include "mqtt.hpp"
 #include "temperature_sensor.hpp"
+#include "power_sensor.hpp"
+#include "clock_buttons.hpp"
+#include "webserial.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -69,7 +72,9 @@ class Radio
         RotaryEncoder *_rotary1;
         TemperatureSensor *_tempSensor1;
         MQTTConnector *_mqttConnector;
-
+        PowerSensor *_powerSensor;
+        ClockButtons *_clockButtons;
+        
         uint8_t _currentInput = 0;  // The input button pressed on the radio
         uint8_t _currentPlayer = 0; // The selected player or audio source
         uint8_t _currentOutput = 0; // The selected output channel

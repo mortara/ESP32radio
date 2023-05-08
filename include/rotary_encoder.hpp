@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "webserial.hpp"
 
 class RotaryEncoder
 {

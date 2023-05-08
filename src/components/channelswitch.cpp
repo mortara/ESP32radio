@@ -4,12 +4,12 @@ ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire,
 {
     if(!isActive())
     {
-        Serial.println("Channel switch not found");
+        WebSerialLogger.println("Channel switch not found");
         _running = false;
         return;
     }
 
-    Serial.println("Initializing Channel switcher");
+    WebSerialLogger.println("Initializing Channel switcher");
     _address = adr;
 
     _i2cwire = twowire;
@@ -30,7 +30,7 @@ ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire,
 
 void ChannelSwitch::TurnAllOff()
 {
-    Serial.println("Turn off all input channels");
+    WebSerialLogger.println("Turn off all input channels");
     if(!_running)
         return;
 
@@ -50,11 +50,11 @@ void ChannelSwitch::TurnAllOff()
 
 void ChannelSwitch::SetChannel(uint8_t channel)
 {
-    Serial.println("Switching to channel " + String(channel));
+    WebSerialLogger.println("Switching to channel " + String(channel));
 
     if(!_running)
     {
-        Serial.println("ERROR: relais module NOT started!");
+        WebSerialLogger.println("ERROR: relais module NOT started!");
         return;
     }
 

@@ -1,15 +1,14 @@
 #include "channelbuttons.hpp"
 
-
 ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
-        Serial.println("channel buttons not found!");
+        WebSerialLogger.println("channel buttons not found!");
         return;
     }
 
-    Serial.println("Initializing channel buttons");
+    WebSerialLogger.println("Initializing channel buttons");
     _address = adr;
 
     _i2cwire = twowire;
@@ -78,7 +77,7 @@ int ChannelButtons::Loop()
         channel = readInputs();
         if(channel != currentchannel)
         {
-            Serial.println("Channel button switched from " + String(currentchannel) + " to " + String(channel));
+            WebSerialLogger.println("Channel button switched from " + String(currentchannel) + " to " + String(channel));
             currentchannel = channel;
             result = channel;
         }

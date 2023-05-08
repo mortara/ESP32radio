@@ -10,13 +10,15 @@ WIFIManager::WIFIManager()
 
 bool WIFIManager::Connect()
 {
-    if(WiFi.status() == WL_CONNECTED)
+    if(WiFi.status() == WL_CONNECTED || connecting)
         return true;
 
+    connecting = true;
+
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
-    Serial.println("Connecting to WiFi ..");
+    WebSerialLogger.println("Connecting to WiFi ..");
     _lastConnectionTry = millis();
-    int timeout = 20;
+    /*int timeout = 10;
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
         delay(1000);
@@ -28,32 +30,31 @@ bool WIFIManager::Connect()
         }
     }
     connected = true;
-    DisplayInfo();
+    DisplayInfo();*/
     return true;
 }
 
 void WIFIManager::Disconnect()
 {
-    connected = false;
-    Serial.println("disonnecting from WiFi ..");
+    WebSerialLogger.println("disonnecting from WiFi ..");
     WiFi.disconnect();
 }
 
 void WIFIManager::DisplayInfo(){
      
-    Serial.print("[*] Network information for ");
-    Serial.println(_credentials.SSID);
+    WebSerialLogger.print("[*] Network information for ");
+    WebSerialLogger.println(_credentials.SSID);
 
-    Serial.println("[+] BSSID : " + WiFi.BSSIDstr());
-    Serial.print("[+] Gateway IP : ");
-    Serial.println(WiFi.gatewayIP());
-    Serial.print("[+] DNS IP : ");
-    Serial.println(WiFi.dnsIP());   
-    Serial.println((String)"[+] RSSI : " + String(WiFi.RSSI()) + " dB");
-    Serial.print("[+] ESP32 IP : ");
-    Serial.println(WiFi.localIP());
-    Serial.print("[+] Subnet Mask : ");
-    Serial.println(WiFi.subnetMask());
+    WebSerialLogger.println("[+] BSSID : " + WiFi.BSSIDstr());
+    WebSerialLogger.print("[+] Gateway IP : ");
+    WebSerialLogger.println(WiFi.gatewayIP().toString());
+    WebSerialLogger.print("[+] DNS IP : ");
+    WebSerialLogger.println(WiFi.dnsIP().toString());   
+    WebSerialLogger.println((String)"[+] RSSI : " + String(WiFi.RSSI()) + " dB");
+    WebSerialLogger.print("[+] ESP32 IP : ");
+    WebSerialLogger.println(WiFi.localIP().toString());
+    WebSerialLogger.print("[+] Subnet Mask : ");
+    WebSerialLogger.println(WiFi.subnetMask().toString());
     
 }
 
@@ -71,6 +72,11 @@ void WIFIManager::Loop(char ch)
 {
     connected = WiFi.isConnected();
 
+    if(connecting && connected)
+    {
+        connecting = false;
+    }
+
     if (ch == 'w') 
     {
         DisplayInfo();    
@@ -83,10 +89,11 @@ void WIFIManager::Loop(char ch)
 
     unsigned long currentMillis = millis();
     // if WiFi is down, try reconnecting
-    if (connected && (WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >=interval)) 
+    if (!connecting && !connected && (currentMillis - _lastConnectionTry >=interval)) 
     {
-        Serial.println("Reconnecting to WiFi...");
+        WebSerialLogger.println("Reconnecting to WiFi...");
         WiFi.reconnect();
-        previousMillis = currentMillis;
+        connecting = true;
+        _lastConnectionTry = currentMillis;
     }
 }

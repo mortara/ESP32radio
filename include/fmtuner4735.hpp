@@ -4,6 +4,7 @@
 #include <Preferences.h>
 #include "dacindicator.hpp"
 #include "mqtt.hpp"
+#include "webserial.hpp"
 
 #ifndef FMTUNER4735_H
 #define FMTUNER4735_H

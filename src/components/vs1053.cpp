@@ -3,32 +3,32 @@
 
 VS1053Player::VS1053Player()
 {
-    Serial.println("Creating vs1053 object");
+    WebSerialLogger.println("Creating vs1053 object");
     _player = new Adafruit_VS1053_FilePlayer(BREAKOUT_RESET, BREAKOUT_MP3_CS, BREAKOUT_XDCS, BREAKOUT_DREQ, BREAKOUT_SD_CS);
     if (! _player->begin()) { // initialise the music player
-        Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
+        WebSerialLogger.println(F("Couldn't find VS1053, do you have the right pins defined?"));
     }
     _player->setVolume(100, 100);
     //_player->softReset();
 
     if (!SD.begin(BREAKOUT_SD_CS)) {
-        Serial.println(F("SD failed, or not present"));
+        WebSerialLogger.println(F("SD failed, or not present"));
     }
     else
-        Serial.println("SD OK!");
+        WebSerialLogger.println("SD OK!");
 
 }
 
 void VS1053Player::Begin()
 {
-    Serial.println("starting vs1053");
+    WebSerialLogger.println("starting vs1053");
     SetVolume(_volume);
     //_player->sineTest(0x44, 500);
 }
 
 void VS1053Player::End()
 {
-    Serial.println("stopping vs1053");
+    WebSerialLogger.println("stopping vs1053");
     _player->stopPlaying();
     _player->setVolume(100, 100);
 }
@@ -36,7 +36,7 @@ void VS1053Player::End()
 void VS1053Player::SetVolume(uint8_t vol)
 {
     _volume = vol;
-    Serial.println("set volume on vs1053 to " + String(vol));
+    WebSerialLogger.println("set volume on vs1053 to " + String(vol));
     _player->setVolume(vol, vol);
 }
 

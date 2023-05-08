@@ -19,6 +19,6 @@ class Clock : i2cdevice
 
         bool SetByNTP();
         DateTime Now();
-        void Loop();
+        void Loop(char ch);
 };
 

@@ -3,10 +3,10 @@
 ClockDisplay::ClockDisplay() : i2cdevice(0x27)
 {
     if(isActive())
-        Serial.println("Initialize clock display");
+        WebSerialLogger.println("Initialize clock display");
     else
     {
-        Serial.println("clock display not found");
+        WebSerialLogger.println("clock display not found");
     }
 
     _lcd = new LiquidCrystal_I2C(0x27,16,2);
@@ -25,7 +25,7 @@ void ClockDisplay::DisplayText(String text, uint8_t row)
     
     if(!_active)
     {
-        Serial.println(String(row) + ": " + text);
+        WebSerialLogger.println(String(row) + ": " + text);
         return;
     }
 

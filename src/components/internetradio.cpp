@@ -4,7 +4,7 @@
 
 InternetRadio::InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndicator *signal)
 {
-    Serial.println("InternetRadio setup ...");
+    WebSerialLogger.println("InternetRadio setup ...");
     _mp3buff = new uint8_t[MP3buffersize];
     _player = player;
 
@@ -21,7 +21,7 @@ InternetRadio::InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndica
 
 void InternetRadio::SwitchPreset(uint8_t num)
 {
-    Serial.print("InternetRadio::SwitchPreset to " + String(num));
+    WebSerialLogger.print("InternetRadio::SwitchPreset to " + String(num));
     current_station_preset = num;
     StartStream(stationlist[current_station_preset]);
 }
@@ -39,8 +39,8 @@ void InternetRadio::StartStream(Station station)
     // Send HTTP GET request
     int httpResponseCode = _http->GET();
     
-    Serial.print("return code: ");
-    Serial.println(String(httpResponseCode));
+    WebSerialLogger.print("return code: ");
+    WebSerialLogger.println(String(httpResponseCode));
 
     if (httpResponseCode>0) {
         if(httpResponseCode == HTTP_CODE_OK) {
@@ -48,14 +48,14 @@ void InternetRadio::StartStream(Station station)
                 _client = _http->getStreamPtr();
 
                 if(_client->connected())
-                    Serial.println("Stream started!");
+                    WebSerialLogger.println("Stream started!");
         }
     }
 }
 
 void InternetRadio::Start()
 {
-    Serial.println("InternetRadio start ...");
+    WebSerialLogger.println("InternetRadio start ...");
 
     _player->Begin();
     StartStream(stationlist[current_station_preset]);
@@ -63,7 +63,7 @@ void InternetRadio::Start()
 
 void InternetRadio::Stop()
 {
-    Serial.println("InternetRadio stop ...");
+    WebSerialLogger.println("InternetRadio stop ...");
     _http->end();
     _player->End();
 }
@@ -135,10 +135,10 @@ void InternetRadio::Loop(char ch)
                 {
                     _player->PlayData(_mp3buff, bytesread);
                     if(bytesread != MP3buffersize)
-                        Serial.println("Data buffer != " + String(MP3buffersize) + " bytes");
+                        WebSerialLogger.println("Data buffer != " + String(MP3buffersize) + " bytes");
                 }
                 else
-                    Serial.println("no data in buffer");
+                    WebSerialLogger.println("no data in buffer");
 
             }
         }  
@@ -147,13 +147,13 @@ void InternetRadio::Loop(char ch)
     else if(WiFi.isConnected())
     {
         delay(100);
-        Serial.println("Try to connect ...");
+        WebSerialLogger.println("Try to connect ...");
         StartStream(stationlist[current_station_preset]);
     }
     
     if (ch == 'i') 
     {
-        Serial.println("Played " + String(bytes_served) + " bytes");
+        WebSerialLogger.println("Played " + String(bytes_served) + " bytes");
     }
     
 }

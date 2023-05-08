@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "secrets.h"
+#include "webserial.hpp"
 
 typedef struct {
     String SSID;  //stream url
@@ -10,12 +11,11 @@ typedef struct {
 class WIFIManager
 {
     private:
-
+        bool connecting = false;
         bool connected = false;
         WIFICreds _credentials = {WIFISSID, WIFIPASS};
-        unsigned long previousMillis = 0;
         unsigned long interval = 15000;
-        unsigned long _lastConnectionTry;
+        unsigned long _lastConnectionTry = 0;
         TaskHandle_t Task1;
 
     public:

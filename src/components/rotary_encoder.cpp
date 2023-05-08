@@ -14,7 +14,7 @@ RotaryEncoder::RotaryEncoder(uint8_t cw, uint8_t ccw, uint8_t sw)
 
     // Start the serial monitor to show output
     
-    Serial.println("Rotary encoder started");
+    WebSerialLogger.println("Rotary encoder started");
 }
 
 int RotaryEncoder::GetCounter()
@@ -55,7 +55,7 @@ void RotaryEncoder::Loop()
 
     if(counter != lastCounter)
     {
-      Serial.println("New encoder value: "  + String(counter));
+      WebSerialLogger.println("New encoder value: "  + String(counter));
       
     }
 }

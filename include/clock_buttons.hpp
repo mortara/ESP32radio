@@ -1,22 +1,21 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
-#include "PCF8574.h"
+#include "PCF8575.h"
 #include "i2cdevice.hpp"
-#include "webserial.hpp"
 
-class ChannelButtons : i2cdevice
+class ClockButtons : i2cdevice
 {
     private:
         uint8_t _address;
-        PCF8574 *_pcf8754;
+        PCF8575 *_pcf8755;
         TwoWire *_i2cwire;
         unsigned long _lastRead = 0;
-        int currentchannel = 0;
+        
         bool _active = false;
         int readInputs();
     public:
-        ChannelButtons(TwoWire *twowire, uint8_t adr);
+        ClockButtons(TwoWire *twowire, uint8_t adr);
         int Loop();
 
 };

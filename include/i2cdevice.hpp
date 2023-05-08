@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
+#include "webserial.hpp"
 
 #ifndef I2CDEVICE_H
 #define I2CDEVICE_H
@@ -15,12 +16,12 @@ class i2cdevice
     public:
         i2cdevice(uint8_t address)
         {
-            Serial.printf("Testing device 0x%02X \r\n", address);
+            WebSerialLogger.printf("Testing device 0x%02X \r\n", address);
             Wire.beginTransmission(address);
             uint8_t error = Wire.endTransmission();
             if (error != 0)
             {
-                Serial.printf("Device 0x%02X not found! \r\n", address);
+                WebSerialLogger.printf("Device 0x%02X not found! \r\n", address);
                 return;
             }
             _active = true;
@@ -29,12 +30,12 @@ class i2cdevice
 
         i2cdevice(TwoWire *wire, uint8_t address)
         {
-            Serial.printf("Testing device 0x%02X on wire 2 \r\n", address);
+            WebSerialLogger.printf("Testing device 0x%02X on wire 2 \r\n", address);
             wire->beginTransmission(address);
             uint8_t error = wire->endTransmission();
             if (error != 0)
             {
-                Serial.printf("Device 0x%02X not found on wire 2 \r\n", address);
+                WebSerialLogger.printf("Device 0x%02X not found on wire 2 \r\n", address);
                 return;
             }
             _active = true;

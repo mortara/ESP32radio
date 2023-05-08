@@ -6,12 +6,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
         char tmp = char(payload[i]);
         msg += tmp;
     }
-    Serial.println(msg);
+    WebSerialLogger.println(msg);
 }
 
 MQTTConnector::MQTTConnector()
 {
-    Serial.println("Initializing MQTT client");
+    WebSerialLogger.println("Initializing MQTT client");
 
     _wifiClientmqtt = new WiFiClient();
 
@@ -36,8 +36,8 @@ void MQTTConnector::Loop()
         _lastConnectAttempt = now;
         if(!_mqttClient->connect(device_id.c_str(), MQTTUSER, MQTTPASSWORD))
         {
-            Serial.println("Could not connect to MQTT broker!");
-            Serial.println("State: " + String(_mqttClient->state()));
+            WebSerialLogger.println("Could not connect to MQTT broker!");
+            WebSerialLogger.println("State: " + String(_mqttClient->state()));
         }
         else
         {
@@ -54,7 +54,7 @@ bool MQTTConnector::SetupSensor(String topic, String sensor, String component, S
     if(!_active)
         return false;
 
-    Serial.println("Configuring sensor "+ topic);
+    WebSerialLogger.println("Configuring sensor "+ topic);
     String sensor_topic_head = "homeassistant/" + sensor + "/" + device_id;
 
     String config_topic = sensor_topic_head + "_" + topic + "/config";
@@ -91,15 +91,15 @@ bool MQTTConnector::SetupSensor(String topic, String sensor, String component, S
     String config_payload  = "";
     serializeJson(root, config_payload);
 
-    Serial.println("Topic: " + config_topic);
+    WebSerialLogger.println("Topic: " + config_topic);
     //serializeJsonPretty(root, Serial);
 
-    Serial.println("Payload: " + config_payload);
+    WebSerialLogger.println("Payload: " + config_payload);
     bool result = _mqttClient->publish_P(config_topic.c_str(), config_payload.c_str(), true);
     if(!result)
     {
-        Serial.println(" ... error!");
-        Serial.println("State: " + String(_mqttClient->state()));
+        WebSerialLogger.println(" ... error!");
+        WebSerialLogger.println("State: " + String(_mqttClient->state()));
     }
 
     //String subs = device_id + "/" + topic;
@@ -115,7 +115,7 @@ void MQTTConnector::PublishSensor(String payload, String component)
     String topic = "homeassistant/sensor/" + device_id + "_" + component + "/state";
     if(!_mqttClient->publish(topic.c_str(), payload.c_str()))
     {
-      Serial.println("Error publishing data!");
-      Serial.println("State: " + String(_mqttClient->state()));
+      WebSerialLogger.println("Error publishing data!");
+      WebSerialLogger.println("State: " + String(_mqttClient->state()));
     }
 }

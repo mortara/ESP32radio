@@ -1,6 +1,6 @@
 #include "bluetoothplayer.hpp"
 #include "bluetoothsink.h"
-
+#include "webserial.hpp"
 
 void BlueToothPlayer::handle_stream() {
   if (circBuffer.available()) { 
@@ -18,7 +18,7 @@ void BlueToothPlayer::handle_stream() {
 
 BlueToothPlayer::BlueToothPlayer(VS1053Player *player)
 {
-    Serial.println("BlueToothPlayer setup ...");
+    WebSerialLogger.println("BlueToothPlayer setup ...");
 
     _player = player;
     _mp3buff = new uint8_t[BUFFSIZE]();
@@ -30,23 +30,23 @@ BlueToothPlayer::BlueToothPlayer(VS1053Player *player)
 
 void BlueToothPlayer::Start()
 {
-    Serial.println("BlueToothPlayer start ...");
+    WebSerialLogger.println("BlueToothPlayer start ...");
     _player->Begin();
     
-    Serial.println("Waiting for bluetooth ...");
+    WebSerialLogger.println("Waiting for bluetooth ...");
     _a2dp_sink->start(BLUETOOTH_NAME);
 
-    Serial.println("prepare buffer ...");
+    WebSerialLogger.println("prepare buffer ...");
     circBuffer.flush();
     delay(100);
     circBuffer.write((char *)bt_wav_header, 44);
 
-    Serial.println("bluetooth ready ...");
+    WebSerialLogger.println("bluetooth ready ...");
 }
 
 void BlueToothPlayer::Stop()
 {
-    Serial.println("BlueToothPlayer stop ...");
+    WebSerialLogger.println("BlueToothPlayer stop ...");
     _player->End();
     
 }

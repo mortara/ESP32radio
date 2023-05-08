@@ -8,6 +8,7 @@ Radio *_radio;
 unsigned long _loopStart;
 int _loopCount;
 
+
 void ScanI2C()
 {
   byte error = 0;
@@ -50,7 +51,8 @@ void ScanI2C()
 
 void setup()
 {
-  Serial.begin(57600);
+  Serial.begin(115200);
+  WebSerialLogger.println("Hello world!");
   ScanI2C();
   _radio = new Radio();
 
@@ -65,7 +67,7 @@ void loop()
       unsigned long end = millis();
       float duration = (float)(end - _loopStart) / (float)15000.0;
       //Serial.print(duration);
-      Serial.println("loop: " + String(duration) + "ms");
+      WebSerialLogger.println("loop: " + String(duration) + "ms");
       _loopCount = 0;
       _loopStart = end;
   }

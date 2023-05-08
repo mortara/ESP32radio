@@ -2,7 +2,7 @@
 
 FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal, MQTTConnector *mqtt)
 {
-    Serial.println("Start Si4735 ...");
+    WebSerialLogger.println("Start Si4735 ...");
     _mqtt = mqtt;
     _pwmindicator_freq = freq;
     _pwmindicator_signal = signal;
@@ -13,8 +13,14 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal, MQTTConnector
 
     
     _radio = new SI4735();
-    _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
-
+    uint8_t adr = _radio->getDeviceI2CAddress(SI7435_RESET_PIN);
+    if(adr == 0)
+    {
+        WebSerialLogger.println("Device address: " + String(adr));
+        WebSerialLogger.println("Si4735 not found!" );
+        return;
+    }
+    
     //_radio->setMaxDelaySetFrequency(50);
     _radio->setTuneFrequencyAntennaCapacitor(0);
     _radio->setup(SI7435_RESET_PIN,0,FM_FUNCTION, SI473X_ANALOG_AUDIO, XOSCEN_CRYSTAL, 0);
@@ -34,39 +40,39 @@ void FMTuner4735::setupMQTT()
     if(mqttsetup)
         return;
 
-    Serial.println("Setting up si4735 MQTT client");
+    WebSerialLogger.println("Setting up si4735 MQTT client");
 
     if(!_mqtt->SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave"))
     {
-        Serial.println("Could not setup frequency sensor!");
+        WebSerialLogger.println("Could not setup frequency sensor!");
         return;
     }
 
     if(!_mqtt->SetupSensor("Station", "sensor", "SI4735", "", "", "mdi:radio"))
     {
-        Serial.println("Could not setup station sensor!");
+        WebSerialLogger.println("Could not setup station sensor!");
         return;
     }
 
     if(!_mqtt->SetupSensor("Band", "text", "SI4735", "", "", "mdi:radio"))
     {
-        Serial.println("Could not setup band sensor!");
+        WebSerialLogger.println("Could not setup band sensor!");
         return;
     }
 
     if(!_mqtt->SetupSensor("RSSI", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower"))
     {
-        Serial.println("Could not setup RSSI sensor!");
+        WebSerialLogger.println("Could not setup RSSI sensor!");
         return;
     }
 
     if(!_mqtt->SetupSensor("RDSMSG", "text", "SI4735", "", "", "mdi:message-processing"))
     {
-        Serial.println("Could not setup RDSMsg sensor!");
+        WebSerialLogger.println("Could not setup RDSMsg sensor!");
         return;
     }
 
-    Serial.println("si4735 Sensor mqtt setup done!");
+    WebSerialLogger.println("si4735 Sensor mqtt setup done!");
 
     mqttsetup = true;
 }
@@ -76,11 +82,11 @@ void FMTuner4735::Start(uint8_t band)
     if(!_active)
         return;
 
-    Serial.println("FMTuner start ...");
+    WebSerialLogger.println("FMTuner start ...");
 
     Band b = _bands[band]; 
 
-    Serial.println("Band " + String(b.bandName));
+    WebSerialLogger.println("Band " + String(b.bandName));
 
     // Initialize the Radio
     //_radio->radioPowerUp();
@@ -97,7 +103,7 @@ void FMTuner4735::Start(uint8_t band)
 
 void FMTuner4735::Stop()
 {
-    Serial.println("FMTuner stop ...");
+    WebSerialLogger.println("FMTuner stop ...");
     //_radio->powerDown();
 }
 
@@ -106,10 +112,10 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     if(!_active)
         return;
 
-    Serial.println("Switch to band " + String(bandIdx));
+    WebSerialLogger.println("Switch to band " + String(bandIdx));
     if(bandIdx == _currentBand)
     {
-        Serial.println("Band already active!");
+        WebSerialLogger.println("Band already active!");
         return;
     }
 
@@ -122,7 +128,7 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
 
     if (b.bandType == FM_BAND_TYPE)
     {
-        Serial.println("... FM Mode band " + String(b.bandName));
+        WebSerialLogger.println("... FM Mode band " + String(b.bandName));
         currentMode = FM;
         
         _radio->setFM(b.minimumFreq, b.maximumFreq, b.currentFreq, tabFmStep[b.currentStepIdx]);
@@ -140,7 +146,7 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     }
     else
     {
-        Serial.println("... AM Mode band " + String(b.bandName));
+        WebSerialLogger.println("... AM Mode band " + String(b.bandName));
         b.disableAgc = b.disableAgc;
 
         // char str[100];
@@ -166,7 +172,7 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
         _smallstep = tabAmStep[0];
         _step = tabAmStep[1];
     }
-    delay(100);
+    delay(10);
     currentFrequency = b.currentFreq;
     currentStepIdx = b.currentStepIdx;
     _currentBand = bandIdx;
@@ -207,38 +213,38 @@ void FMTuner4735::DisplayInfo()
     if(!_active)
         return;
 
-    Serial.println("Radio info:");
+    WebSerialLogger.println("Radio info:");
     _radio->getStatus();
     _radio->getCurrentReceivedSignalQuality();
-    Serial.print("You are tuned on ");
+    WebSerialLogger.print("You are tuned on ");
     if (_radio->isCurrentTuneFM())
     {
-        Serial.print(String(currentFrequency / 100.0, 2));
-        Serial.print("MHz ");
-        Serial.print((_radio->getCurrentPilot()) ? "STEREO" : "MONO");
+        WebSerialLogger.print(String(currentFrequency / 100.0, 2));
+        WebSerialLogger.print("MHz ");
+        WebSerialLogger.print((_radio->getCurrentPilot()) ? "STEREO" : "MONO");
     }
     else
     {
-        Serial.print(currentFrequency);
-        Serial.print("kHz");
+        WebSerialLogger.print(String(currentFrequency));
+        WebSerialLogger.print("kHz");
     }
-    Serial.print(" [SNR:");
-    Serial.print(_radio->getCurrentSNR());
-    Serial.print("dB");
+    WebSerialLogger.print(" [SNR:");
+    WebSerialLogger.print(String(_radio->getCurrentSNR()));
+    WebSerialLogger.print("dB");
 
-    Serial.print(" Signal:");
-    Serial.print(_radio->getCurrentRSSI());
-    Serial.println("dBuV]");
+    WebSerialLogger.print(" Signal:");
+    WebSerialLogger.print(String(_radio->getCurrentRSSI()));
+    WebSerialLogger.println("dBuV]");
 
     uint8_t offset = _radio->getCurrentSignedFrequencyOffset();
-    Serial.println(" SignedFrequencyOffset: " + String(offset) + " kHz");
+    WebSerialLogger.println(" SignedFrequencyOffset: " + String(offset) + " kHz");
 
-    Serial.println("Volume: " + String(_volume));
+    WebSerialLogger.println("Volume: " + String(_volume));
     
     if(_savemode)
-        Serial.println("Preset save mode is: on");
+        WebSerialLogger.println("Preset save mode is: on");
     else
-        Serial.println("Preset save mode is: off");
+        WebSerialLogger.println("Preset save mode is: off");
 
     
 }
@@ -283,7 +289,7 @@ void FMTuner4735::SetSaveMode(bool onoff)
 
 void FMTuner4735::SwitchPreset(uint8_t num)
 {
-    Serial.println("FMTuner::SwitchPreset to " + String(num));
+    WebSerialLogger.println("FMTuner::SwitchPreset to " + String(num));
     _current_station_preset = num;
     currentFrequency = _station_presets[num];
     setFrequency(currentFrequency);
@@ -292,7 +298,7 @@ void FMTuner4735::SwitchPreset(uint8_t num)
 
 void FMTuner4735::SaveCurrentChannel(uint8_t preset)
 {
-    Serial.println("Saving frequency " + String(currentFrequency)+ " as preset " + preset);
+    WebSerialLogger.println("Saving frequency " + String(currentFrequency)+ " as preset " + preset);
     _station_presets[preset] = currentFrequency;
 
     SavePresets();
@@ -300,10 +306,10 @@ void FMTuner4735::SaveCurrentChannel(uint8_t preset)
 
 void FMTuner4735::LoadPresets()
 {
-    Serial.println("Load presets");
+    WebSerialLogger.println("Load presets");
     if(_currentBand < 0 || _currentBand > 7)
     {
-        Serial.println(" ... invalid band");
+        WebSerialLogger.println(" ... invalid band");
         return; 
     }    
 
@@ -312,11 +318,11 @@ void FMTuner4735::LoadPresets()
     String prefname = "radio_tuner_" + String(b.bandName);
     if(!_prefs.begin(prefname.c_str(), false)) 
     {
-        Serial.println("unable to open preferences");
+        WebSerialLogger.println("unable to open preferences");
     }
     else
     {
-        Serial.println("Loading presets from SPIIFFS");
+        WebSerialLogger.println("Loading presets from SPIIFFS");
         _station_presets[0] = _prefs.getUShort("PRESET_0", b.currentFreq);
         _station_presets[1] = _prefs.getUShort("PRESET_1", 0);
         _station_presets[2] = _prefs.getUShort("PRESET_2", 0);
@@ -334,10 +340,10 @@ void FMTuner4735::LoadPresets()
 
 void FMTuner4735::SavePresets()
 {
-    Serial.println("Save presets band " + String(_currentBand));
+    WebSerialLogger.println("Save presets band " + String(_currentBand));
     if(_currentBand < 0 || _currentBand > 7)
     {
-        Serial.println(" ... invalid band");
+        WebSerialLogger.println(" ... invalid band");
         return; 
     } 
 
@@ -345,10 +351,10 @@ void FMTuner4735::SavePresets()
 
     Preferences _prefs;
     String prefname = "radio_tuner_" + String(b.bandName);
-    Serial.println(prefname);
+    WebSerialLogger.println(prefname);
     if(!_prefs.begin(prefname.c_str(), false))
     {
-        Serial.println("Could not open preset file " + prefname);
+        WebSerialLogger.println("Could not open preset file " + prefname);
         return;
     }
     _prefs.putUShort("PRESET_0", _station_presets[0]);
@@ -398,21 +404,21 @@ void FMTuner4735::checkRDS()
       if(msg != RDSMessage && msg != "")
       {
         RDSMessage = msg;
-        Serial.println("RDS Message: '" + RDSMessage + "'");
+        WebSerialLogger.println("RDS Message: '" + RDSMessage + "'");
       }
 
       String stationname = UpdateRDSMessage(RDSStationName, stationName);
       if(stationname != RDSStationName && stationname != "")
       {
         RDSStationName = stationname;
-        Serial.println("RDS Stationname: '" + RDSStationName+ "'");
+        WebSerialLogger.println("RDS Stationname: '" + RDSStationName+ "'");
       }
 
       String time = UpdateRDSMessage(RDSTime, rdsTime);
       if(time != RDSTime && time != "")
       {
         RDSTime = time;
-        Serial.println("RDS Time: '" + RDSTime+ "'");
+        WebSerialLogger.println("RDS Time: '" + RDSTime+ "'");
       }
     }
   }
@@ -480,46 +486,46 @@ void FMTuner4735::Loop(char ch)
             setFrequency(newfreq);  
             _seekmode = '0';
             channelchanged = true;
-            Serial.println("Frequency up " + String(_smallstep));
+            WebSerialLogger.println("Frequency up " + String(_smallstep));
             break;
         case 'i':
             newfreq = currentFrequency - _smallstep;
             setFrequency(newfreq);  
             _seekmode = '0';
             channelchanged = true;
-            Serial.println("Frequency down " + String(_smallstep));
+            WebSerialLogger.println("Frequency down " + String(_smallstep));
             break;
         case 'I':
             newfreq = currentFrequency + _step;
             setFrequency(newfreq);          
             _seekmode = '0';
             channelchanged = true;
-            Serial.println("Frequency up " + String(_step));
+            WebSerialLogger.println("Frequency up " + String(_step));
             break;
         case 'O':
             newfreq = currentFrequency - _step;
             setFrequency(newfreq);
             _seekmode = '0';
             channelchanged = true;
-            Serial.println("Frequency down " + String(_step));
+            WebSerialLogger.println("Frequency down " + String(_step));
             break;
         case 'u':
             _seekmode = ch;
             _radio->frequencyUp();
             _seektimer = millis();
             channelchanged = true;
-            Serial.println("Start seek up");
+            WebSerialLogger.println("Start seek up");
             break;
         case 'z':
             _seekmode = ch;
             _radio->frequencyDown();
-            Serial.println("Start seek down");
+            WebSerialLogger.println("Start seek down");
             _seektimer = millis();
             channelchanged = true;
             break;
         case 't':
             _seekmode = '0';
-            Serial.println("Seek stopped");
+            WebSerialLogger.println("Seek stopped");
             DisplayInfo();
             break;
         case 'x':
@@ -541,20 +547,20 @@ void FMTuner4735::Loop(char ch)
     if (ch == 'r')
     {   
         if(rdsMsg != NULL && rdsMsg[0] != '\0')
-            Serial.println("Msg: " + String(rdsMsg));
+            WebSerialLogger.println("Msg: " + String(rdsMsg));
 
         if(stationName != NULL && stationName[0] != '\0')    
-            Serial.println("Station: " + String(stationName));
+            WebSerialLogger.println("Station: " + String(stationName));
 
         if(rdsTime != NULL && rdsTime[0] != '\0')
-            Serial.println("Time" + String(rdsTime));
+            WebSerialLogger.println("Time" + String(rdsTime));
 
     }
 
     currentFrequency = _radio->getCurrentFrequency();
     if(previousFrequency != currentFrequency) 
     {
-        Serial.println("Frequency changed!");
+        WebSerialLogger.println("Frequency changed!");
         previousFrequency = currentFrequency;
         
         if(_savemode)

@@ -1,14 +1,13 @@
-
-#ifndef BLUETOOTPLAYER_h
-#define BLUETOOTPLAYER_h
-
 #include <Arduino.h>
 #include "BluetoothA2DPSink.h"
 #include <cbuf.h>
 #include "vs1053.hpp"
+#include "webserial.hpp"
+
+#ifndef BLUETOOTPLAYER_h
+#define BLUETOOTPLAYER_h
 
 #define BLUETOOTH_NAME "Siemens RS-555"
-
 
 class BlueToothPlayer
 {
