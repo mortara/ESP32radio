@@ -1,6 +1,6 @@
 #include "clock_display.hpp"
 
-ClockDisplay::ClockDisplay() : i2cdevice(0x27)
+ClockDisplay::ClockDisplay(uint8_t adr) : i2cdevice(adr)
 {
     if(isActive())
         WebSerialLogger.println("Initialize clock display");
@@ -9,9 +9,8 @@ ClockDisplay::ClockDisplay() : i2cdevice(0x27)
         WebSerialLogger.println("clock display not found");
     }
 
-    _lcd = new LiquidCrystal_I2C(0x27,16,2);
+    _lcd = new LiquidCrystal_I2C(adr,16,2);
     _lcd->init();                      // initialize the lcd 
-    // Print a message to the LCD.
     _lcd->backlight();
  
     _active = true;
