@@ -1,7 +1,7 @@
 #include "temperature_sensor.hpp"
+#include "mqtt.hpp"
 
-
-TemperatureSensor::TemperatureSensor(MQTTConnector *mqtt) : i2cdevice(0x77)
+TemperatureSensor::TemperatureSensor(uint8_t adr) : i2cdevice(adr)
 {
     if(!isActive())
     {
@@ -14,8 +14,6 @@ TemperatureSensor::TemperatureSensor(MQTTConnector *mqtt) : i2cdevice(0x77)
     _bmp->begin();
 
     _lastRead = millis();
-
-    _mqtt = mqtt;
 }
 
 bool TemperatureSensor::mqttSetup()
@@ -25,13 +23,13 @@ bool TemperatureSensor::mqttSetup()
 
     WebSerialLogger.println("Setting up MQTT client");
 
-    if(!_mqtt->SetupSensor("Temperature", "sensor", "BMP180", "temperature", "*C", "mdi:temperature-celsius"))
+    if(!MQTTConnector.SetupSensor("Temperature", "sensor", "BMP180", "temperature", "*C", "mdi:temperature-celsius"))
     {
         WebSerialLogger.println("Could not setup temperature sensor!");
         return false;
     }
 
-    _mqtt->SetupSensor("Pressure", "sensor", "BMP180", "pressure", " Pa", "mdi:air-filter");
+    MQTTConnector.SetupSensor("Pressure", "sensor", "BMP180", "pressure", " Pa", "mdi:air-filter");
     setupmqtt = true;
 
     WebSerialLogger.println("Temperature Sensor mqtt setup done!");
@@ -49,7 +47,7 @@ void TemperatureSensor::Loop() {
 
     _lastRead = now;
 
-    if(_mqtt->isActive() && !setupmqtt)
+    if(MQTTConnector.isActive() && !setupmqtt)
         mqttSetup();
 
     float _temperature = _bmp->readTemperature();
@@ -65,6 +63,6 @@ void TemperatureSensor::Loop() {
     if(setupmqtt)
     {
         String payload ="{ \"Temperature\": " + String(_temperature) + ", \"Pressure\": " + String(_pressure) + "}";
-        _mqtt->PublishSensor(payload, "BMP180");
+        MQTTConnector.PublishSensor(payload, "BMP180");
     }
 }

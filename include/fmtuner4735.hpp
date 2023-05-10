@@ -40,10 +40,10 @@ class FMTuner4735
 
         DACIndicator *_pwmindicator_freq;
         DACIndicator *_pwmindicator_signal;
-        MQTTConnector *_mqtt;
+
         bool mqttsetup = false;
         void setupMQTT();
-
+        void sendMQTTState();
         uint8_t _band = 6;
         uint16_t currentFrequency = 0;
         uint16_t previousFrequency = 0;
@@ -146,7 +146,7 @@ class FMTuner4735
         };
 
     public:
-        FMTuner4735(DACIndicator *freq, DACIndicator *signal, MQTTConnector *mqtt);
+        FMTuner4735(DACIndicator *freq, DACIndicator *signal);
         void Loop(char ch);
         void Stop();
         void Start(uint8_t band);

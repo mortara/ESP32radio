@@ -8,14 +8,13 @@ class TemperatureSensor : i2cdevice
 {
     private:
         Adafruit_BMP085 *_bmp = NULL;
-        MQTTConnector *_mqtt = NULL; 
         unsigned long _lastRead;
         bool setupmqtt = false;
 
         bool mqttSetup();
 
     public:
-        TemperatureSensor(MQTTConnector *mqtt);
+        TemperatureSensor(uint8_t adr);
         void Loop();
 
 };

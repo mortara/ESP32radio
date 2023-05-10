@@ -1,7 +1,7 @@
 #include "power_sensor.hpp"
+#include "mqtt.hpp"
 
-
-PowerSensor::PowerSensor(uint8_t adr, MQTTConnector *mqtt) : i2cdevice(adr)
+PowerSensor::PowerSensor(uint8_t adr) : i2cdevice(adr)
 {
     if(!isActive())
     {
@@ -14,8 +14,6 @@ PowerSensor::PowerSensor(uint8_t adr, MQTTConnector *mqtt) : i2cdevice(adr)
     _ina->begin();
     _ina->setCalibration_32V_1A();
     _lastRead = millis();
-
-    _mqtt = mqtt;
 }
 
 bool PowerSensor::mqttSetup()
@@ -25,17 +23,17 @@ bool PowerSensor::mqttSetup()
 
     WebSerialLogger.println("Setting up MQTT client");
 
-    if(!_mqtt->SetupSensor("Current", "sensor", "INA219", "current", "mA", "mdi:current-dc"))
+    if(!MQTTConnector.SetupSensor("Current", "sensor", "INA219", "current", "mA", "mdi:current-dc"))
     {
         WebSerialLogger.println("Could not setup current sensor!");
         return false;
     }
 
-    _mqtt->SetupSensor("BusVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
-    _mqtt->SetupSensor("ShuntVoltage", "sensor", "INA219", "voltage", "mV", "mdi:flash-triangle");
-    _mqtt->SetupSensor("LoadVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("BusVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("ShuntVoltage", "sensor", "INA219", "voltage", "mV", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("LoadVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
 
-    _mqtt->SetupSensor("Power", "sensor", "INA219", "power", "mW", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("Power", "sensor", "INA219", "power", "mW", "mdi:flash-triangle");
 
     setupmqtt = true;
 
@@ -54,7 +52,7 @@ void PowerSensor::Loop(char ch) {
 
     _lastRead = now;
 
-    if(_mqtt->isActive() && !setupmqtt)
+    if(MQTTConnector.isActive() && !setupmqtt)
         mqttSetup();
 
     float _current = _ina->getCurrent_mA();
@@ -85,6 +83,6 @@ void PowerSensor::Loop(char ch) {
     if(setupmqtt)
     {
         String payload ="{ \"Current\": " + String(_current) + ", \"BusVoltage\": " + String(_busvoltage) + ", \"ShuntVoltage\": " + String(_shuntvoltage) + ", \"LoadVoltage\": " + String(_loadvoltage) + ", \"Power\": " + String(_power) + "}";
-        _mqtt->PublishSensor(payload, "INA219");
+        MQTTConnector.PublishSensor(payload, "INA219");
     }
 }

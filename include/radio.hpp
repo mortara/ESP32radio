@@ -71,7 +71,6 @@ class Radio
         DACIndicator *_pwm_indicator_signal;
         RotaryEncoder *_rotary1;
         TemperatureSensor *_tempSensor1;
-        MQTTConnector *_mqttConnector;
         PowerSensor *_powerSensor;
         ClockButtons *_clockButtons;
         

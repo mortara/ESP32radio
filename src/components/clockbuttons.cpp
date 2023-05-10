@@ -61,9 +61,22 @@ int ClockButtons::readInputs()
         button = 7;
     else if(input.p7 == 1)
         button = 8;
-
-    //Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3) +" " + String(input.p4) +" " + String(input.p5) +" " + String(input.p6)+" " + String(input.p7));
-    //delay(300);
+    else if(input.p8 == 1)
+        button = 9;
+    else if(input.p9 == 1)
+        button = 10;
+    else if(input.p10 == 1)
+        button = 11;
+    else if(input.p11 == 1)
+        button = 12;
+    else if(input.p12 == 1)
+        button = 13;
+    else if(input.p13 == 1)
+        button = 14;
+    else if(input.p14 == 1)
+        button = 15;
+    else if(input.p15 == 1)
+        button = 16;
 
     return button;
 }
@@ -76,16 +89,17 @@ int ClockButtons::Loop()
         return 0;
     _lastRead = now;
 
-    
     int button = readInputs();
 
     // Input is read twice for debouncing the switch!
     if(button != 0)
     {
-        button = readInputs();
-
-        WebSerialLogger.println("Button " + String(button) + " pressed!");
+        if(readInputs() == button)
+        {
+            WebSerialLogger.println("Button " + String(button) + " pressed!");
+            return button;
+        }
     }
 
-    return button;
+    return 0;
 }

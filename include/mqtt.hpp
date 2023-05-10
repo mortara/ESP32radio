@@ -9,7 +9,7 @@
 #ifndef MQTTCONNECTOR_H
 #define MQTTCONNECTOR_H
 
-class MQTTConnector
+class MQTTConnectorClass
 {
     private:
         WiFiClient *_wifiClientmqtt;
@@ -19,11 +19,13 @@ class MQTTConnector
         unsigned long _lastConnectAttempt;
 
     public:
-        MQTTConnector();
+        MQTTConnectorClass();
         void Loop();
         void PublishSensor(String msg, String component);
         bool isActive();
         bool SetupSensor(String topic, String sensor, String component, String deviceclass = "", String unit = "", String icon = "", String entity_category="config");
 };
+
+extern MQTTConnectorClass MQTTConnector;
 
 #endif

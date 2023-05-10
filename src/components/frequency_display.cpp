@@ -15,7 +15,7 @@ FrequencyDisplay::FrequencyDisplay()
     _u8g2->setContrast(6);
     _u8g2->clearBuffer();					// clear the internal memory
     SetFont(0);
-    _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"1234567890");
+    _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"  HELLO!  ");
     _u8g2->sendBuffer();
     _lastUpdate = millis();
     

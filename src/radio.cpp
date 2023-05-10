@@ -2,10 +2,30 @@
 
 Radio::Radio()
 {
+    /*
+        I2C Adresses:
+
+        Wire 1
+            0x20    ClockButtons
+            0x11    Si4735
+            0x27    ClockDisplay
+            0x40    INA219
+            0x77    BMP180
+
+        Wire 2
+            0x21    PreselectLeds
+            0x22    TunerButtons
+            0x23    PreselectButtons
+            0x24    ChannelSwicth relais
+            0x25    ChannelButtons
+    
+    */
+
+
     _spk = new Speaker(27);
     Wire.begin();
     _freq_display = new FrequencyDisplay();
-    _clockDisplay = new ClockDisplay();
+    _clockDisplay = new ClockDisplay(0x27);
     _clockDisplay->DisplayText("Starte I2C Bus 2 ...",0);
 
     _i2cwire = new TwoWire(1);
@@ -17,9 +37,6 @@ Radio::Radio()
     _clockDisplay->DisplayText("Starte WIFI ...",0);
     wifi = new WIFIManager();
 
-    _clockDisplay->DisplayText("Starte MQTT ...",0);
-    _mqttConnector = new MQTTConnector();
-    
     _clockDisplay->DisplayText("Starte RTC ...",0);
     _clock = new Clock(_i2cwire);
 
@@ -32,7 +49,7 @@ Radio::Radio()
     _pwm_indicator_signal = new DACIndicator(25, 0,5, 0);
 
     _clockDisplay->DisplayText("Starte Si4735 ...",0);
-    _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal, _mqttConnector);
+    _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal);
 
     _clockDisplay->DisplayText("Starte Internetradio ...",0);
     _inetRadio = new InternetRadio(_player, _pwm_indicator_freq, _pwm_indicator_signal);
@@ -48,10 +65,10 @@ Radio::Radio()
     _rotary1 = new RotaryEncoder(34,35,39);
     
     _clockDisplay->DisplayText("Starte Temperatursensor ...",0);
-    _tempSensor1 = new TemperatureSensor(_mqttConnector);
+    _tempSensor1 = new TemperatureSensor(0x77);
 
     _clockDisplay->DisplayText("Starte Energiesensor ...",0);
-    _powerSensor = new PowerSensor(0x40, _mqttConnector);
+    _powerSensor = new PowerSensor(0x40);
     //wifi->Connect();
     
     _clockDisplay->DisplayText("Fertig!",0);
@@ -248,7 +265,7 @@ void Radio::Loop()
     _rotary1->Loop();
     _tempSensor1->Loop();
     _powerSensor->Loop(ch);
-    _mqttConnector->Loop();
+    MQTTConnector.Loop();
     WebSerialLogger.Loop(ch);
     uint16_t now = millis();
     if(now - _lastClockUpdate >= 1000)
