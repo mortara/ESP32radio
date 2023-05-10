@@ -1,4 +1,5 @@
 #include "internetradio.hpp"
+#include "mqtt.hpp"
 
 #define MP3buffersize 32
 
@@ -17,6 +18,42 @@ InternetRadio::InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndica
     _http->setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
     _signaltimer = millis();
+}
+
+void InternetRadio::setupMQTT()
+{
+    if(mqttsetup)
+        return;
+
+    WebSerialLogger.println("Setting up Internetradio MQTT client");
+
+    if(!MQTTConnector.SetupSensor("Station", "sensor", "Internetradio", "", "", ""))
+    {
+        WebSerialLogger.println("Could not setup station sensor!");
+        return;
+    }
+
+    if(!MQTTConnector.SetupSensor("RSSI", "sensor", "Internetradio", "signal_strength", "dB", "mdi:sine-wave"))
+    {
+        WebSerialLogger.println("Could not setup signal sensor!");
+        return;
+    }
+
+    if(!MQTTConnector.SetupSensor("Preset", "sensor", "Internetradio", "", "", "mdi:radio"))
+    {
+        WebSerialLogger.println("Could not setup Preset sensor!");
+        return;
+    }
+
+    if(!MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "", "", "mdi:radio"))
+    {
+        WebSerialLogger.println("Could not setup bytesplayed sensor!");
+        return;
+    }
+
+    WebSerialLogger.println("Internetradio Sensor mqtt setup done!");
+
+    mqttsetup = true;
 }
 
 void InternetRadio::SwitchPreset(uint8_t num)
@@ -114,7 +151,15 @@ void InternetRadio::Loop(char ch)
         
         clockdisplaypagetimer = now;
 
-        
+        if(MQTTConnector.isActive() && !mqttsetup)
+            setupMQTT();
+
+        if(mqttsetup)
+        {   
+            Station st = stationlist[current_station_preset];
+            String payload ="{ \"Station\": \"" + String(st.name) + "\", \"RSSI\": " + String(WiFi.RSSI()) + ", \"Preset\": " + String(current_station_preset) + ", \"BytesPlayed\": " + String(bytes_served) + "}";
+            MQTTConnector.PublishSensor(payload, "Internetradio");
+        }
     }
 
     if(now - _signaltimer > 500)
@@ -150,7 +195,7 @@ void InternetRadio::Loop(char ch)
         WebSerialLogger.println("Try to connect ...");
         StartStream(stationlist[current_station_preset]);
     }
-    
+
     if (ch == 'i') 
     {
         WebSerialLogger.println("Played " + String(bytes_served) + " bytes");

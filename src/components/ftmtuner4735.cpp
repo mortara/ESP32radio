@@ -1,9 +1,10 @@
 #include "fmtuner4735.hpp"
+#include "mqtt.hpp"
 
-FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal, MQTTConnector *mqtt)
+FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
 {
     WebSerialLogger.println("Start Si4735 ...");
-    _mqtt = mqtt;
+
     _pwmindicator_freq = freq;
     _pwmindicator_signal = signal;
     _pwmindicator_signal->SetRange(0, 127);
@@ -42,39 +43,38 @@ void FMTuner4735::setupMQTT()
 
     WebSerialLogger.println("Setting up si4735 MQTT client");
 
-    if(!_mqtt->SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave"))
-    {
-        WebSerialLogger.println("Could not setup frequency sensor!");
-        return;
-    }
-
-    if(!_mqtt->SetupSensor("Station", "sensor", "SI4735", "", "", "mdi:radio"))
-    {
-        WebSerialLogger.println("Could not setup station sensor!");
-        return;
-    }
-
-    if(!_mqtt->SetupSensor("Band", "text", "SI4735", "", "", "mdi:radio"))
-    {
-        WebSerialLogger.println("Could not setup band sensor!");
-        return;
-    }
-
-    if(!_mqtt->SetupSensor("RSSI", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower"))
-    {
-        WebSerialLogger.println("Could not setup RSSI sensor!");
-        return;
-    }
-
-    if(!_mqtt->SetupSensor("RDSMSG", "text", "SI4735", "", "", "mdi:message-processing"))
-    {
-        WebSerialLogger.println("Could not setup RDSMsg sensor!");
-        return;
-    }
-
+    MQTTConnector.SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
+    MQTTConnector.SetupSensor("Preset", "sensor", "SI4735", "", "", "mdi:radio");
+    MQTTConnector.SetupSensor("Band", "sensor", "SI4735", "", "", "mdi:radio");
+    MQTTConnector.SetupSensor("BandLowerLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
+    MQTTConnector.SetupSensor("BandHighLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
+    MQTTConnector.SetupSensor("RSSI", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
+    MQTTConnector.SetupSensor("SNR", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
+    MQTTConnector.SetupSensor("RDSMSG", "sensor", "SI4735", "", "", "mdi:message-processing");
+    
     WebSerialLogger.println("si4735 Sensor mqtt setup done!");
 
     mqttsetup = true;
+}
+
+void FMTuner4735::sendMQTTState()
+{
+    Band b = _bands[_currentBand];
+
+    DynamicJsonDocument payload(2048);
+    payload["Frequency"] = _radio->getCurrentFrequency();
+    payload["RSSI"] = _radio->getCurrentRSSI();
+    payload["SNR"] = _radio->getCurrentSNR();
+    payload["Band"] = b.bandName;
+    payload["BandLowerLimit"] = b.minimumFreq;
+    payload["BandHighLimit"] = b.maximumFreq;
+    payload["Preset"] = _current_station_preset;
+    payload["RDSMSG"] = RDSMessage;
+
+    String state_payload  = "";
+    serializeJson(payload, state_payload);
+    
+    MQTTConnector.PublishSensor(state_payload, "SI4735");
 }
 
 void FMTuner4735::Start(uint8_t band)
@@ -83,19 +83,8 @@ void FMTuner4735::Start(uint8_t band)
         return;
 
     WebSerialLogger.println("FMTuner start ...");
-
-    Band b = _bands[band]; 
-
-    WebSerialLogger.println("Band " + String(b.bandName));
-
-    // Initialize the Radio
-    //_radio->radioPowerUp();
-    //digitalWrite(SI7435_RESET_PIN, HIGH);
-    //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
-    //_radio->setup(SI7435_RESET_PIN,0, b.bandType, SI473X_ANALOG_AUDIO, 0, 0);
-
+    
     SwitchBand(band);
-
     _radio->setVolume(_volume);
     
     DisplayInfo();
@@ -104,7 +93,6 @@ void FMTuner4735::Start(uint8_t band)
 void FMTuner4735::Stop()
 {
     WebSerialLogger.println("FMTuner stop ...");
-    //_radio->powerDown();
 }
 
 void FMTuner4735::SwitchBand(uint8_t bandIdx)
@@ -180,6 +168,8 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     _pwmindicator_freq->SetRange(b.minimumFreq, b.maximumFreq);
 
     LoadPresets();
+
+    sendMQTTState();
 }
 
 uint16_t FMTuner4735::GetBandMin()
@@ -306,7 +296,7 @@ void FMTuner4735::SaveCurrentChannel(uint8_t preset)
 
 void FMTuner4735::LoadPresets()
 {
-    WebSerialLogger.println("Load presets");
+    WebSerialLogger.println("Load presets for band " + String(_currentBand));
     if(_currentBand < 0 || _currentBand > 7)
     {
         WebSerialLogger.println(" ... invalid band");
@@ -322,7 +312,7 @@ void FMTuner4735::LoadPresets()
     }
     else
     {
-        WebSerialLogger.println("Loading presets from SPIIFFS");
+        WebSerialLogger.println("Loading presets from SPIFFS");
         _station_presets[0] = _prefs.getUShort("PRESET_0", b.currentFreq);
         _station_presets[1] = _prefs.getUShort("PRESET_1", 0);
         _station_presets[2] = _prefs.getUShort("PRESET_2", 0);
@@ -432,7 +422,7 @@ void FMTuner4735::Loop(char ch)
     if(!_active)
         return;
 
-    if(_mqtt->isActive() && !mqttsetup)
+    if(MQTTConnector.isActive() && !mqttsetup)
         setupMQTT();
 
     if((now - clockdisplaypagetimer) > 15000)
@@ -445,11 +435,7 @@ void FMTuner4735::Loop(char ch)
 
         if(mqttsetup)
         {   
-            Band b = _bands[_currentBand];
-            uint8_t rssi = _radio->getCurrentRSSI();
-            uint16_t frq = _radio->getCurrentFrequency();
-            String payload ="{ \"Frequency\": " + String(frq) + ", \"RSSI\": " + String(rssi) + ", \"Band\": \"" + String(b.bandName) + "\", \"Station\": " + String(_current_station_preset) + ", \"RDSMSG\": \"" + RDSMessage + "\"}";
-            _mqtt->PublishSensor(payload, "SI4735");
+            sendMQTTState();
         }
     }
 
@@ -463,7 +449,6 @@ void FMTuner4735::Loop(char ch)
 
     if(_seekmode != '0' && ch != 't')
     {
-        delay(100);
         _radio->getCurrentReceivedSignalQuality();
         uint8_t rssi = _radio->getCurrentRSSI();
         uint8_t snr = _radio->getCurrentSNR();

@@ -21,6 +21,9 @@ class InternetRadio
 
         uint16_t _signaltimer = 0;
 
+        bool mqttsetup;
+        void setupMQTT();
+
         // https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high
         // http://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3
         //String station = "http://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3";
