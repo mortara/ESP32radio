@@ -9,25 +9,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
     WebSerialLogger.println(msg);
 }
 
-MQTTConnector::MQTTConnector()
+MQTTConnectorClass::MQTTConnectorClass()
 {
     WebSerialLogger.println("Initializing MQTT client");
 
     _wifiClientmqtt = new WiFiClient();
 
     _mqttClient = new PubSubClient(MQTTBROKER, 1883, *_wifiClientmqtt);
-    _mqttClient->setBufferSize(1024);
+    _mqttClient->setBufferSize(4096);
     _mqttClient->setCallback(callback);
 
     _lastConnectAttempt = millis();
 }
 
-bool MQTTConnector::isActive()
+bool MQTTConnectorClass::isActive()
 {
     return _active;
 }
 
-void MQTTConnector::Loop()
+void MQTTConnectorClass::Loop()
 {
     unsigned long now = millis();
 
@@ -49,7 +49,7 @@ void MQTTConnector::Loop()
     _mqttClient->loop();
 }
 
-bool MQTTConnector::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon, String entity_category)
+bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon, String entity_category)
 {
     if(!_active)
         return false;
@@ -92,7 +92,6 @@ bool MQTTConnector::SetupSensor(String topic, String sensor, String component, S
     serializeJson(root, config_payload);
 
     WebSerialLogger.println("Topic: " + config_topic);
-    //serializeJsonPretty(root, Serial);
 
     WebSerialLogger.println("Payload: " + config_payload);
     bool result = _mqttClient->publish_P(config_topic.c_str(), config_payload.c_str(), true);
@@ -102,13 +101,10 @@ bool MQTTConnector::SetupSensor(String topic, String sensor, String component, S
         WebSerialLogger.println("State: " + String(_mqttClient->state()));
     }
 
-    //String subs = device_id + "/" + topic;
-    //client.subscribe(subs.c_str());
-
     return result;
 }
 
-void MQTTConnector::PublishSensor(String payload, String component)
+void MQTTConnectorClass::PublishSensor(String payload, String component)
 {
     if(!_active)
         return;
@@ -119,3 +115,5 @@ void MQTTConnector::PublishSensor(String payload, String component)
       WebSerialLogger.println("State: " + String(_mqttClient->state()));
     }
 }
+
+MQTTConnectorClass MQTTConnector;
