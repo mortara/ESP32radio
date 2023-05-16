@@ -9,33 +9,37 @@
 class i2cdevice
 {
     private:
-        uint8_t _address;
-        TwoWire *_i2cwire;
         bool _active = false;
 
     public:
         i2cdevice(uint8_t address)
         {
-            WebSerialLogger.printf("Testing device 0x%02X \r\n", address);
+            char hexadecimalnum [3];
+            sprintf(hexadecimalnum, "%X", address);
+
+            WebSerialLogger.println("Testing device 0x" + String(hexadecimalnum));
             Wire.beginTransmission(address);
             uint8_t error = Wire.endTransmission();
             if (error != 0)
             {
-                WebSerialLogger.printf("Device 0x%02X not found! \r\n", address);
+                WebSerialLogger.println("Device 0x" + String(hexadecimalnum) + " not found!");
                 return;
             }
             _active = true;
         }
 
 
-        i2cdevice(TwoWire *wire, uint8_t address)
+        i2cdevice(TwoWire &wire, uint8_t address)
         {
-            WebSerialLogger.printf("Testing device 0x%02X on wire 2 \r\n", address);
-            wire->beginTransmission(address);
-            uint8_t error = wire->endTransmission();
+            char hexadecimalnum [3];
+            sprintf(hexadecimalnum, "%X", address);
+
+            WebSerialLogger.println("Testing device 0x" + String(hexadecimalnum) + " on wire 2");
+            wire.beginTransmission(address);
+            uint8_t error = wire.endTransmission();
             if (error != 0)
             {
-                WebSerialLogger.printf("Device 0x%02X not found on wire 2 \r\n", address);
+                WebSerialLogger.println("Device 0x" + String(hexadecimalnum) + " not found on wire 2");
                 return;
             }
             _active = true;

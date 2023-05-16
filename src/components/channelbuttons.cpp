@@ -1,6 +1,6 @@
 #include "channelbuttons.hpp"
 
-ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
+ChannelButtons::ChannelButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -9,10 +9,8 @@ ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowir
     }
 
     WebSerialLogger.println("Initializing channel buttons");
-    _address = adr;
-
-    _i2cwire = twowire;
-    _pcf8754 = new PCF8574(_i2cwire,_address);
+   
+    _pcf8754 = new PCF8574(&twowire,adr);
     _pcf8754->begin();
    
     _pcf8754->pinMode(P0, INPUT);
@@ -27,10 +25,12 @@ ChannelButtons::ChannelButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowir
     _lastRead = millis();
 }
 
-int ChannelButtons::readInputs()
+int ChannelButtons::Loop()
 {
-    if(!isActive())
+    unsigned long now = millis();
+    if(now - _lastRead < 400 || !isActive())
         return 0;
+    _lastRead = now;
 
     PCF8574::DigitalInput input = _pcf8754->digitalReadAll();
 
@@ -53,35 +53,12 @@ int ChannelButtons::readInputs()
     else if(input.p7 == 0)
         channel = 8;
 
-    //Serial.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3) +" " + String(input.p4) +" " + String(input.p5) +" " + String(input.p6)+" " + String(input.p7));
-    //delay(300);
-
-    return channel;
-}
-
-
-int ChannelButtons::Loop()
-{
-    unsigned long now = millis();
-    if(now - _lastRead < 100)
-        return 0;
-    _lastRead = now;
-
-    int result = 0;
-    int channel = readInputs();
-
-    // Input is read twice for debouncing the switch!
     if(channel != currentchannel)
     {   
-        delay(50);
-        channel = readInputs();
-        if(channel != currentchannel)
-        {
-            WebSerialLogger.println("Channel button switched from " + String(currentchannel) + " to " + String(channel));
-            currentchannel = channel;
-            result = channel;
-        }
+        WebSerialLogger.println("Channel button switched from " + String(currentchannel) + " to " + String(channel));
+        currentchannel = channel;
+        return channel;
     }
 
-    return result;
+    return 0;
 }

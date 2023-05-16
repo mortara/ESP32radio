@@ -23,7 +23,6 @@ WebSerialLoggerClass::WebSerialLoggerClass()
 
 void WebSerialLoggerClass::Begin()
 {
-
     Serial.println("Starting webserial connection!");
     if(_server == NULL)
     {
@@ -45,15 +44,9 @@ char WebSerialLoggerClass::GetInput()
     return c;
 }
 
-void WebSerialLoggerClass::Loop(char ch)
+bool WebSerialLoggerClass::IsRunning()
 {
-    if(!running && WiFi.isConnected())
-        Begin();
-
-    if(ch == 'r')
-    {
-        Serial.println("WEBSERIAL running = " + String(running));
-    }
+    return running;
 }
 
 void WebSerialLoggerClass::print(const char *text)
@@ -86,16 +79,6 @@ void WebSerialLoggerClass::println(String text)
 
     if(running)
         WebSerial.println(text);
-}
-
-void WebSerialLoggerClass::printf(const char *text, ...)
-{
-    va_list ap;
-
-    Serial.printf(text, ap);
-
-    if(running)
-        WebSerial.printf(text, ap);
 }
 
 WebSerialLoggerClass WebSerialLogger;

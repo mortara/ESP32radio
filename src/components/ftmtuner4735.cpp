@@ -1,5 +1,6 @@
 #include "fmtuner4735.hpp"
 #include "mqtt.hpp"
+#include "rotary_encoder.hpp"
 
 FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
 {
@@ -7,7 +8,6 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
 
     _pwmindicator_freq = freq;
     _pwmindicator_signal = signal;
-    _pwmindicator_signal->SetRange(0, 127);
 
     digitalWrite(SI7435_RESET_PIN, HIGH);
     //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
@@ -32,8 +32,10 @@ FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
     _radio->setFmStereoOn();
     _radio->setFMDeEmphasis(2);
     _radio->RdsInit();
+
+    _lastRotaryCount = RotaryEncoder.GetCounter();
     _active = true;
-    _lastRDSUpdate = _lastUpdate = millis();
+    _lastRotaryRead = frequencychangetimeout = _lastRDSUpdate = _lastUpdate = millis();
 }
 
 void FMTuner4735::setupMQTT()
@@ -44,7 +46,6 @@ void FMTuner4735::setupMQTT()
     WebSerialLogger.println("Setting up si4735 MQTT client");
 
     MQTTConnector.SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
-    MQTTConnector.SetupSensor("Preset", "sensor", "SI4735", "", "", "mdi:radio");
     MQTTConnector.SetupSensor("Band", "sensor", "SI4735", "", "", "mdi:radio");
     MQTTConnector.SetupSensor("BandLowerLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
     MQTTConnector.SetupSensor("BandHighLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
@@ -74,7 +75,7 @@ void FMTuner4735::sendMQTTState()
     String state_payload  = "";
     serializeJson(payload, state_payload);
     
-    MQTTConnector.PublishSensor(state_payload, "SI4735");
+    MQTTConnector.PublishMessage(state_payload, "SI4735");
 }
 
 void FMTuner4735::Start(uint8_t band)
@@ -83,6 +84,9 @@ void FMTuner4735::Start(uint8_t band)
         return;
 
     WebSerialLogger.println("FMTuner start ...");
+
+    
+    _pwmindicator_signal->SetRange(0, 127);
     
     SwitchBand(band);
     _radio->setVolume(_volume);
@@ -161,13 +165,15 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
         _step = tabAmStep[1];
     }
     delay(10);
-    currentFrequency = b.currentFreq;
+
     currentStepIdx = b.currentStepIdx;
     _currentBand = bandIdx;
 
     _pwmindicator_freq->SetRange(b.minimumFreq, b.maximumFreq);
 
     LoadPresets();
+
+    SwitchPreset(_current_station_preset);
 
     sendMQTTState();
 }
@@ -182,20 +188,25 @@ uint16_t FMTuner4735::GetBandMax()
     return _bands[_currentBand].maximumFreq;
 }
 
-void FMTuner4735::setFrequency(u_int16_t freq)
+uint16_t FMTuner4735::setFrequency(u_int16_t freq)
 {
     if(!_active)
-        return;
+        return currentFrequency;
+
 
     Band b = _bands[_currentBand];
+    uint16_t fwidth = b.maximumFreq - b.minimumFreq;
+
     if(freq < b.minimumFreq)
-        freq = b.minimumFreq;
+        freq += fwidth;
 
     if(freq > b.maximumFreq)
-        freq = b.maximumFreq;
+        freq -= fwidth;
 
     _radio->setFrequency(freq);
+    currentFrequency = _radio->getCurrentFrequency();
     _pwmindicator_freq->SetValue(currentFrequency);
+    return currentFrequency;
 }
 
 void FMTuner4735::DisplayInfo()
@@ -236,7 +247,14 @@ void FMTuner4735::DisplayInfo()
     else
         WebSerialLogger.println("Preset save mode is: off");
 
-    
+    if(rdsMsg != NULL && rdsMsg[0] != '\0')
+        WebSerialLogger.println("RDS Msg: " + String(rdsMsg));
+
+    if(stationName != NULL && stationName[0] != '\0')    
+        WebSerialLogger.println("RDS Station: " + String(stationName));
+
+    if(rdsTime != NULL && rdsTime[0] != '\0')
+        WebSerialLogger.println("RDS Time" + String(rdsTime));
 }
 
 String FMTuner4735::GetFreqDisplayText()
@@ -281,9 +299,7 @@ void FMTuner4735::SwitchPreset(uint8_t num)
 {
     WebSerialLogger.println("FMTuner::SwitchPreset to " + String(num));
     _current_station_preset = num;
-    currentFrequency = _station_presets[num];
-    setFrequency(currentFrequency);
-    DisplayInfo();
+    currentFrequency = setFrequency(_station_presets[num]);
 }
 
 void FMTuner4735::SaveCurrentChannel(uint8_t preset)
@@ -381,49 +397,44 @@ void FMTuner4735::checkRDS()
     if(!_active)
         return;
 
-  _radio->getRdsStatus();
-  if (_radio->getRdsReceived())
-  {
-    if (_radio->getRdsSync() && _radio->getRdsSyncFound())
+    _radio->getRdsStatus();
+    if (_radio->getRdsReceived())
     {
-      rdsMsg = _radio->getRdsText2A();
-      stationName = _radio->getRdsText0A();
-      rdsTime = _radio->getRdsTime();
+        if (_radio->getRdsSync() && _radio->getRdsSyncFound())
+        {
+            rdsMsg = _radio->getRdsText2A();
+            stationName = _radio->getRdsText0A();
+            rdsTime = _radio->getRdsTime();
 
-      String msg = UpdateRDSMessage(RDSMessage, rdsMsg);
-      if(msg != RDSMessage && msg != "")
-      {
-        RDSMessage = msg;
-        WebSerialLogger.println("RDS Message: '" + RDSMessage + "'");
-      }
+            String msg = UpdateRDSMessage(RDSMessage, rdsMsg);
+            if(msg != RDSMessage && msg != "")
+            {
+                RDSMessage = msg;
+                //WebSerialLogger.println("RDS Message: '" + RDSMessage + "'");
+            }
 
-      String stationname = UpdateRDSMessage(RDSStationName, stationName);
-      if(stationname != RDSStationName && stationname != "")
-      {
-        RDSStationName = stationname;
-        WebSerialLogger.println("RDS Stationname: '" + RDSStationName+ "'");
-      }
+            String stationname = UpdateRDSMessage(RDSStationName, stationName);
+            if(stationname != RDSStationName && stationname != "")
+            {
+                RDSStationName = stationname;
+                //WebSerialLogger.println("RDS Stationname: '" + RDSStationName+ "'");
+            }
 
-      String time = UpdateRDSMessage(RDSTime, rdsTime);
-      if(time != RDSTime && time != "")
-      {
-        RDSTime = time;
-        WebSerialLogger.println("RDS Time: '" + RDSTime+ "'");
-      }
+            String time = UpdateRDSMessage(RDSTime, rdsTime);
+            if(time != RDSTime && time != "")
+            {
+                RDSTime = time;
+                //WebSerialLogger.println("RDS Time: '" + RDSTime+ "'");
+            }
+        }
     }
-  }
 }
 
 void FMTuner4735::Loop(char ch)
 {
-    bool channelchanged = false;
-    unsigned long now = millis();
-
     if(!_active)
         return;
-
-    if(MQTTConnector.isActive() && !mqttsetup)
-        setupMQTT();
+    unsigned long now = millis();
 
     if((now - clockdisplaypagetimer) > 15000)
     {
@@ -436,12 +447,12 @@ void FMTuner4735::Loop(char ch)
         if(mqttsetup)
         {   
             sendMQTTState();
-        }
+        } else if(MQTTConnector.isActive())
+            setupMQTT();
     }
 
-    if(now - _lastUpdate > 100)
+    if(now - _lastUpdate > 500)
     {
-        _radio->getStatus();
         _radio->getCurrentReceivedSignalQuality();
         _pwmindicator_signal->SetValue(_radio->getCurrentRSSI());
         _lastUpdate = now;
@@ -457,39 +468,53 @@ void FMTuner4735::Loop(char ch)
             ch = _seekmode;
             char str[100];
             sprintf(str,"Seeking .... Freq: %2.2d | RSSI: %2.2d | SNR: %2.2d", currentFrequency, rssi, snr);
-            Serial.println(str);
+            WebSerialLogger.println(str);
         }
 
     }
 
-    uint16_t newfreq = 0;
+    if(now - _lastRotaryRead > 200)
+    {
+        _lastRotaryRead = now;
+        int rotary = RotaryEncoder.GetCounter();
+        if(rotary != _lastRotaryCount)
+        {
+            int diff = (rotary - _lastRotaryCount) / 5;
+            if(diff < 1)
+                diff = 1;
 
+            _lastRotaryCount = rotary;
+            _seekmode = '0';
+            setFrequency(currentFrequency + _smallstep * diff);
+            frequencychangetimeout = now + 1000;
+            return;
+        }
+        _lastRotaryCount = rotary;
+    }
+    
+    bool channelchanged = false;
     switch(ch)
     {
         case 'o':
-            newfreq = currentFrequency + _smallstep;
-            setFrequency(newfreq);  
+            setFrequency(currentFrequency + _smallstep); 
             _seekmode = '0';
             channelchanged = true;
             WebSerialLogger.println("Frequency up " + String(_smallstep));
             break;
         case 'i':
-            newfreq = currentFrequency - _smallstep;
-            setFrequency(newfreq);  
+            setFrequency(currentFrequency - _smallstep);
             _seekmode = '0';
             channelchanged = true;
             WebSerialLogger.println("Frequency down " + String(_smallstep));
             break;
         case 'I':
-            newfreq = currentFrequency + _step;
-            setFrequency(newfreq);          
+            setFrequency(currentFrequency + _step);     
             _seekmode = '0';
             channelchanged = true;
             WebSerialLogger.println("Frequency up " + String(_step));
             break;
         case 'O':
-            newfreq = currentFrequency - _step;
-            setFrequency(newfreq);
+            setFrequency(currentFrequency - _step);
             _seekmode = '0';
             channelchanged = true;
             WebSerialLogger.println("Frequency down " + String(_step));
@@ -529,21 +554,8 @@ void FMTuner4735::Loop(char ch)
             break;
     }
 
-    if (ch == 'r')
-    {   
-        if(rdsMsg != NULL && rdsMsg[0] != '\0')
-            WebSerialLogger.println("Msg: " + String(rdsMsg));
-
-        if(stationName != NULL && stationName[0] != '\0')    
-            WebSerialLogger.println("Station: " + String(stationName));
-
-        if(rdsTime != NULL && rdsTime[0] != '\0')
-            WebSerialLogger.println("Time" + String(rdsTime));
-
-    }
-
     currentFrequency = _radio->getCurrentFrequency();
-    if(previousFrequency != currentFrequency) 
+    if(previousFrequency != currentFrequency && now > frequencychangetimeout) 
     {
         WebSerialLogger.println("Frequency changed!");
         previousFrequency = currentFrequency;
@@ -551,16 +563,15 @@ void FMTuner4735::Loop(char ch)
         if(_savemode)
             SaveCurrentChannel(_current_station_preset);
 
-        DisplayInfo();
         RDSMessage.clear();
         RDSStationName.clear();
         RDSTime.clear();
-        
+        _lastRDSUpdate = now;
     }
 
     if(_bands[_currentBand].bandType == FM_BAND_TYPE)
     {
-        if(now - _lastRDSUpdate > 10)
+        if(now - _lastRDSUpdate > 50)
         {
             checkRDS();
             _lastRDSUpdate = now;

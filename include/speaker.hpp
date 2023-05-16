@@ -11,6 +11,7 @@ class Speaker
 
         void TurnOn();
         void TurnOff();
-
+        void Toggle();
+        
         void ExecuteCommand(char ch);
 };

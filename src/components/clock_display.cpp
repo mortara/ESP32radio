@@ -44,13 +44,9 @@ void ClockDisplay::DisplayText(String text, uint8_t row)
 
 void ClockDisplay::Loop()
 {
-    if(!_active)
-        return;
-
-    unsigned long _now = millis();
-
-    if(_texts[0].length() > 16)
+    if(_texts[0].length() > 16 && _active)
     {
+        unsigned long _now = millis();
         if(_now - _scroll_row1_timer > 500)
         {
             String t1 = _texts[0] + "   " + _texts[0];

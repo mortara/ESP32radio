@@ -1,7 +1,7 @@
 #include "tunerbuttons.hpp"
 
 
-TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
+TunerButtons::TunerButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -10,10 +10,8 @@ TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, a
     }
 
     WebSerialLogger.println("Initializing tuner buttons switcher");
-    _address = adr;
 
-    _i2cwire = twowire;
-    _pcf8754 = new PCF8574(_i2cwire,_address);
+    _pcf8754 = new PCF8574(&twowire,adr);
     _pcf8754->begin();
    
     _pcf8754->pinMode(P0, INPUT);
@@ -30,11 +28,8 @@ TunerButtons::TunerButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, a
 
 int TunerButtons::Loop()
 {
-    if(!isActive())
-        return 0;
-
     unsigned long now = millis();
-    if(now - _lastRead < 100)
+    if(now - _lastRead < 200 || !isActive())
         return 0;
     _lastRead = now;    
     

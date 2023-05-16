@@ -1,5 +1,5 @@
 #include "wifimanager.hpp"
-
+#include "mqtt.hpp"
 
 WIFIManager::WIFIManager()
 {
@@ -32,6 +32,27 @@ bool WIFIManager::Connect()
     connected = true;
     DisplayInfo();*/
     return true;
+}
+
+void WIFIManager::setupMQTT()
+{
+    if(mqttsetup)
+        return;
+
+    WebSerialLogger.println("Setting up Wifi MQTT client");
+
+    MQTTConnector.SetupSensor("SSID", "sensor", "WIFI", "", "", "");
+    MQTTConnector.SetupSensor("BSSID", "sensor", "WIFI", "", "", "");
+    MQTTConnector.SetupSensor("WIFI_RSSI", "sensor", "WIFI", "signal_strength", "dB", "mdi:sine-wave");
+    MQTTConnector.SetupSensor("Hostname", "sensor", "WIFI", "", "", "");
+    MQTTConnector.SetupSensor("IP", "sensor", "WIFI", "", "", "");
+    MQTTConnector.SetupSensor("SubnetMask", "sensor", "WIFI", "", "", "");
+    MQTTConnector.SetupSensor("Gateway", "sensor", "WIFI", "", "", "");
+    MQTTConnector.SetupSensor("DNS", "sensor", "WIFI", "", "", "");
+
+    WebSerialLogger.println("WIfi mqtt setup done!");
+
+    mqttsetup = true;
 }
 
 void WIFIManager::Disconnect()
@@ -68,28 +89,42 @@ unsigned long WIFIManager::LastConnectionTry()
     return _lastConnectionTry;
 }
 
-void WIFIManager::Loop(char ch)
+void WIFIManager::Loop()
 {
+    unsigned long currentMillis = millis();
+
     connected = WiFi.isConnected();
 
     if(connecting && connected)
     {
+        WebSerialLogger.println("WiFi connected!");
         connecting = false;
     }
 
-    if (ch == 'w') 
+    if(currentMillis - _lastMqttupdate > 10000 && connected && MQTTConnector.isActive())
     {
-        DisplayInfo();    
+        if(!mqttsetup)
+            setupMQTT();
+
+        DynamicJsonDocument payload(2048);
+        payload["SSID"] = _credentials.SSID;
+        payload["BSSID"] = WiFi.BSSIDstr();
+        payload["WIFI_RSSI"] = String(WiFi.RSSI());
+        payload["Hostname"] = String(WiFi.getHostname());
+        payload["IP"] = WiFi.localIP().toString();
+        payload["SubnetMask"] = WiFi.subnetMask().toString();
+        payload["Gateway"] = WiFi.gatewayIP().toString();
+        payload["DNS"] = WiFi.dnsIP().toString();;
+        
+        String state_payload  = "";
+        serializeJson(payload, state_payload);
+        
+        MQTTConnector.PublishMessage(state_payload, "WIFI");
+        _lastMqttupdate = currentMillis;
     }
 
-    if (ch == 'v') 
-    {
-        Connect();    
-    }
-
-    unsigned long currentMillis = millis();
     // if WiFi is down, try reconnecting
-    if (!connecting && !connected && (currentMillis - _lastConnectionTry >=interval)) 
+    if (!connecting && !connected && (currentMillis - _lastConnectionTry >= interval)) 
     {
         WebSerialLogger.println("Reconnecting to WiFi...");
         WiFi.reconnect();

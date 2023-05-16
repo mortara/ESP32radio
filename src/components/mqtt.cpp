@@ -19,11 +19,26 @@ MQTTConnectorClass::MQTTConnectorClass()
     _mqttClient->setBufferSize(4096);
     _mqttClient->setCallback(callback);
 
+    Tasks = new std::list<MQTTMessages *>();
+    TaskHandle_t xHandle = NULL;
+
+    xTaskCreatePinnedToCore(
+        Task1code, /* Function to implement the task */
+        "Task1", /* Name of the task */
+        10000,  /* Stack size in words */
+        this,  /* Task input parameter */
+        0,  /* Priority of the task */
+        &xHandle,  /* Task handle. */
+        0); /* Core where the task should run */
+
     _lastConnectAttempt = millis();
 }
 
 bool MQTTConnectorClass::isActive()
 {
+    if(!WiFi.isConnected())
+        _active = false;
+
     return _active;
 }
 
@@ -33,6 +48,12 @@ void MQTTConnectorClass::Loop()
 
     if(!_active && WiFi.status() == WL_CONNECTED && now - _lastConnectAttempt > 5000)
     {
+        if(_wifiClientmqtt != NULL)
+            delete _wifiClientmqtt;
+
+        _wifiClientmqtt = new WiFiClient();
+
+        _mqttClient->setClient(*_wifiClientmqtt);
         _lastConnectAttempt = now;
         if(!_mqttClient->connect(device_id.c_str(), MQTTUSER, MQTTPASSWORD))
         {
@@ -46,7 +67,11 @@ void MQTTConnectorClass::Loop()
         }
     }
 
-    _mqttClient->loop();
+    if(now - _lastMqTTLoop > 4000)
+    {
+        _lastMqTTLoop = now;
+        _mqttClient->loop();
+    }
 }
 
 bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon, String entity_category)
@@ -93,8 +118,8 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
 
     WebSerialLogger.println("Topic: " + config_topic);
 
-    WebSerialLogger.println("Payload: " + config_payload);
-    bool result = _mqttClient->publish_P(config_topic.c_str(), config_payload.c_str(), true);
+    //WebSerialLogger.println("Payload: " + config_payload);
+    bool result = _mqttClient->publish(config_topic.c_str(), config_payload.c_str(), true);
     if(!result)
     {
         WebSerialLogger.println(" ... error!");
@@ -104,16 +129,65 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
     return result;
 }
 
-void MQTTConnectorClass::PublishSensor(String payload, String component)
+void MQTTConnectorClass::SendPayload(String payload, String component, bool retain)
 {
     if(!_active)
         return;
     String topic = "homeassistant/sensor/" + device_id + "_" + component + "/state";
-    if(!_mqttClient->publish(topic.c_str(), payload.c_str()))
+    if(!_mqttClient->publish(topic.c_str(), payload.c_str(), retain))
     {
-      WebSerialLogger.println("Error publishing data!");
-      WebSerialLogger.println("State: " + String(_mqttClient->state()));
+        WebSerialLogger.println("Error publishing data!");
+        WebSerialLogger.println("State: " + String(_mqttClient->state()));
+
+        if(_mqttClient->state() == -3)
+        {
+            _active = false;
+        }
     }
 }
+
+void MQTTConnectorClass::PublishMessage(String msg, String component, bool retain)
+{
+    MQTTMessages *bt = new MQTTMessages();
+    bt->payload = msg;
+    bt->component = component;
+    bt->Retain = retain;
+
+    while(lock)
+        delay(1);
+
+    lock = true;
+    Tasks->push_back(bt);
+    lock = false;
+}
+
+void MQTTConnectorClass::Task1code(void *pvParameters) 
+{
+    // Add a delay to give the rest of the radio some time to setup
+    delay(15000);
+
+    for(;;) {
+        if(MQTTConnector.Tasks->empty() || !MQTTConnector.isActive())
+        {
+            delay(1000);
+        }
+        else
+        {
+            while(MQTTConnector.lock)
+                delay(15);
+
+            MQTTConnector.lock = true;
+            MQTTMessages *bt = MQTTConnector.Tasks->front();
+            MQTTConnector.lock = false;
+            
+            MQTTConnector.SendPayload(bt->payload, bt->component);
+
+            MQTTConnector.lock = true;
+            MQTTConnector.Tasks->remove(bt);
+            MQTTConnector.lock = false;
+            delete bt;
+        }
+        }
+    }
 
 MQTTConnectorClass MQTTConnector;

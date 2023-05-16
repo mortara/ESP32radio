@@ -2,12 +2,14 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "radio.hpp"
-
+#include "i2cscanner.hpp"
 
 Radio *_radio;
+I2CScanner *_i2cscanner;
 unsigned long _loopStart;
 int _loopCount;
-
+int _loopnum = 150000;
+int mode = 0;
 
 void ScanI2C()
 {
@@ -53,7 +55,7 @@ void setup()
 {
   Serial.begin(115200);
   WebSerialLogger.println("Hello world!");
-  ScanI2C();
+  //ScanI2C();
   _radio = new Radio();
 
 }
@@ -61,19 +63,47 @@ void setup()
 // Main
 void loop()
 {
-  _loopCount++;
-  if(_loopCount == 15000)
-  {
-      unsigned long end = millis();
-      float duration = (float)(end - _loopStart) / (float)15000.0;
-      //Serial.print(duration);
-      WebSerialLogger.println("loop: " + String(duration) + "ms");
-      _loopCount = 0;
-      _loopStart = end;
-  }
+    _loopCount++;
+    if(_loopCount == _loopnum)
+    {
+        unsigned long end = millis();
+        float duration = (float)(end - _loopStart) / (float)_loopnum;
+        //Serial.print(duration);
+        if(mode == 0)
+          WebSerialLogger.println("loop: " + String(duration) + "ms");
+        _loopCount = 0;
+        _loopStart = end;
 
-  
-  _radio->Loop();
+        if(duration > 0.5)
+          _loopnum = 15000;
+
+        if(duration > 5)
+          _loopnum = 1500;
+    }
+
+    if(mode == 0)
+    {
+      char ch = _radio->Loop();
+      switch(ch)
+      {
+        case 'D':
+          ScanI2C();
+          break;
+        case 'S':
+          _radio->Stop();
+
+          _i2cscanner = new I2CScanner();
+          _i2cscanner->setup();
+          mode = 1;
+          break;
+        case 'L':
+          WebSerialLogger.println("loop: " + String(_loopCount));
+          break;
+      }
+    } else if(mode == 1)
+    {
+      _i2cscanner->loop();
+    }
 }
 
 

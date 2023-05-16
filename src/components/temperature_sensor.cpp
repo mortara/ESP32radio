@@ -10,8 +10,9 @@ TemperatureSensor::TemperatureSensor(uint8_t adr) : i2cdevice(adr)
     }
 
     WebSerialLogger.println("Initializing temperature sensor");
-    _bmp = new Adafruit_BMP085();
-    _bmp->begin();
+
+    if(_bmp.begin())
+        _active = true;
 
     _lastRead = millis();
 }
@@ -30,15 +31,29 @@ bool TemperatureSensor::mqttSetup()
     }
 
     MQTTConnector.SetupSensor("Pressure", "sensor", "BMP180", "pressure", " Pa", "mdi:air-filter");
+    MQTTConnector.SetupSensor("Altitude", "sensor", "BMP180", "", "m", "");
     setupmqtt = true;
 
     WebSerialLogger.println("Temperature Sensor mqtt setup done!");
     return true;
 }
 
+void TemperatureSensor::DisplayInfo()
+{
+    WebSerialLogger.print("Temperature = ");
+    WebSerialLogger.print(String(_temperature));
+    WebSerialLogger.println(" *C");
+    WebSerialLogger.print("Pressure = ");
+    WebSerialLogger.print(String(_pressure));
+    WebSerialLogger.println(" Pa");
+    WebSerialLogger.print("Altitude = ");
+    WebSerialLogger.print(String(_altitude));
+    WebSerialLogger.println("m");
+}
+
 void TemperatureSensor::Loop() {
 
-    if(_bmp == NULL)
+    if(!_active)
         return;
 
     unsigned long now = millis();
@@ -50,19 +65,21 @@ void TemperatureSensor::Loop() {
     if(MQTTConnector.isActive() && !setupmqtt)
         mqttSetup();
 
-    float _temperature = _bmp->readTemperature();
-    WebSerialLogger.print("Temperature = ");
-    WebSerialLogger.print(String(_temperature));
-    WebSerialLogger.println(" *C");
+    _temperature = _bmp.readTemperature();
+    _pressure = _bmp.readPressure();
+    _altitude = _bmp.readAltitude();
 
-    float _pressure = _bmp->readPressure();
-    WebSerialLogger.print("Pressure = ");
-    WebSerialLogger.print(String(_pressure));
-    WebSerialLogger.println(" Pa");
-    
     if(setupmqtt)
     {
-        String payload ="{ \"Temperature\": " + String(_temperature) + ", \"Pressure\": " + String(_pressure) + "}";
-        MQTTConnector.PublishSensor(payload, "BMP180");
+        DynamicJsonDocument payload(2048);
+        payload["Temperature"] = String(_temperature);
+        payload["Pressure"] = String(_pressure);
+        payload["Altitude"] = String(_altitude);
+        
+        String state_payload  = "";
+        serializeJson(payload, state_payload);
+        
+        MQTTConnector.PublishMessage(state_payload, "BMP180");
+
     }
 }

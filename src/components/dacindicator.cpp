@@ -10,11 +10,14 @@ DACIndicator::DACIndicator(uint8_t channel, uint16_t minvalue, uint16_t maxvalue
 
     pinMode(_pin, OUTPUT);
     dacWrite(_pin,0);
-    
+    _current = -1;
 }
 
 void DACIndicator::SetValue(uint16_t value)
 {
+    if(_current == value)
+        return;
+
     uint16_t r = _max - _min;
     _current_voltage = (uint8_t)((double)(value - _min) / (double)r * 255.0);
 
@@ -37,16 +40,13 @@ void DACIndicator::SetValue(uint16_t value)
 
 void DACIndicator::SetRange(uint16_t min, uint16_t max)
 {
-    
     _max = max;
     _min = min;
     WebSerialLogger.println("Set PWM range: " + String(_min) + " -> " + String(_max));
 }
 
-void DACIndicator::Loop(char ch)
+void DACIndicator::DisplayInfo()
 {
-    if(ch == 'y')
-    {
-        WebSerialLogger.println("DAC: " + String(_pin) + " Min: " + String(_min) + " Max: " + String(_max) + " Cur: " + String(_current) + " => " + String(_current_voltage));
-    }
+    WebSerialLogger.println("DAC: " + String(_pin) + " Min: " + String(_min) + " Max: " + String(_max) + " Cur: " + String(_current) + " => " + String(_current_voltage));
+    
 }

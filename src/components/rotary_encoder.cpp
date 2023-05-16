@@ -1,61 +1,43 @@
 #include "rotary_encoder.hpp"
 
-
-RotaryEncoder::RotaryEncoder(uint8_t cw, uint8_t ccw, uint8_t sw)
+void RotaryEncoderClass::Setup(uint8_t cw, uint8_t ccw, uint8_t sw)
 {
-    ENC_A = cw;
-    ENC_B = ccw;
     _sw = sw;
 
-     // Set encoder pins
-    pinMode(ENC_A, INPUT);
-    pinMode(ENC_B, INPUT);
+    encoder.attachHalfQuad(cw, ccw);
+    encoder.setCount(0);
     pinMode(_sw, INPUT);
-
-    // Start the serial monitor to show output
-    
+    _lastread = millis();
     WebSerialLogger.println("Rotary encoder started");
+    running = true;
 }
 
-int RotaryEncoder::GetCounter()
+int64_t RotaryEncoderClass::GetCounter()
 {
-    return counter;
+    if(!running)
+      return 0;
+
+    return encoder.getCount();
 }
 
-void RotaryEncoder::Loop()
+void RotaryEncoderClass::Loop()
 {
-    lastCounter = counter;
+    //counter = encoder.getCount();
 
-    // read X and Y analog values
-    _currValueAB  = digitalRead(ENC_A) << 1;
-    _currValueAB |= digitalRead(ENC_B);
-    
-    switch ((_prevValueAB | _currValueAB))
+    unsigned long now = millis();
+
+    if(now - _lastread > 200)
     {
-                                                    //fast MCU
-      //case 0b0001: case 0b1110:                                   //CW states, 1 count  per click
-    case 0b0001: case 0b1110: case 0b1000: case 0b0111:         //CW states, 2 counts per click
-        counter++;
-        break;                                              //fast MCU
-      //case 0b0100: case 0b1011:                                   //CCW states, 1 count  per click
-    case 0b0100: case 0b1011: case 0b0010: case 0b1101:         //CCW states, 2 counts per click
-        counter--;
-        break;
-    }
+      _lastread = now;
 
-    _prevValueAB = _currValueAB << 2;
+      int SW = digitalRead(_sw);
+      if(SW == 0 && SW_OLD != 0)
+        SwitchPressed = true;
+      else
+        SwitchPressed = false;
 
-    int SW = digitalRead(_sw);
-    if(SW == 0 && SW_OLD != 0)
-      SwitchPressed = true;
-    else
-      SwitchPressed = false;
-
-    SW_OLD = SW;
-
-    if(counter != lastCounter)
-    {
-      WebSerialLogger.println("New encoder value: "  + String(counter));
-      
+      SW_OLD = SW;
     }
 }
+
+RotaryEncoderClass RotaryEncoder;

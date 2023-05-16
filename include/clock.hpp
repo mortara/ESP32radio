@@ -5,20 +5,29 @@
 #include <time.h>
 #include "i2cdevice.hpp"
 
+#ifndef CLOCK_H
+#define CLOCK_H
+
 class Clock : i2cdevice
 {
     private:
-        RTC_DS3231 *_rtc;
+        RTC_DS3231 _rtc;
         
         bool _timeset = false;
-        unsigned long _lastUpdate; 
         bool _active = false;
         
+        char _defaultformat[20] = "DD.MM.YYYY hh:mm:ss";
+        char _defaultshortformat[17] = "DD.MM.YYYY hh:mm";
+
     public:
-        Clock(TwoWire *wire);
+        Clock(TwoWire &wire);
 
         bool SetByNTP();
         DateTime Now();
-        void Loop(char ch);
+        String GetDateTimeString(bool seconds = true);
+        bool IsSet();
+        void DisplayInfo();
+
 };
 
+#endif

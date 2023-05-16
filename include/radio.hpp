@@ -52,7 +52,7 @@ class Radio
 {
 
     private:
-        TwoWire *_i2cwire;
+        TwoWire _i2cwire = TwoWire(1);
         WIFIManager *wifi;
         Speaker *_spk;
         VS1053Player *_player;
@@ -69,20 +69,25 @@ class Radio
         ClockDisplay *_clockDisplay;
         DACIndicator *_pwm_indicator_freq;
         DACIndicator *_pwm_indicator_signal;
-        RotaryEncoder *_rotary1;
         TemperatureSensor *_tempSensor1;
         PowerSensor *_powerSensor;
         ClockButtons *_clockButtons;
         
+        uint8_t _currentPreset = 0;
         uint8_t _currentInput = 0;  // The input button pressed on the radio
         uint8_t _currentPlayer = 0; // The selected player or audio source
         uint8_t _currentOutput = 0; // The selected output channel
 
-        uint16_t _lastClockUpdate;
+        bool mqttsetup = false;
+        void setupMQTT();
+        unsigned long _lastClockUpdate;
+        unsigned long _lastDisplayUpdate;
     public:
         Radio();
-        void Loop();
+        char Loop();
         void ExecuteCommand(char ch);
         void SwitchInput(uint8_t newinput);
+        void Stop();
+        void Start();
 
 };

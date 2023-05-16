@@ -16,14 +16,17 @@ class WIFIManager
         WIFICreds _credentials = {WIFISSID, WIFIPASS};
         unsigned long interval = 15000;
         unsigned long _lastConnectionTry = 0;
+        unsigned long _lastMqttupdate = 0;
         TaskHandle_t Task1;
+        void setupMQTT();
+        bool mqttsetup = false;
 
     public:
 
         WIFIManager();
         bool Connect();
         void Disconnect();
-        void Loop(char ch);
+        void Loop();
         void DisplayInfo();
         bool IsConnected();
         unsigned long LastConnectionTry();

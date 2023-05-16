@@ -1,7 +1,7 @@
 #include "preselect_buttons.hpp"
 
 
-PreselectButtons::PreselectButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
+PreselectButtons::PreselectButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -10,35 +10,30 @@ PreselectButtons::PreselectButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(tw
     }
 
     WebSerialLogger.println("Initializing preselect buttons");
-    _address = adr;
 
-    _i2cwire = twowire;
-    _pcf8754 = new PCF8574(_i2cwire,_address);
-    _pcf8754->begin();
-   
-    _pcf8754->pinMode(P0, INPUT);
-    _pcf8754->pinMode(P1, INPUT);
-    _pcf8754->pinMode(P2, INPUT);
-    _pcf8754->pinMode(P3, INPUT);
-    _pcf8754->pinMode(P4, INPUT);
-    _pcf8754->pinMode(P5, INPUT);
-    _pcf8754->pinMode(P6, INPUT);
-    _pcf8754->pinMode(P7, INPUT);
+    _pcf8574 = new PCF8574(&twowire,adr);
+    _pcf8574->begin();
+
+    _pcf8574->pinMode(P0, INPUT);
+    _pcf8574->pinMode(P1, INPUT);
+    _pcf8574->pinMode(P2, INPUT);
+    _pcf8574->pinMode(P3, INPUT);
+    _pcf8574->pinMode(P4, INPUT);
+    _pcf8574->pinMode(P5, INPUT);
+    _pcf8574->pinMode(P6, INPUT);
+    _pcf8574->pinMode(P7, INPUT);
 
     _lastRead = millis();
 }
 
 int PreselectButtons::Loop()
 {
-    if(!isActive())
-        return 0;
-
-    long now = millis();
-    if(now - _lastRead < 100)
+    unsigned long now = millis();
+    if(now - _lastRead < 200 || !isActive())
         return 0;
     _lastRead = now;
         
-    PCF8574::DigitalInput input = _pcf8754->digitalReadAll();
+    PCF8574::DigitalInput input = _pcf8574->digitalReadAll();
 
     int result = input.p0 + 2 * input.p1 + 4 * input.p2 + 8 * input.p3 + 16 * input.p4;
     result += 32 * input.p5 + 64 * input.p6 + 128 * input.p7;

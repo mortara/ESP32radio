@@ -15,7 +15,7 @@ FrequencyDisplay::FrequencyDisplay()
     _u8g2->setContrast(6);
     _u8g2->clearBuffer();					// clear the internal memory
     SetFont(0);
-    _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"  HELLO!  ");
+    _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"HELLO!");
     _u8g2->sendBuffer();
     _lastUpdate = millis();
     
@@ -25,11 +25,15 @@ void FrequencyDisplay::SetFont(uint8_t fontindx)
 {
     if(!_active)
         return;
+    
+    if(_currenFontIndex == fontindx)
+        return;
 
     WebSerialLogger.println("Freq. display set font " + String(fontindx));
 
     _currentFont = _fontsettings[fontindx];
     _u8g2->setFont(_currentFont._font);
+    _currenFontIndex = fontindx;
 }
 
 void FrequencyDisplay::DisplayText(String text, uint8_t font)
@@ -40,7 +44,7 @@ void FrequencyDisplay::DisplayText(String text, uint8_t font)
     if(text == _displayText_original)
         return;
 
-    WebSerialLogger.println("Displaytext: " + text);
+    //WebSerialLogger.println("Displaytext: " + text);
 
     SetFont(font);
 
@@ -73,7 +77,7 @@ void FrequencyDisplay::Loop()
         return;
 
     unsigned long now = millis();
-    if((now - _lastUpdate) < 200)
+    if((now - _lastUpdate) < 300)
         return;
     _lastUpdate = now;
 

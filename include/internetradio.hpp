@@ -7,21 +7,21 @@
 class InternetRadio
 {
     private:
-        WiFiClient *_client;
-        HTTPClient *_http;
-        VS1053Player  *_player ;
-        DACIndicator *_pwmindicator_freq;
-        DACIndicator *_pwmindicator_signal;
+        WiFiClient *_client = NULL;
+        HTTPClient *_http = NULL;
+        VS1053Player  *_player = NULL;
+        DACIndicator *_pwmindicator_freq = NULL;
+        DACIndicator *_pwmindicator_signal = NULL;
         bool _active = false;
         unsigned long bytes_served = 0;
-        uint8_t current_station_preset = 0;
+        uint8_t _current_station_preset = 0;
 
         uint8_t clockdisplaypage = 0;
-        uint16_t clockdisplaypagetimer = 0;
+        unsigned long clockdisplaypagetimer = 0;
 
-        uint16_t _signaltimer = 0;
+        unsigned long _signaltimer = 0;
 
-        bool mqttsetup;
+        bool mqttsetup = false;
         void setupMQTT();
 
         // https://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high
@@ -50,12 +50,13 @@ class InternetRadio
         uint8_t *_mp3buff;
     public:
         InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndicator *signal);
-        void Loop(char ch);
+        void Loop();
         void Stop();
         void Start();
         void StartStream(Station station);
         void SwitchPreset(uint8_t num);
-
+        void DisplayInfo();
         String GetFreqDisplayText();
         String GetClockDisplayText();
+ 
 };

@@ -53,7 +53,7 @@ class FMTuner4735
         char _seekmode = '0';
         unsigned long _seektimer = 0;
         char _rdsBuffer[10];
-        uint16_t _current_station_preset = 0;
+        uint8_t _current_station_preset = 0;
         uint16_t _station_presets[8];
         bool _savemode = false;
        
@@ -62,7 +62,7 @@ class FMTuner4735
         uint8_t _step = 10;
         unsigned long _lastUpdate;
         
-        void setFrequency(u_int16_t freq);
+        uint16_t setFrequency(u_int16_t freq);
 
         char *rdsMsg = NULL;
         char *stationName = NULL;
@@ -75,6 +75,10 @@ class FMTuner4735
         
         uint8_t clockdisplaypage = 0;
         unsigned long clockdisplaypagetimer = 0;
+        unsigned long frequencychangetimeout = 0;
+
+        unsigned long _lastRotaryRead = 0;
+        int64_t _lastRotaryCount = 0;
 
         void checkRDS();
 

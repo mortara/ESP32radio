@@ -1,27 +1,31 @@
 #include <Arduino.h>
 #include "webserial.hpp"
+#include <ESP32Encoder.h>
 
-class RotaryEncoder
+#ifndef ROTARYENCODER_H
+#define ROTARYENCODER_H
+
+class RotaryEncoderClass
 {
     private:
-        volatile int counter = 0;
-        volatile int lastCounter = 0;
+        int64_t counter = 0;
+        int64_t lastCounter = 0;
 
-        volatile uint8_t _prevValueAB = 0;    //previouse state of "A"+"B"
-        volatile uint8_t _currValueAB = 0;    //current   state of "A"+"B"
-
-        uint8_t ENC_A;
-        uint8_t ENC_B;
+        ESP32Encoder encoder;
         uint8_t _sw;
-        int SW_OLD = 0;
-        void read_encoder();
 
+        int SW_OLD = 0;
         
+        unsigned long _lastread;
+        bool running = false;
 
     public:
-        RotaryEncoder(uint8_t cw, uint8_t ccw, uint8_t sw);
+        void Setup(uint8_t cw, uint8_t ccw, uint8_t sw);
         void Loop();
-
         bool SwitchPressed = false;
-        int GetCounter();
+        int64_t GetCounter();
 };
+
+extern RotaryEncoderClass RotaryEncoder;
+
+#endif

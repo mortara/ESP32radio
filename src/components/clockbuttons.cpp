@@ -1,7 +1,7 @@
 #include "clock_buttons.hpp"
 
 
-ClockButtons::ClockButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
+ClockButtons::ClockButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -10,13 +10,12 @@ ClockButtons::ClockButtons(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, a
     }
 
     WebSerialLogger.println("Initializing channel buttons");
-    _address = adr;
 
-    _i2cwire = twowire;
-    _pcf8755 = new PCF8575(_i2cwire,_address);
+    _pcf8755 = new PCF8575(&twowire,adr);
     _pcf8755->begin();
    
-    _pcf8755->pinMode(P0, INPUT);
+    _pcf8755->pinMode(P0, OUTPUT);
+    _pcf8755->digitalWrite(P0, HIGH);
     _pcf8755->pinMode(P1, INPUT);
     _pcf8755->pinMode(P2, INPUT);
     _pcf8755->pinMode(P3, INPUT);
@@ -85,7 +84,7 @@ int ClockButtons::readInputs()
 int ClockButtons::Loop()
 {
     unsigned long now = millis();
-    if(now - _lastRead < 100)
+    if(now - _lastRead < 300)
         return 0;
     _lastRead = now;
 
@@ -94,11 +93,8 @@ int ClockButtons::Loop()
     // Input is read twice for debouncing the switch!
     if(button != 0)
     {
-        if(readInputs() == button)
-        {
-            WebSerialLogger.println("Button " + String(button) + " pressed!");
-            return button;
-        }
+        WebSerialLogger.println("Button " + String(button) + " pressed!");
+        return button;
     }
 
     return 0;

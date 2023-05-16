@@ -16,13 +16,12 @@ class WebSerialLoggerClass
     public:
         WebSerialLoggerClass();
         void Begin();
-        void Loop(char ch);
+        bool IsRunning();
         void print(const char *text);
-        void print(String text);
+        void print(String text = "");
         void println(const char *text);
-        void println(String text);
-        void printf(const char *text, ...);
-
+        void println(String text = "");
+        
         char GetInput();
 };
 #endif

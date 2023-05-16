@@ -1,18 +1,12 @@
 #include "clock.hpp"
 
-Clock::Clock(TwoWire *wire) : i2cdevice(wire, 0x68)
+Clock::Clock(TwoWire &wire) : i2cdevice(wire, 0x68)
 {
-    _rtc = new RTC_DS3231();
-
-    if(_rtc->begin(wire))
+    if(_rtc.begin(&wire))
     {
         WebSerialLogger.println("Clock found! ");
-        char buf2[] = "DD.MM.YYYY hh:mm:ss";
-        WebSerialLogger.println(_rtc->now().toString(buf2));
         _active = true;
     }
-    
-    _lastUpdate = millis();
 }
 
 bool Clock::SetByNTP()
@@ -32,12 +26,18 @@ bool Clock::SetByNTP()
         return false;
     }
 
+    if(time.tm_year == 2000)
+    {
+        WebSerialLogger.println("Invalid DateTime received");
+        return false;
+    }
+
     if(!_active)
         return true;
 
     DateTime now(time.tm_year, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
 
-    _rtc->adjust(now); 
+    _rtc.adjust(now); 
     _timeset = true;
 
     return true;
@@ -56,29 +56,26 @@ DateTime Clock::Now()
         return DateTime();
     }
 
-    return _rtc->now();
+    return _rtc.now();
 }
 
-void Clock::Loop(char ch)
+void Clock::DisplayInfo()
 {
-    switch(ch)
-    {
-        case 'n':
-            char buf2[] = "DD.MM.YYYY hh:mm:ss";
-            WebSerialLogger.println(_rtc->now().toString(buf2));
-            break;
-    }
+    WebSerialLogger.println("Clock active = " + String(_active));
+    WebSerialLogger.println("Clock set by NTP = " + String(_timeset));
+    WebSerialLogger.println("Current date = " + GetDateTimeString());
+    WebSerialLogger.println("DS3231 time = " + String(_rtc.now().toString(_defaultformat)));
+}
 
-    unsigned long now = millis();
-    if(now - _lastUpdate < 15000)
-        return;
+String Clock::GetDateTimeString(bool seconds)
+{
+    if(seconds)
+        return Now().toString(_defaultformat);
 
-    _lastUpdate = now;
+    return Now().toString(_defaultshortformat);
+}
 
-    if(!_timeset && WiFi.isConnected())
-    {
-        if(!SetByNTP())
-            return;
-    }
-
+bool Clock::IsSet()
+{
+    return _timeset;
 }

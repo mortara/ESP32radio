@@ -26,13 +26,10 @@ void Speaker::TurnOff()
     _onoff = false;
 }
 
-void Speaker::ExecuteCommand(char ch)
+void Speaker::Toggle()
 {
-    if (ch == 's') 
-    {
-        if(_onoff)
-            TurnOff();
-        else
-            TurnOn();
-    }
+    if(_onoff)
+        TurnOff();
+    else
+        TurnOn();
 }

@@ -32,7 +32,7 @@ class FrequencyDisplay
         };
 
         FontSetting _currentFont;
-
+        uint8_t _currenFontIndex = -1;
         void updateScreen();
     public:
         FrequencyDisplay();

@@ -6,13 +6,13 @@ VS1053Player::VS1053Player()
     WebSerialLogger.println("Creating vs1053 object");
     _player = new Adafruit_VS1053_FilePlayer(BREAKOUT_RESET, BREAKOUT_MP3_CS, BREAKOUT_XDCS, BREAKOUT_DREQ, BREAKOUT_SD_CS);
     if (! _player->begin()) { // initialise the music player
-        WebSerialLogger.println(F("Couldn't find VS1053, do you have the right pins defined?"));
+        WebSerialLogger.println("Couldn't find VS1053, do you have the right pins defined?");
     }
     _player->setVolume(100, 100);
     //_player->softReset();
 
     if (!SD.begin(BREAKOUT_SD_CS)) {
-        WebSerialLogger.println(F("SD failed, or not present"));
+        WebSerialLogger.println("SD failed, or not present");
     }
     else
         WebSerialLogger.println("SD OK!");

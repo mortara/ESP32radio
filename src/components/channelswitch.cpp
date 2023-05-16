@@ -1,6 +1,6 @@
 #include "channelswitch.hpp"
 
-ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
+ChannelSwitch::ChannelSwitch(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -10,10 +10,8 @@ ChannelSwitch::ChannelSwitch(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire,
     }
 
     WebSerialLogger.println("Initializing Channel switcher");
-    _address = adr;
 
-    _i2cwire = twowire;
-    _relais = new PCF8574(_i2cwire,_address);
+    _relais = new PCF8574(&twowire,adr);
     _relais->begin();
     _running = true;
 
@@ -93,7 +91,4 @@ void ChannelSwitch::SetChannel(uint8_t channel)
     }
 
     _relais->digitalWriteAll(digitalInput);
-
-    _channel = channel;
-
 }

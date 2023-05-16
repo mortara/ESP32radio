@@ -3,17 +3,19 @@
 
 PowerSensor::PowerSensor(uint8_t adr) : i2cdevice(adr)
 {
+    WebSerialLogger.println("Initializing power sensor");
     if(!isActive())
     {
         WebSerialLogger.println("Power sensor not found!");     
         return;   
     }
 
-    WebSerialLogger.println("Initializing power sensor");
-    _ina = new Adafruit_INA219();
-    _ina->begin();
-    _ina->setCalibration_32V_1A();
-    _lastRead = millis();
+    if(_ina.begin())
+    {
+        _ina.setCalibration_32V_1A();
+        _active = true;
+    }
+
 }
 
 bool PowerSensor::mqttSetup()
@@ -32,7 +34,6 @@ bool PowerSensor::mqttSetup()
     MQTTConnector.SetupSensor("BusVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
     MQTTConnector.SetupSensor("ShuntVoltage", "sensor", "INA219", "voltage", "mV", "mdi:flash-triangle");
     MQTTConnector.SetupSensor("LoadVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
-
     MQTTConnector.SetupSensor("Power", "sensor", "INA219", "power", "mW", "mdi:flash-triangle");
 
     setupmqtt = true;
@@ -41,9 +42,28 @@ bool PowerSensor::mqttSetup()
     return true;
 }
 
-void PowerSensor::Loop(char ch) {
+void PowerSensor::DisplayInfo()
+{
+    WebSerialLogger.print("Current = ");
+    WebSerialLogger.print(String(_current));
+    WebSerialLogger.println("mA");
 
-    if(_ina == NULL)
+    WebSerialLogger.print("BusVoltage = ");
+    WebSerialLogger.print(String(_busvoltage));
+    WebSerialLogger.println(" V");
+
+    WebSerialLogger.print("ShuntVoltage = ");
+    WebSerialLogger.print(String(_shuntvoltage));
+    WebSerialLogger.println(" mV");
+
+    WebSerialLogger.print("Power = ");
+    WebSerialLogger.print(String(_power));
+    WebSerialLogger.println(" mW");
+}
+
+void PowerSensor::Loop() {
+
+    if(!_active)
         return;
 
     unsigned long now = millis();
@@ -52,37 +72,27 @@ void PowerSensor::Loop(char ch) {
 
     _lastRead = now;
 
-    if(MQTTConnector.isActive() && !setupmqtt)
+    if(!setupmqtt && MQTTConnector.isActive())
         mqttSetup();
 
-    float _current = _ina->getCurrent_mA();
-    float _busvoltage = _ina->getBusVoltage_V();
-    float _shuntvoltage = _ina->getShuntVoltage_mV();
-    float _loadvoltage = _busvoltage + (_shuntvoltage / 1000);
-    float _power = _ina->getPower_mW();
+    _current = _ina.getCurrent_mA();
+    _busvoltage = _ina.getBusVoltage_V();
+    _shuntvoltage = _ina.getShuntVoltage_mV();
+    _loadvoltage = _busvoltage + (_shuntvoltage / 1000);
+    _power = _ina.getPower_mW();
 
-    if(ch == 'j')
-    {
-        WebSerialLogger.print("Current = ");
-        WebSerialLogger.print(String(_current));
-        WebSerialLogger.println("mA");
-
-        WebSerialLogger.print("BusVoltage = ");
-        WebSerialLogger.print(String(_busvoltage));
-        WebSerialLogger.println(" V");
-
-        WebSerialLogger.print("ShuntVoltage = ");
-        WebSerialLogger.print(String(_shuntvoltage));
-        WebSerialLogger.println(" mV");
-
-        WebSerialLogger.print("Power = ");
-        WebSerialLogger.print(String(_power));
-        WebSerialLogger.println(" mW");
-    }
-    
     if(setupmqtt)
     {
-        String payload ="{ \"Current\": " + String(_current) + ", \"BusVoltage\": " + String(_busvoltage) + ", \"ShuntVoltage\": " + String(_shuntvoltage) + ", \"LoadVoltage\": " + String(_loadvoltage) + ", \"Power\": " + String(_power) + "}";
-        MQTTConnector.PublishSensor(payload, "INA219");
+        DynamicJsonDocument payload(2048);
+        payload["Current"] = String(_current);
+        payload["BusVoltage"] = String(_busvoltage);
+        payload["ShuntVoltage"] = String(_shuntvoltage);
+        payload["LoadVoltage"] = String(_loadvoltage);
+        payload["Power"] = String(_power);
+
+        String state_payload  = "";
+        serializeJson(payload, state_payload);
+        
+        MQTTConnector.PublishMessage(state_payload, "INA219");
     }
 }

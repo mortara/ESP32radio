@@ -11,11 +11,6 @@ InternetRadio::InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndica
 
     _pwmindicator_freq = freq;
     _pwmindicator_signal = signal;
-    _pwmindicator_signal->SetRange(0, 120);
-
-    _http = new HTTPClient();
-    _http->setConnectTimeout(5000);
-    _http->setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
     _signaltimer = millis();
 }
@@ -27,29 +22,8 @@ void InternetRadio::setupMQTT()
 
     WebSerialLogger.println("Setting up Internetradio MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Station", "sensor", "Internetradio", "", "", ""))
-    {
-        WebSerialLogger.println("Could not setup station sensor!");
-        return;
-    }
-
-    if(!MQTTConnector.SetupSensor("RSSI", "sensor", "Internetradio", "signal_strength", "dB", "mdi:sine-wave"))
-    {
-        WebSerialLogger.println("Could not setup signal sensor!");
-        return;
-    }
-
-    if(!MQTTConnector.SetupSensor("Preset", "sensor", "Internetradio", "", "", "mdi:radio"))
-    {
-        WebSerialLogger.println("Could not setup Preset sensor!");
-        return;
-    }
-
-    if(!MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "", "", "mdi:radio"))
-    {
-        WebSerialLogger.println("Could not setup bytesplayed sensor!");
-        return;
-    }
+    MQTTConnector.SetupSensor("Station", "sensor", "Internetradio", "", "", "");
+    MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "", "", "mdi:radio");
 
     WebSerialLogger.println("Internetradio Sensor mqtt setup done!");
 
@@ -58,9 +32,9 @@ void InternetRadio::setupMQTT()
 
 void InternetRadio::SwitchPreset(uint8_t num)
 {
-    WebSerialLogger.print("InternetRadio::SwitchPreset to " + String(num));
-    current_station_preset = num;
-    StartStream(stationlist[current_station_preset]);
+    WebSerialLogger.println("InternetRadio::SwitchPreset to " + String(num));
+    _current_station_preset = num;
+    StartStream(stationlist[_current_station_preset]);
 }
 
 void InternetRadio::StartStream(Station station)
@@ -68,8 +42,23 @@ void InternetRadio::StartStream(Station station)
     Serial.print("connecting to ");
     Serial.println(station.url);
 
-    _client = NULL;
-    
+    if(_http != NULL)
+    {
+        _http->end();
+        delete _http;
+    }
+
+    _http = new HTTPClient();
+    _http->setConnectTimeout(5000);
+    _http->setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
+    if(_client != NULL)
+    {
+        _client->stop();
+        delete _client;
+        _client = NULL;
+    }
+    bytes_served = 0;
     // Your Domain name with URL path or IP address with path
     _http->begin(station.url);
     
@@ -93,9 +82,9 @@ void InternetRadio::StartStream(Station station)
 void InternetRadio::Start()
 {
     WebSerialLogger.println("InternetRadio start ...");
-
+    _pwmindicator_signal->SetRange(0, 120);
     _player->Begin();
-    StartStream(stationlist[current_station_preset]);
+    StartStream(stationlist[_current_station_preset]);
 }
 
 void InternetRadio::Stop()
@@ -105,9 +94,15 @@ void InternetRadio::Stop()
     _player->End();
 }
 
+void InternetRadio::DisplayInfo()
+{
+    WebSerialLogger.println("Current stream: " + String(stationlist[_current_station_preset].name));
+    WebSerialLogger.println("Played " + String(bytes_served) + " bytes");
+}
+
 String InternetRadio::GetFreqDisplayText()
 {
-    Station st = stationlist[current_station_preset];
+    Station st = stationlist[_current_station_preset];
     return String(st.name);
 }
 
@@ -115,7 +110,7 @@ String InternetRadio::GetClockDisplayText()
 {
     if(clockdisplaypage == 0)
     {
-        Station st = stationlist[current_station_preset];
+        Station st = stationlist[_current_station_preset];
         return String(st.name);
     }
 
@@ -140,10 +135,10 @@ String InternetRadio::GetClockDisplayText()
     return "";
 }
 
-void InternetRadio::Loop(char ch)
+void InternetRadio::Loop()
 {
-    uint16_t now = millis();
-    if((now - clockdisplaypagetimer) > 5000)
+    unsigned long now = millis();
+    if((now - clockdisplaypagetimer) > 15000)
     {
         clockdisplaypage++;
         if(clockdisplaypage == 4)
@@ -156,13 +151,20 @@ void InternetRadio::Loop(char ch)
 
         if(mqttsetup)
         {   
-            Station st = stationlist[current_station_preset];
-            String payload ="{ \"Station\": \"" + String(st.name) + "\", \"RSSI\": " + String(WiFi.RSSI()) + ", \"Preset\": " + String(current_station_preset) + ", \"BytesPlayed\": " + String(bytes_served) + "}";
-            MQTTConnector.PublishSensor(payload, "Internetradio");
+            Station st = stationlist[_current_station_preset];
+
+            DynamicJsonDocument payload(2048);
+            payload["Station"] = String(st.name);
+            payload["BytesPlayed"] = String(bytes_served);
+
+            String state_payload  = "";
+            serializeJson(payload, state_payload);
+            
+            MQTTConnector.PublishMessage(state_payload, "Internetradio");
         }
     }
 
-    if(now - _signaltimer > 500)
+    if(now - _signaltimer > 1000)
     {
         _pwmindicator_signal->SetValue((uint16_t)abs(WiFi.RSSI()));
         _signaltimer = now;
@@ -170,8 +172,9 @@ void InternetRadio::Loop(char ch)
 
     if(_client != NULL && _client->connected())
     {
-        if (_player->ReadyForData()) {
-                if (_client->available() >= MP3buffersize) {
+        if (_player->ReadyForData()) 
+        {
+            if (_client->available() >= MP3buffersize) {
                 //Serial.println("playing data");
                 // The buffer size 64 seems to be optimal. At 32 and 128 the sound might be brassy.
                 uint8_t bytesread = _client->read(_mp3buff, MP3buffersize);
@@ -179,8 +182,8 @@ void InternetRadio::Loop(char ch)
                 if(bytesread > 0)
                 {
                     _player->PlayData(_mp3buff, bytesread);
-                    if(bytesread != MP3buffersize)
-                        WebSerialLogger.println("Data buffer != " + String(MP3buffersize) + " bytes");
+                    /*if(bytesread != MP3buffersize)
+                        WebSerialLogger.println("Data buffer != " + String(MP3buffersize) + " bytes");*/
                 }
                 else
                     WebSerialLogger.println("no data in buffer");
@@ -191,14 +194,8 @@ void InternetRadio::Loop(char ch)
     } 
     else if(WiFi.isConnected())
     {
-        delay(100);
         WebSerialLogger.println("Try to connect ...");
-        StartStream(stationlist[current_station_preset]);
+        StartStream(stationlist[_current_station_preset]);
     }
 
-    if (ch == 'i') 
-    {
-        WebSerialLogger.println("Played " + String(bytes_served) + " bytes");
-    }
-    
 }
