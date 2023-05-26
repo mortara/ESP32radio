@@ -16,11 +16,14 @@ class DACIndicator
         uint8_t _pin = 0;
         
     public:
-        DACIndicator(uint8_t pwmpin, uint16_t minvalue, uint16_t maxvalue, uint16_t startvalue);
-
+        void Setup(uint8_t pwmpin, uint16_t minvalue, uint16_t maxvalue, uint16_t startvalue);
         void SetValue(uint16_t val);
         void SetRange(uint16_t min, uint16_t max);
         void DisplayInfo();
 };
+
+extern DACIndicator FrequencyIndicator;
+extern DACIndicator SignalIndicator;
+
 
 #endif

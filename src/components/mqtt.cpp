@@ -36,7 +36,7 @@ MQTTConnectorClass::MQTTConnectorClass()
 
 bool MQTTConnectorClass::isActive()
 {
-    if(!WiFi.isConnected())
+    if(WiFi.status() != WL_CONNECTED)
         _active = false;
 
     return _active;
@@ -174,7 +174,7 @@ void MQTTConnectorClass::Task1code(void *pvParameters)
         else
         {
             while(MQTTConnector.lock)
-                delay(15);
+                delay(1);
 
             MQTTConnector.lock = true;
             MQTTMessages *bt = MQTTConnector.Tasks->front();

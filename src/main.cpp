@@ -74,6 +74,11 @@ void loop()
         _loopCount = 0;
         _loopStart = end;
 
+        _loopnum = 50000;
+
+        if(duration > 0.01)
+          _loopnum = 25000;
+
         if(duration > 0.5)
           _loopnum = 15000;
 
@@ -87,6 +92,7 @@ void loop()
       switch(ch)
       {
         case 'D':
+          _radio->Stop();
           ScanI2C();
           break;
         case 'S':

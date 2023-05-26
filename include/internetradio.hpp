@@ -7,11 +7,9 @@
 class InternetRadio
 {
     private:
-        WiFiClient *_client = NULL;
-        HTTPClient *_http = NULL;
-        VS1053Player  *_player = NULL;
-        DACIndicator *_pwmindicator_freq = NULL;
-        DACIndicator *_pwmindicator_signal = NULL;
+        
+        HTTPClient _http;
+       
         bool _active = false;
         unsigned long bytes_served = 0;
         uint8_t _current_station_preset = 0;
@@ -47,12 +45,12 @@ class InternetRadio
         {"http://dispatcher.rndfnk.com/rbb/rbb888/live/mp3/mid","RBB"},
         {"http://rnrw.cast.addradio.de/rnrw-0182/deinrock/low/stream.mp3","NRW Rockradio"}};
         
-        uint8_t *_mp3buff;
+        
     public:
-        InternetRadio(VS1053Player *player, DACIndicator *freq, DACIndicator *signal);
+        InternetRadio();
         void Loop();
         void Stop();
-        void Start();
+        void Start(uint8_t preset);
         void StartStream(Station station);
         void SwitchPreset(uint8_t num);
         void DisplayInfo();

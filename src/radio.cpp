@@ -1,7 +1,5 @@
 #include "radio.hpp"
 
-
-
 Radio::Radio()
 {
     /*
@@ -31,34 +29,33 @@ Radio::Radio()
     _clockDisplay = new ClockDisplay(0x27);
     _clockDisplay->DisplayText("Starte I2C Bus 2 ...",0);
 
-
     _i2cwire.begin(33,32);
 
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
 
     _clockDisplay->DisplayText("Starte WIFI ...",0);
-    wifi = new WIFIManager();
+    WIFIManager.StartUp();
 
     _clockDisplay->DisplayText("Starte RTC ...",0);
-    _clock = new Clock(_i2cwire);
+    _clock = new Clock(Wire);
 
     _clockDisplay->DisplayText("Starte Kanalrelais ...",0);
     _channel = new ChannelSwitch(_i2cwire, 0x24);
 
     _clockDisplay->DisplayText("Starte VS1053 ...",0);
-    _player = new VS1053Player();
-    _pwm_indicator_freq = new DACIndicator(26, 8800,10800, 8800);
-    _pwm_indicator_signal = new DACIndicator(25, 0,5, 0);
+ 
+    FrequencyIndicator.Setup(26, 8800,10800, 8800);
+    SignalIndicator.Setup(25, 0,5, 0);
 
     _clockDisplay->DisplayText("Starte Si4735 ...",0);
-    _fmtuner = new FMTuner4735(_pwm_indicator_freq, _pwm_indicator_signal);
+    _fmtuner = new FMTuner4735();
 
     _clockDisplay->DisplayText("Starte Internetradio ...",0);
-    _inetRadio = new InternetRadio(_player, _pwm_indicator_freq, _pwm_indicator_signal);
+    _inetRadio = new InternetRadio();
 
     _clockDisplay->DisplayText("Starte Bluetooth ...",0);
-    _bluetoothplayer = new BlueToothPlayer(_player);
+    _bluetoothplayer = new BlueToothPlayer();
 
     _clockDisplay->DisplayText("Starte Frontelemente ...",0);
     _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
@@ -140,8 +137,8 @@ void Radio::ExecuteCommand(char ch)
             SwitchInput(INPUT_INET);
             break;
         case 'j':
-            _pwm_indicator_freq->DisplayInfo();
-            _pwm_indicator_signal->DisplayInfo();
+            FrequencyIndicator.DisplayInfo();
+            SignalIndicator.DisplayInfo();
             _powerSensor->DisplayInfo();
             _tempSensor1->DisplayInfo();
             _clock->DisplayInfo();
@@ -158,10 +155,10 @@ void Radio::ExecuteCommand(char ch)
             _spk->Toggle();
             break;
         case 'v':
-            wifi->Connect();
+            WIFIManager.Connect();
             break;
         case 'w':
-            wifi->DisplayInfo();
+            WIFIManager.DisplayInfo();
             break;
         case '1':
         case '2':
@@ -171,13 +168,15 @@ void Radio::ExecuteCommand(char ch)
         case '6':
         case '7':
         case '8':
-            int preset = ch - '0';
+            int preset = ch - '1';
             WebSerialLogger.println("Switch to preset: " + String(ch));
-            _preselectLeds->SetLed(preset-1);
+            _preselectLeds->SetLed(preset);
             if(_currentOutput == OUTPUT_SI47XX)
-                _fmtuner->SwitchPreset(preset - 1);
+                _fmtuner->SwitchPreset(preset);
             else if(_currentInput == INPUT_INET)
-                _inetRadio->SwitchPreset(preset - 1);
+                _inetRadio->SwitchPreset(preset);
+
+            _currentPreset = preset;
             break;
     }
 }
@@ -198,6 +197,9 @@ void Radio::setupMQTT()
     MQTTConnector.SetupSensor("ChipCores", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("CPUFreqpCores", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("ChipModel", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("FrequencyDisplay", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("ClockDisplay1", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("ClockDisplay2", "sensor", "ESP32Radio", "", "", "");
     WebSerialLogger.println("mqtt setup done!");
 
     mqttsetup = true;
@@ -246,7 +248,7 @@ char Radio::Loop()
             case 64: ch = '7'; break;
             case 128: ch = '8'; break;
         }
-        _currentPreset = ch - '1';
+        
     }
 
     int btn = _tunerbuttons->Loop();
@@ -283,12 +285,12 @@ char Radio::Loop()
         
     } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
-        _player->ExecuteCommand(ch);
+        MP3Player.ExecuteCommand(ch);
         _inetRadio->Loop();
         
     } else if(_currentPlayer == PLAYER_BT)
     {
-        _player->ExecuteCommand(ch);
+        MP3Player.ExecuteCommand(ch);
         _bluetoothplayer->Loop(ch);
     }
 
@@ -296,18 +298,23 @@ char Radio::Loop()
     if(now - _lastDisplayUpdate > 100)
     {
         _lastDisplayUpdate = now;
+        int freqfront = 0;
         if(_currentPlayer == PLAYER_SI47XX)
         {
-            _freq_display->DisplayText(_fmtuner->GetFreqDisplayText(),1);
-            _clockDisplay->DisplayText(_fmtuner->GetClockDisplayText(), 0);
+            _clockDisplayText0 = _fmtuner->GetClockDisplayText();
+            _frequencyDisplayText = _fmtuner->GetFreqDisplayText();
+            freqfront = 1;
         } else if(_currentPlayer == PLAYER_WEBRADIO)
         {
-            _clockDisplay->DisplayText(_inetRadio->GetClockDisplayText(), 0);
-            _freq_display->DisplayText(_inetRadio->GetFreqDisplayText(),0);
+            _clockDisplayText0 = _inetRadio->GetClockDisplayText();
+            _frequencyDisplayText = _inetRadio->GetFreqDisplayText();           
         } else
         {
-            _clockDisplay->DisplayText("BLUETOOTH",0);
+            _clockDisplayText0 = "BLUETOOTH";
         }
+
+        _clockDisplay->DisplayText(_clockDisplayText0, 0);
+        _freq_display->DisplayText(_frequencyDisplayText, freqfront);
 
         _freq_display->Loop();
         _clockDisplay->Loop();
@@ -318,11 +325,11 @@ char Radio::Loop()
         _lastClockUpdate = millis();
         _tempSensor1->Loop();
         _powerSensor->Loop();
-        wifi->Loop();
-        if(!wifi->IsConnected() && _lastClockUpdate - wifi->LastConnectionTry() > 10000)
+        WIFIManager.Loop();
+        if(!WIFIManager.IsConnected() && _lastClockUpdate - WIFIManager.LastConnectionTry() > 10000)
         {
             _clockDisplay->DisplayText("Verbinde WIFI ...",0);
-            if(!wifi->Connect())
+            if(!WIFIManager.Connect())
             {
                 WebSerialLogger.println("Could not connect to WIFI network!");
             }
@@ -333,10 +340,8 @@ char Radio::Loop()
         if(WiFi.isConnected() && !WebSerialLogger.IsRunning())
             WebSerialLogger.Begin();
 
-        if(!_clock->IsSet() && WiFi.isConnected())
-            _clock->SetByNTP();
-
-        _clockDisplay->DisplayText(_clock->GetDateTimeString(false), 1);
+        _clockDisplayText1 = _clock->GetDateTimeString(false);
+        _clockDisplay->DisplayText(_clockDisplayText1, 1);
 
         if(WiFi.isConnected() && MQTTConnector.isActive() && !mqttsetup)
             setupMQTT();
@@ -351,6 +356,10 @@ char Radio::Loop()
         payload["ChipCores"] = String(ESP.getChipCores());
         payload["CPUFreqpCores"] = String(ESP.getCpuFreqMHz());
         payload["ChipModel"] = String(ESP.getChipModel());
+
+        payload["FrequencyDisplay"] = _frequencyDisplayText;
+        payload["ClockDisplay1"] = _clockDisplayText0;
+        payload["ClockDisplay2"] = _clockDisplayText1;
 
         String state_payload  = "";
         serializeJson(payload, state_payload);
@@ -409,23 +418,25 @@ void Radio::SwitchInput(uint8_t newinput)
         WebSerialLogger.println("Starting new player");
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
-            _fmtuner->Start(newinput - 1);
+            _fmtuner->Start(newinput - 1, _currentPreset);
         else if(new_player == PLAYER_BT)
             _bluetoothplayer->Start();
         else if(new_player == PLAYER_WEBRADIO)
         {
-            if(!wifi->IsConnected())
-                if(!wifi->Connect())
+            if(!WIFIManager.IsConnected())
+                if(!WIFIManager.Connect())
                 {
                     WebSerialLogger.println("Could not connect to WIFI network!");
                 }
                     
-            _inetRadio->Start();
+            _inetRadio->Start(_currentPreset);
         }
     }
 
     if(new_player == PLAYER_SI47XX)
+    {
         _fmtuner->SwitchBand(newinput - 1);
+    }
 
     if(new_output != _currentOutput)
     {

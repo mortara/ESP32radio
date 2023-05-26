@@ -38,9 +38,6 @@ class FMTuner4735
         SI4735  *_radio;
         bool _active = false;
 
-        DACIndicator *_pwmindicator_freq;
-        DACIndicator *_pwmindicator_signal;
-
         bool mqttsetup = false;
         void setupMQTT();
         void sendMQTTState();
@@ -150,10 +147,10 @@ class FMTuner4735
         };
 
     public:
-        FMTuner4735(DACIndicator *freq, DACIndicator *signal);
+        FMTuner4735();
         void Loop(char ch);
         void Stop();
-        void Start(uint8_t band);
+        void Start(uint8_t band, uint8_t preset);
         void SwitchPreset(uint8_t num);
         void SwitchBand(uint8_t band);
         void DisplayInfo();

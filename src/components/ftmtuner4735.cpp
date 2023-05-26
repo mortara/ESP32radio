@@ -2,12 +2,9 @@
 #include "mqtt.hpp"
 #include "rotary_encoder.hpp"
 
-FMTuner4735::FMTuner4735(DACIndicator *freq, DACIndicator *signal)
+FMTuner4735::FMTuner4735()
 {
     WebSerialLogger.println("Start Si4735 ...");
-
-    _pwmindicator_freq = freq;
-    _pwmindicator_signal = signal;
 
     digitalWrite(SI7435_RESET_PIN, HIGH);
     //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
@@ -52,7 +49,7 @@ void FMTuner4735::setupMQTT()
     MQTTConnector.SetupSensor("RSSI", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
     MQTTConnector.SetupSensor("SNR", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
     MQTTConnector.SetupSensor("RDSMSG", "sensor", "SI4735", "", "", "mdi:message-processing");
-    
+    MQTTConnector.SetupSensor("BandData", "sensor", "SI4735", "", "", "mdi:radio-tower");
     WebSerialLogger.println("si4735 Sensor mqtt setup done!");
 
     mqttsetup = true;
@@ -72,13 +69,21 @@ void FMTuner4735::sendMQTTState()
     payload["Preset"] = _current_station_preset;
     payload["RDSMSG"] = RDSMessage;
 
+    char str[200];
+    if (b.bandType == FM_BAND_TYPE)
+        sprintf(str,"Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+    else
+        sprintf(str,"Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabAmStep[b.currentStepIdx], bandwidthAM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+
+    payload["BandData"] = String(str);
+
     String state_payload  = "";
     serializeJson(payload, state_payload);
     
     MQTTConnector.PublishMessage(state_payload, "SI4735");
 }
 
-void FMTuner4735::Start(uint8_t band)
+void FMTuner4735::Start(uint8_t band, uint8_t preset)
 {
     if(!_active)
         return;
@@ -86,11 +91,13 @@ void FMTuner4735::Start(uint8_t band)
     WebSerialLogger.println("FMTuner start ...");
 
     
-    _pwmindicator_signal->SetRange(0, 127);
+    SignalIndicator.SetRange(0, 127);
     
     SwitchBand(band);
     _radio->setVolume(_volume);
     
+    SwitchPreset(preset);
+
     DisplayInfo();
 }
 
@@ -169,7 +176,7 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     currentStepIdx = b.currentStepIdx;
     _currentBand = bandIdx;
 
-    _pwmindicator_freq->SetRange(b.minimumFreq, b.maximumFreq);
+    FrequencyIndicator.SetRange(b.minimumFreq, b.maximumFreq);
 
     LoadPresets();
 
@@ -205,7 +212,7 @@ uint16_t FMTuner4735::setFrequency(u_int16_t freq)
 
     _radio->setFrequency(freq);
     currentFrequency = _radio->getCurrentFrequency();
-    _pwmindicator_freq->SetValue(currentFrequency);
+    FrequencyIndicator.SetValue(currentFrequency);
     return currentFrequency;
 }
 
@@ -454,7 +461,7 @@ void FMTuner4735::Loop(char ch)
     if(now - _lastUpdate > 500)
     {
         _radio->getCurrentReceivedSignalQuality();
-        _pwmindicator_signal->SetValue(_radio->getCurrentRSSI());
+        SignalIndicator.SetValue(_radio->getCurrentRSSI());
         _lastUpdate = now;
     }
 

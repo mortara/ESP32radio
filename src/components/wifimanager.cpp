@@ -1,14 +1,16 @@
 #include "wifimanager.hpp"
 #include "mqtt.hpp"
 
-WIFIManager::WIFIManager()
+void WIFIManagerClass::StartUp()
 {
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(true);
     //Connect();
+
+    WiFi.setHostname("ESP32Radio");
 }
 
-bool WIFIManager::Connect()
+bool WIFIManagerClass::Connect()
 {
     if(WiFi.status() == WL_CONNECTED || connecting)
         return true;
@@ -34,7 +36,7 @@ bool WIFIManager::Connect()
     return true;
 }
 
-void WIFIManager::setupMQTT()
+void WIFIManagerClass::setupMQTT()
 {
     if(mqttsetup)
         return;
@@ -55,13 +57,13 @@ void WIFIManager::setupMQTT()
     mqttsetup = true;
 }
 
-void WIFIManager::Disconnect()
+void WIFIManagerClass::Disconnect()
 {
     WebSerialLogger.println("disonnecting from WiFi ..");
     WiFi.disconnect();
 }
 
-void WIFIManager::DisplayInfo(){
+void WIFIManagerClass::DisplayInfo(){
      
     WebSerialLogger.print("[*] Network information for ");
     WebSerialLogger.println(_credentials.SSID);
@@ -79,17 +81,17 @@ void WIFIManager::DisplayInfo(){
     
 }
 
-bool WIFIManager::IsConnected()
+bool WIFIManagerClass::IsConnected()
 {
     return connected;
 }
 
-unsigned long WIFIManager::LastConnectionTry()
+unsigned long WIFIManagerClass::LastConnectionTry()
 {
     return _lastConnectionTry;
 }
 
-void WIFIManager::Loop()
+void WIFIManagerClass::Loop()
 {
     unsigned long currentMillis = millis();
 
@@ -132,3 +134,5 @@ void WIFIManager::Loop()
         _lastConnectionTry = currentMillis;
     }
 }
+
+WIFIManagerClass WIFIManager;

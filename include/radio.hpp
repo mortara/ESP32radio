@@ -53,9 +53,8 @@ class Radio
 
     private:
         TwoWire _i2cwire = TwoWire(1);
-        WIFIManager *wifi;
         Speaker *_spk;
-        VS1053Player *_player;
+
         ChannelSwitch *_channel;
         FMTuner4735 *_fmtuner;
         InternetRadio *_inetRadio;
@@ -67,8 +66,7 @@ class Radio
         Clock *_clock;
         FrequencyDisplay *_freq_display;
         ClockDisplay *_clockDisplay;
-        DACIndicator *_pwm_indicator_freq;
-        DACIndicator *_pwm_indicator_signal;
+        
         TemperatureSensor *_tempSensor1;
         PowerSensor *_powerSensor;
         ClockButtons *_clockButtons;
@@ -82,6 +80,10 @@ class Radio
         void setupMQTT();
         unsigned long _lastClockUpdate;
         unsigned long _lastDisplayUpdate;
+
+        String _frequencyDisplayText;
+        String _clockDisplayText0;
+        String _clockDisplayText1;
     public:
         Radio();
         char Loop();

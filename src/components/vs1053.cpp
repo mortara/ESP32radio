@@ -40,10 +40,10 @@ void VS1053Player::SetVolume(uint8_t vol)
     _player->setVolume(vol, vol);
 }
 
-void VS1053Player::PlayData(uint8_t *buffer, uint8_t size)
+void VS1053Player::PlayData(uint8_t size)
 {
     //Serial.println("playing data on vs1053");
-    _player->playData(buffer, size);
+    _player->playData(Mp3buffer, size);
 }
 
 bool VS1053Player::ReadyForData()
@@ -66,3 +66,5 @@ void VS1053Player::ExecuteCommand(char ch)
         _player->sineTest(0x44, 500);
     }
 }
+
+VS1053Player MP3Player;

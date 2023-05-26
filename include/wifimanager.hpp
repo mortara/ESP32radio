@@ -3,12 +3,15 @@
 #include "secrets.h"
 #include "webserial.hpp"
 
+#ifndef WIFIMANAGER_H
+#define WIFIMANAGER_H
+
 typedef struct {
     String SSID;  //stream url
     String PASS; //stations name
 } WIFICreds;
 
-class WIFIManager
+class WIFIManagerClass
 {
     private:
         bool connecting = false;
@@ -23,7 +26,7 @@ class WIFIManager
 
     public:
 
-        WIFIManager();
+        void StartUp();
         bool Connect();
         void Disconnect();
         void Loop();
@@ -31,3 +34,7 @@ class WIFIManager
         bool IsConnected();
         unsigned long LastConnectionTry();
 };
+
+extern WIFIManagerClass WIFIManager;
+
+#endif

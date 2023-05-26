@@ -2,23 +2,30 @@
 
 Clock::Clock(TwoWire &wire) : i2cdevice(wire, 0x68)
 {
-    if(_rtc.begin(&wire))
-    {
-        WebSerialLogger.println("Clock found! ");
-        _active = true;
-    }
+    _rtc.begin();
+
+    setSyncProvider(_rtc.get);   // the function to get the time from the RTC
+
+    setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
+    tzset();
+
+    if(timeStatus() != timeSet)
+        Serial.println("Unable to sync with the RTC");
+    else
+        Serial.println("RTC has set the system time");
+    _active = true;
+    
 }
 
 bool Clock::SetByNTP()
 {
     WebSerialLogger.println("Setting time by NTP Server");
 
-    configTime(0,0, "ptbtime1.ptb.de");
+    configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "ptbtime1.ptb.de", "ptbtime2.ptb.de", "ptbtime3.ptb.de");
+    //configTime(0,0, "ptbtime1.ptb.de");
 
-    setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
-    tzset();
-
-    tm time;
+    tm time = {0};
+    time.tm_isdst = -1;
 
     if(!getLocalTime(&time))
     {
@@ -26,37 +33,25 @@ bool Clock::SetByNTP()
         return false;
     }
 
-    if(time.tm_year == 2000)
-    {
-        WebSerialLogger.println("Invalid DateTime received");
-        return false;
-    }
-
     if(!_active)
         return true;
 
-    DateTime now(time.tm_year, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
+    WebSerialLogger.println("dst = " + String(time.tm_isdst));
 
-    _rtc.adjust(now); 
+    time_t now = mktime(&time);
+    
+    _rtc.set(now); 
+    
     _timeset = true;
+    time_t timeSinceEpoch = mktime(&time);
+    now = _rtc.get();
+    tmElements_t tme;
+    _rtc.read(tme);
+    WebSerialLogger.println("tme = " + TimeTToString(tme, true));
+    WebSerialLogger.println("now = " + GetDateTimeString(now));
+    WebSerialLogger.println("timeSinceEpoch = " + GetDateTimeString(timeSinceEpoch));
 
     return true;
-}
-
-DateTime Clock::Now()
-{
-    if(!_active)
-    {
-        tm time;
-        if(getLocalTime(&time))
-        {
-            return DateTime(time.tm_year, time.tm_mon + 1, time.tm_mday, time.tm_hour, time.tm_min, time.tm_sec);
-        }
-
-        return DateTime();
-    }
-
-    return _rtc.now();
 }
 
 void Clock::DisplayInfo()
@@ -64,18 +59,55 @@ void Clock::DisplayInfo()
     WebSerialLogger.println("Clock active = " + String(_active));
     WebSerialLogger.println("Clock set by NTP = " + String(_timeset));
     WebSerialLogger.println("Current date = " + GetDateTimeString());
-    WebSerialLogger.println("DS3231 time = " + String(_rtc.now().toString(_defaultformat)));
+    WebSerialLogger.println("DS3231 time = " + String(_rtc.get()));
+}
+
+String Clock::TimeTToString(tmElements_t time, bool seconds)
+{
+    return FormatDateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute,time.Second, seconds);
+}
+
+String Clock::TimeTToString(tm time, bool seconds)
+{
+    return FormatDateTime(time.tm_year+1900, time.tm_mon+1, time.tm_mday, time.tm_hour, time.tm_min,time.tm_sec, seconds);
+}
+
+String Clock::GetDateTimeString(time_t time, bool seconds)
+{
+    return FormatDateTime(year(time), month(time), day(time), hour(time), minute(time),second(time), seconds);
+}
+
+String Clock::FormatDateTime(int year, int month, int day, int hour, int minute, int seconds, bool showseconds)
+{
+    String y = String(year);
+    String m = String(month);
+    if(m.length() == 1)
+        m = "0" + m;
+
+    String d = String(day);
+    if(d.length() == 1)
+        d = "0" + d;
+
+    String h = String(hour);
+    if(h.length() == 1)
+       h  = "0" + h;
+
+    String mi = String(minute);
+    if(mi.length() == 1)
+        mi = "0" + mi;
+
+    String s = String(seconds);
+    if(s.length() == 1)
+        s = "0" + s;
+
+    String result = d + "." + m + "." + y + " " + h + ":" + mi;
+    if(seconds)
+        result = result + ":" + s;
+
+    return result;
 }
 
 String Clock::GetDateTimeString(bool seconds)
 {
-    if(seconds)
-        return Now().toString(_defaultformat);
-
-    return Now().toString(_defaultshortformat);
-}
-
-bool Clock::IsSet()
-{
-    return _timeset;
+    return FormatDateTime(year(), month(), day(), hour(), minute(),second(), seconds);
 }

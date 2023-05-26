@@ -35,10 +35,15 @@ void ClockDisplay::DisplayText(String text, uint8_t row)
     while(t1.length() < 16)
         t1 = t1 + " ";
 
+    _lcd->setCursor(0,row);
+
     if(t1.length() <= 16)
     {
-        _lcd->setCursor(0,row);
         _lcd->print(t1);
+    }
+    else
+    {
+        _lcd->print(t1.substring(0,15));
     }
 }
 

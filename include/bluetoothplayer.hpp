@@ -16,14 +16,12 @@ class BlueToothPlayer
         
         void handle_stream();
        
-        VS1053Player  *_player ;
-
         #define BUFFSIZE 32 
         uint8_t *_mp3buff;
         bool _active = false;
 
     public:
-        BlueToothPlayer(VS1053Player *player);
+        BlueToothPlayer();
         void Loop(char ch);
         void Stop();
         void Start();

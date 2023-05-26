@@ -101,9 +101,4 @@ void FrequencyDisplay::Loop()
         updateScreen();
         _update = false;
     }
-
-    
 }
-
-
-

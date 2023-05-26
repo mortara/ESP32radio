@@ -16,6 +16,7 @@
 
 // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
 #define BREAKOUT_DREQ 4       // VS1053 Data request, ideally an Interrupt pin
+#define MP3buffersize 32
 
 class VS1053Player
 {
@@ -30,9 +31,13 @@ class VS1053Player
         void Begin();
         void End();
         void SetVolume(uint8_t vol);
-        void PlayData(uint8_t *buffer, uint8_t size);
+        void PlayData(uint8_t size);
         bool ReadyForData();
         void ExecuteCommand(char ch);
+
+        uint8_t Mp3buffer[MP3buffersize];
 };
+
+extern VS1053Player MP3Player;
 
 #endif

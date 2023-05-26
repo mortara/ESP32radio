@@ -1,6 +1,6 @@
 #include "dacindicator.hpp"
 
-DACIndicator::DACIndicator(uint8_t channel, uint16_t minvalue, uint16_t maxvalue, uint16_t startvalue)
+void DACIndicator::Setup(uint8_t channel, uint16_t minvalue, uint16_t maxvalue, uint16_t startvalue)
 {
     WebSerialLogger.println("Initializing DAC indicator " + String(channel));
 
@@ -18,8 +18,17 @@ void DACIndicator::SetValue(uint16_t value)
     if(_current == value)
         return;
 
-    uint16_t r = _max - _min;
-    _current_voltage = (uint8_t)((double)(value - _min) / (double)r * 255.0);
+    
+    float r = (float)_max - (float)_min;
+    float d = (float)value - (float)_min;
+
+    float newvoltage = d / r * 255.0f;
+    if(newvoltage < 0)
+    {
+        WebSerialLogger.println("DAC Voltage below zero! " + String(value) + ">" + String(newvoltage));
+        newvoltage = 0;
+    }
+    _current_voltage = (uint8_t)newvoltage;
 
     //long pwmValue = map(value, 0, 1023, _min,_max);
     //Serial.println("DAC PIN: " + String(_pin) +  " " + String(value) + " = " + String(v)); 
@@ -50,3 +59,6 @@ void DACIndicator::DisplayInfo()
     WebSerialLogger.println("DAC: " + String(_pin) + " Min: " + String(_min) + " Max: " + String(_max) + " Cur: " + String(_current) + " => " + String(_current_voltage));
     
 }
+
+DACIndicator FrequencyIndicator;
+DACIndicator SignalIndicator;
