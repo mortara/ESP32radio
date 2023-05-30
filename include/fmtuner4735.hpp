@@ -52,8 +52,7 @@ class FMTuner4735
         char _rdsBuffer[10];
         uint8_t _current_station_preset = 0;
         uint16_t _station_presets[8];
-        bool _savemode = false;
-       
+        
         uint8_t _currentBand = 99;
         uint8_t _smallstep = 5;
         uint8_t _step = 10;
@@ -155,7 +154,6 @@ class FMTuner4735
         void SwitchBand(uint8_t band);
         void DisplayInfo();
         void SaveCurrentChannel(uint8_t preset);
-        void SetSaveMode(bool onoff);
         void SavePresets();
         void LoadPresets();
         String GetFreqDisplayText();

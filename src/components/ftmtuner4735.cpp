@@ -1,6 +1,7 @@
 #include "fmtuner4735.hpp"
 #include "mqtt.hpp"
 #include "rotary_encoder.hpp"
+#include "tunerbuttons.hpp"
 
 FMTuner4735::FMTuner4735()
 {
@@ -204,10 +205,10 @@ uint16_t FMTuner4735::setFrequency(u_int16_t freq)
     Band b = _bands[_currentBand];
     uint16_t fwidth = b.maximumFreq - b.minimumFreq;
 
-    if(freq < b.minimumFreq)
+    while(freq < b.minimumFreq)
         freq += fwidth;
 
-    if(freq > b.maximumFreq)
+    while(freq > b.maximumFreq)
         freq -= fwidth;
 
     _radio->setFrequency(freq);
@@ -249,7 +250,7 @@ void FMTuner4735::DisplayInfo()
 
     WebSerialLogger.println("Volume: " + String(_volume));
     
-    if(_savemode)
+    if(TunerButtons.SavePresetButtonPressed)
         WebSerialLogger.println("Preset save mode is: on");
     else
         WebSerialLogger.println("Preset save mode is: off");
@@ -295,11 +296,6 @@ String FMTuner4735::GetClockDisplayText()
         t = t.substring(0,16);
 
     return t;
-}
-
-void FMTuner4735::SetSaveMode(bool onoff)
-{
-    _savemode = onoff;
 }
 
 void FMTuner4735::SwitchPreset(uint8_t num)
@@ -470,7 +466,7 @@ void FMTuner4735::Loop(char ch)
         _radio->getCurrentReceivedSignalQuality();
         uint8_t rssi = _radio->getCurrentRSSI();
         uint8_t snr = _radio->getCurrentSNR();
-        if(rssi < 24 || (now - _seektimer) > 4000)
+        if(rssi < 23 || (now - _seektimer) > 6000)
         {
             ch = _seekmode;
             char str[100];
@@ -544,11 +540,7 @@ void FMTuner4735::Loop(char ch)
             _seekmode = '0';
             WebSerialLogger.println("Seek stopped");
             DisplayInfo();
-            break;
-        case 'x':
-            SetSaveMode(!_savemode);
-            DisplayInfo();
-            break;
+            break;       
         case '+':
             _radio->volumeUp();
             _volume = _radio->getVolume();
@@ -567,7 +559,7 @@ void FMTuner4735::Loop(char ch)
         WebSerialLogger.println("Frequency changed!");
         previousFrequency = currentFrequency;
         
-        if(_savemode)
+        if(TunerButtons.SavePresetButtonPressed)
             SaveCurrentChannel(_current_station_preset);
 
         RDSMessage.clear();

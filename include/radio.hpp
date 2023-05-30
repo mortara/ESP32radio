@@ -59,7 +59,7 @@ class Radio
         FMTuner4735 *_fmtuner;
         InternetRadio *_inetRadio;
         BlueToothPlayer *_bluetoothplayer;
-        TunerButtons *_tunerbuttons;
+
         PreselectLeds *_preselectLeds;
         PreselectButtons *_preselectButtons;
         ChannelButtons *_channelButtons;

@@ -58,7 +58,7 @@ Radio::Radio()
     _bluetoothplayer = new BlueToothPlayer();
 
     _clockDisplay->DisplayText("Starte Frontelemente ...",0);
-    _tunerbuttons = new TunerButtons(_i2cwire, 0x22);
+    TunerButtons.Setup(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
     _clockButtons = new ClockButtons(Wire, 0x20);
@@ -251,7 +251,7 @@ char Radio::Loop()
         
     }
 
-    int btn = _tunerbuttons->Loop();
+    int btn = TunerButtons.Loop();
     if(btn != 0)
     {
         WebSerialLogger.println("Tunerbutton pressed: " + String(btn));
@@ -280,7 +280,6 @@ char Radio::Loop()
 
     if(_currentPlayer == PLAYER_SI47XX)
     {
-        _fmtuner->SetSaveMode(_tunerbuttons->SavePresetButtonPressed);
         _fmtuner->Loop(ch);
         
     } else if(_currentPlayer == PLAYER_WEBRADIO)

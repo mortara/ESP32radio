@@ -1,8 +1,10 @@
 #include "tunerbuttons.hpp"
 
 
-TunerButtons::TunerButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
+void TunerButtonsClass::Setup(TwoWire &twowire, uint8_t adr)
 {
+    i2cdevice::Setup(twowire, adr);
+
     if(!isActive())
     {
         WebSerialLogger.println("Tuner buttons not found!");
@@ -26,7 +28,7 @@ TunerButtons::TunerButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, a
     _lastRead = millis();
 }
 
-int TunerButtons::Loop()
+int TunerButtonsClass::Loop()
 {
     unsigned long now = millis();
     if(now - _lastRead < 200 || !isActive())
@@ -50,3 +52,5 @@ int TunerButtons::Loop()
 
     return result;
 }
+
+TunerButtonsClass TunerButtons;

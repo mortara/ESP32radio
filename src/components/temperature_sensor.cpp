@@ -57,7 +57,7 @@ void TemperatureSensor::Loop() {
         return;
 
     unsigned long now = millis();
-    if(now - _lastRead < 15000)
+    if(now - _lastRead < 15000UL)
         return;
 
     _lastRead = now;
@@ -68,7 +68,7 @@ void TemperatureSensor::Loop() {
     _temperature = _bmp.readTemperature();
     _pressure = _bmp.readPressure();
     _altitude = _bmp.readAltitude();
-
+    
     if(setupmqtt)
     {
         DynamicJsonDocument payload(2048);

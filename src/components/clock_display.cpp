@@ -12,7 +12,7 @@ ClockDisplay::ClockDisplay(uint8_t adr) : i2cdevice(adr)
     _lcd = new LiquidCrystal_I2C(adr,16,2);
     _lcd->init();                      // initialize the lcd 
     _lcd->backlight();
- 
+    
     _active = true;
 }
 
@@ -52,7 +52,7 @@ void ClockDisplay::Loop()
     if(_texts[0].length() > 16 && _active)
     {
         unsigned long _now = millis();
-        if(_now - _scroll_row1_timer > 500)
+        if(_now - _scroll_row1_timer > 500UL)
         {
             String t1 = _texts[0] + "   " + _texts[0];
             String t2 = t1.substring(_scroll_row1_offset, _scroll_row1_offset + 16);

@@ -12,7 +12,7 @@ class TemperatureSensor : i2cdevice
         bool setupmqtt = false;
         bool _active = false;
         float _temperature = 0;
-        float _pressure = 0;
+        int32_t _pressure = 0;
         float _altitude = 0;
         bool mqttSetup();
 
