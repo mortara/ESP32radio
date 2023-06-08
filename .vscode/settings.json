@@ -49,7 +49,12 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "cinttypes": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "chrono": "cpp",
+        "list": "cpp",
+        "future": "cpp",
+        "thread": "cpp",
+        "variant": "cpp"
     },
     "idf.portWin": "COM11"
 }

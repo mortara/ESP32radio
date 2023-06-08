@@ -79,6 +79,14 @@ void WebSerialLoggerClass::println(String text)
 
     if(running)
         WebSerial.println(text);
+
+}
+
+void WebSerialLoggerClass::Flush()
+{
+    if(running)
+        WebSerial.flush();
+
 }
 
 WebSerialLoggerClass WebSerialLogger;

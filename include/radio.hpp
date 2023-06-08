@@ -25,6 +25,7 @@
 #include "power_sensor.hpp"
 #include "clock_buttons.hpp"
 #include "webserial.hpp"
+#include "uptime_formatter.h"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -45,8 +46,6 @@
 #define OUTPUT_VS1053 1
 #define OUTPUT_AUX 3
 #define OUTPUT_AUX2 4
-
-
 
 class Radio
 {
@@ -91,5 +90,7 @@ class Radio
         void SwitchInput(uint8_t newinput);
         void Stop();
         void Start();
+
+        float LoopTime = 0;
 
 };

@@ -21,7 +21,7 @@ class WebSerialLoggerClass
         void print(String text = "");
         void println(const char *text);
         void println(String text = "");
-        
+        void Flush();
         char GetInput();
 };
 #endif

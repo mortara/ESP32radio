@@ -64,13 +64,15 @@ Radio::Radio()
     _clockButtons = new ClockButtons(Wire, 0x20);
     RotaryEncoder.Setup(34,35,39);
     
-    _clockDisplay->DisplayText("Starte Temperatursensor ...",0);
+    _clockDisplay->DisplayText("Starte Temperatursensoren ...",0);
     _tempSensor1 = new TemperatureSensor(0x77);
-
+    
     _clockDisplay->DisplayText("Starte Energiesensor ...",0);
     _powerSensor = new PowerSensor(0x40);
     //wifi->Connect();
     
+    
+
     _clockDisplay->DisplayText("Fertig!",0);
 
     _lastClockUpdate = millis();
@@ -141,9 +143,13 @@ void Radio::ExecuteCommand(char ch)
             SignalIndicator.DisplayInfo();
             _powerSensor->DisplayInfo();
             _tempSensor1->DisplayInfo();
+            break;
+        case 'J':    
+            _clockButtons->DisplayInfo();
             _clock->DisplayInfo();
             _fmtuner->DisplayInfo();
             _inetRadio->DisplayInfo();
+            
             break;
         case 'n':
             _clock->SetByNTP();
@@ -156,6 +162,9 @@ void Radio::ExecuteCommand(char ch)
             break;
         case 'v':
             WIFIManager.Connect();
+            break;
+        case 'V':
+            WIFIManager.Disconnect();
             break;
         case 'w':
             WIFIManager.DisplayInfo();
@@ -197,9 +206,13 @@ void Radio::setupMQTT()
     MQTTConnector.SetupSensor("ChipCores", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("CPUFreqpCores", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("ChipModel", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("FlashSize", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("FlashMode", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("FrequencyDisplay", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("ClockDisplay1", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("ClockDisplay2", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("UpTime", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("LoopTime", "sensor", "ESP32Radio", "", "", "");
     WebSerialLogger.println("mqtt setup done!");
 
     mqttsetup = true;
@@ -327,7 +340,6 @@ char Radio::Loop()
         WIFIManager.Loop();
         if(!WIFIManager.IsConnected() && _lastClockUpdate - WIFIManager.LastConnectionTry() > 10000)
         {
-            _clockDisplay->DisplayText("Verbinde WIFI ...",0);
             if(!WIFIManager.Connect())
             {
                 WebSerialLogger.println("Could not connect to WIFI network!");
@@ -355,10 +367,14 @@ char Radio::Loop()
         payload["ChipCores"] = String(ESP.getChipCores());
         payload["CPUFreqpCores"] = String(ESP.getCpuFreqMHz());
         payload["ChipModel"] = String(ESP.getChipModel());
+        payload["FlashSize"] = String(ESP.getFlashChipSize());
+        payload["FlashMode"] = String(ESP.getFlashChipMode());
 
         payload["FrequencyDisplay"] = _frequencyDisplayText;
         payload["ClockDisplay1"] = _clockDisplayText0;
         payload["ClockDisplay2"] = _clockDisplayText1;
+        payload["UpTime"] =  uptime_formatter::getUptime();
+        payload["LoopTime"] =  String(LoopTime);
 
         String state_payload  = "";
         serializeJson(payload, state_payload);
@@ -447,6 +463,6 @@ void Radio::SwitchInput(uint8_t newinput)
 
     _currentPlayer = new_player;
     _currentInput = newinput;
-    delay(50);
+    
     WebSerialLogger.println("Input switch done!");
 }

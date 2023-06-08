@@ -12,7 +12,8 @@ FrequencyDisplay::FrequencyDisplay()
         return;
     }
     _active = true;
-    _u8g2->setContrast(6);
+    _u8g2->setContrast(5);
+    //_u8g2->setPowerSave(1);
     _u8g2->clearBuffer();					// clear the internal memory
     SetFont(0);
     _u8g2->drawStr(_currentFont._xoffset,_currentFont._yoffset,"HELLO!");

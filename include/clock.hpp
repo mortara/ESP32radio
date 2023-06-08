@@ -4,6 +4,7 @@
 #include <time.h>
 #include "i2cdevice.hpp"
 #include <DS3232RTC.h>
+#include "Timezone.h"
 
 #ifndef CLOCK_H
 #define CLOCK_H
@@ -15,6 +16,10 @@ class Clock : i2cdevice
         bool _timeset = false;
         bool _active = false;
     
+        TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120};     // Central European Summer Time
+        TimeChangeRule CET = {"CET ", Last, Sun, Oct, 3, 60};       // Central European Standard Time
+        Timezone *_ce;
+
     public:
         Clock(TwoWire &wire);
 

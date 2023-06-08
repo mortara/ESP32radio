@@ -1,5 +1,6 @@
 #include "clock.hpp"
 
+
 Clock::Clock(TwoWire &wire) : i2cdevice(wire, 0x68)
 {
     _rtc.begin();
@@ -8,6 +9,8 @@ Clock::Clock(TwoWire &wire) : i2cdevice(wire, 0x68)
 
     setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
     tzset();
+
+    _ce = new Timezone(CEST, CET);
 
     if(timeStatus() != timeSet)
         Serial.println("Unable to sync with the RTC");
@@ -56,10 +59,18 @@ bool Clock::SetByNTP()
 
 void Clock::DisplayInfo()
 {
-    WebSerialLogger.println("Clock active = " + String(_active));
-    WebSerialLogger.println("Clock set by NTP = " + String(_timeset));
+    if(_active)
+        WebSerialLogger.println("Clock active = YES");
+    else
+        WebSerialLogger.println("Clock active = NO");
+
+    if(_timeset)
+        WebSerialLogger.println("Clock set by NTP = YES" );
+    else
+        WebSerialLogger.println("Clock set by NTP = NO" );
+
     WebSerialLogger.println("Current date = " + GetDateTimeString());
-    WebSerialLogger.println("DS3231 time = " + String(_rtc.get()));
+    //WebSerialLogger.println("DS3231 time = " + String(_rtc.get()));
 }
 
 String Clock::TimeTToString(tmElements_t time, bool seconds)
@@ -69,7 +80,9 @@ String Clock::TimeTToString(tmElements_t time, bool seconds)
 
 String Clock::TimeTToString(tm time, bool seconds)
 {
-    return FormatDateTime(time.tm_year+1900, time.tm_mon+1, time.tm_mday, time.tm_hour, time.tm_min,time.tm_sec, seconds);
+    time_t nt = mktime(&time);
+    return GetDateTimeString(nt,seconds);
+    //return FormatDateTime(time.tm_year+1900, time.tm_mon+1, time.tm_mday, time.tm_hour, time.tm_min,time.tm_sec, seconds);
 }
 
 String Clock::GetDateTimeString(time_t time, bool seconds)
@@ -101,7 +114,7 @@ String Clock::FormatDateTime(int year, int month, int day, int hour, int minute,
         s = "0" + s;
 
     String result = d + "." + m + "." + y + " " + h + ":" + mi;
-    if(seconds)
+    if(showseconds)
         result = result + ":" + s;
 
     return result;
@@ -109,5 +122,6 @@ String Clock::FormatDateTime(int year, int month, int day, int hour, int minute,
 
 String Clock::GetDateTimeString(bool seconds)
 {
-    return FormatDateTime(year(), month(), day(), hour(), minute(),second(), seconds);
+    time_t nt2 = _ce->toLocal(_rtc.get());
+    return GetDateTimeString(nt2, seconds);
 }

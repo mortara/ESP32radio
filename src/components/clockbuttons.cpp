@@ -5,34 +5,40 @@ ClockButtons::ClockButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, a
 {
     if(!isActive())
     {
-        WebSerialLogger.println("channel buttons not found!");
+        WebSerialLogger.println("clock buttons not found!");
         return;
     }
 
-    WebSerialLogger.println("Initializing channel buttons");
+    WebSerialLogger.println("Initializing clock buttons");
 
-    _pcf8755 = new PCF8575(&twowire,adr);
-    _pcf8755->begin();
-   
-    _pcf8755->pinMode(P0, OUTPUT);
-    _pcf8755->digitalWrite(P0, HIGH);
-    _pcf8755->pinMode(P1, INPUT);
-    _pcf8755->pinMode(P2, INPUT);
-    _pcf8755->pinMode(P3, INPUT);
-    _pcf8755->pinMode(P4, INPUT);
-    _pcf8755->pinMode(P5, INPUT);
-    _pcf8755->pinMode(P6, INPUT);
-    _pcf8755->pinMode(P7, INPUT);
-    _pcf8755->pinMode(P8, INPUT);
-    _pcf8755->pinMode(P9, INPUT);
-    _pcf8755->pinMode(P10, INPUT);
-    _pcf8755->pinMode(P11, INPUT);
-    _pcf8755->pinMode(P12, INPUT);
-    _pcf8755->pinMode(P13, INPUT);
-    _pcf8755->pinMode(P14, INPUT);
-    _pcf8755->pinMode(P15, INPUT);
+    _pcf = new PCF8574(&twowire,adr);
+    _pcf->pinMode(P0, INPUT_PULLUP);
+    _pcf->pinMode(P7, INPUT_PULLUP);
+    _pcf->begin();
+    
 
     _lastRead = millis();
+}
+
+void ClockButtons::DisplayInfo()
+{
+    if(!isActive())
+        return;
+
+    PCF8574::DigitalInput input = _pcf->digitalReadAll();
+
+    WebSerialLogger.println("Clockbuttons: " + String(input.p7));
+
+    /*WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(0)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(1)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(2)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(3)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(4)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(5)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(6)));
+    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(7)));
+
+    WebSerialLogger.println("Clockbuttons: " + String(read.p0) + String(read.p1) +String(read.p2) +String(read.p3) +String(read.p4) +String(read.p5) +String(read.p6) +String(read.p7));*/
 }
 
 int ClockButtons::readInputs()
@@ -40,43 +46,11 @@ int ClockButtons::readInputs()
     if(!isActive())
         return 0;
 
-    PCF8575::DigitalInput input = _pcf8755->digitalReadAll();
 
     int button = 0;
-
-    if(input.p0 == 1)
-        button = 1;
-    else if(input.p1 == 1)
-        button = 2;
-    else if(input.p2 == 1)
-        button = 3;
-    else if(input.p3 == 1)
-        button = 4;
-    else if(input.p4 == 1)
-        button = 5;
-    else if(input.p5 == 1)
-        button = 6;
-    else if(input.p6 == 1)
-        button = 7;
-    else if(input.p7 == 1)
-        button = 8;
-    else if(input.p8 == 1)
-        button = 9;
-    else if(input.p9 == 1)
-        button = 10;
-    else if(input.p10 == 1)
-        button = 11;
-    else if(input.p11 == 1)
-        button = 12;
-    else if(input.p12 == 1)
-        button = 13;
-    else if(input.p13 == 1)
-        button = 14;
-    else if(input.p14 == 1)
-        button = 15;
-    else if(input.p15 == 1)
-        button = 16;
-
+    
+    PCF8574::DigitalInput read = _pcf->digitalReadAll();
+    //WebSerialLogger.println(String(read.p0) + String(read.p1) +String(read.p2) +String(read.p3) +String(read.p4) +String(read.p5) +String(read.p6) +String(read.p7));
     return button;
 }
 
@@ -84,7 +58,7 @@ int ClockButtons::readInputs()
 int ClockButtons::Loop()
 {
     unsigned long now = millis();
-    if(now - _lastRead < 300)
+    if(now - _lastRead < 500)
         return 0;
     _lastRead = now;
 
@@ -93,7 +67,7 @@ int ClockButtons::Loop()
     // Input is read twice for debouncing the switch!
     if(button != 0)
     {
-        WebSerialLogger.println("Button " + String(button) + " pressed!");
+        WebSerialLogger.println("Clockbutton " + String(button) + " pressed!");
         return button;
     }
 

@@ -56,7 +56,7 @@ class FMTuner4735
         uint8_t _currentBand = 99;
         uint8_t _smallstep = 5;
         uint8_t _step = 10;
-        unsigned long _lastUpdate;
+        unsigned long _lastSignalUpdate;
         
         uint16_t setFrequency(u_int16_t freq);
 

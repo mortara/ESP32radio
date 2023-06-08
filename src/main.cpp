@@ -53,6 +53,8 @@ void ScanI2C()
 
 void setup()
 {
+  setCpuFrequencyMhz(80);
+
   Serial.begin(115200);
   WebSerialLogger.println("Hello world!");
   //ScanI2C();
@@ -70,7 +72,8 @@ void loop()
         float duration = (float)(end - _loopStart) / (float)_loopnum;
         //Serial.print(duration);
         if(mode == 0)
-          WebSerialLogger.println("loop: " + String(duration) + "ms");
+          _radio->LoopTime  = duration;
+          //WebSerialLogger.println("loop: " + String(duration) + "ms");
         _loopCount = 0;
         _loopStart = end;
 

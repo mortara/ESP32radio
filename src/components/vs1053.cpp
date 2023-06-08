@@ -8,6 +8,7 @@ VS1053Player::VS1053Player()
     if (! _player->begin()) { // initialise the music player
         WebSerialLogger.println("Couldn't find VS1053, do you have the right pins defined?");
     }
+    
     _player->setVolume(100, 100);
     //_player->softReset();
 

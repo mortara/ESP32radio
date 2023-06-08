@@ -12,7 +12,7 @@ PowerSensor::PowerSensor(uint8_t adr) : i2cdevice(adr)
 
     if(_ina.begin())
     {
-        _ina.setCalibration_32V_1A();
+        _ina.setCalibration_16V_400mA();
         _active = true;
     }
 
@@ -67,7 +67,7 @@ void PowerSensor::Loop() {
         return;
 
     unsigned long now = millis();
-    if(now - _lastRead < 5000)
+    if(now - _lastRead < 10000UL)
         return;
 
     _lastRead = now;
@@ -78,7 +78,7 @@ void PowerSensor::Loop() {
     _current = _ina.getCurrent_mA();
     _busvoltage = _ina.getBusVoltage_V();
     _shuntvoltage = _ina.getShuntVoltage_mV();
-    _loadvoltage = _busvoltage + (_shuntvoltage / 1000);
+    _loadvoltage = _busvoltage + (_shuntvoltage / 1000.0);
     _power = _ina.getPower_mW();
 
     if(setupmqtt)

@@ -4,6 +4,7 @@
 void WIFIManagerClass::StartUp()
 {
     WiFi.mode(WIFI_STA);
+    WiFi.setSleep(true);
     WiFi.setAutoReconnect(true);
     //Connect();
 
@@ -13,10 +14,13 @@ void WIFIManagerClass::StartUp()
 bool WIFIManagerClass::Connect()
 {
     if(WiFi.status() == WL_CONNECTED || connecting)
+    {
+        //WebSerialLogger.println("Already connected or connecting");
         return true;
+    }
 
     connecting = true;
-
+    WiFi.disconnect();
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
     WebSerialLogger.println("Connecting to WiFi ..");
     _lastConnectionTry = millis();
@@ -61,6 +65,9 @@ void WIFIManagerClass::Disconnect()
 {
     WebSerialLogger.println("disonnecting from WiFi ..");
     WiFi.disconnect();
+    
+    connecting = false;
+    connected = false;
 }
 
 void WIFIManagerClass::DisplayInfo(){
@@ -103,7 +110,7 @@ void WIFIManagerClass::Loop()
         connecting = false;
     }
 
-    if(currentMillis - _lastMqttupdate > 10000 && connected && MQTTConnector.isActive())
+    if(currentMillis - _lastMqttupdate > 30000 && connected && MQTTConnector.isActive())
     {
         if(!mqttsetup)
             setupMQTT();

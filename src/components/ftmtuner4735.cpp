@@ -33,7 +33,7 @@ FMTuner4735::FMTuner4735()
 
     _lastRotaryCount = RotaryEncoder.GetCounter();
     _active = true;
-    _lastRotaryRead = frequencychangetimeout = _lastRDSUpdate = _lastUpdate = millis();
+    _lastRotaryRead = frequencychangetimeout = _lastRDSUpdate = _lastSignalUpdate = millis();
 }
 
 void FMTuner4735::setupMQTT()
@@ -172,7 +172,7 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
         _smallstep = tabAmStep[0];
         _step = tabAmStep[1];
     }
-    delay(10);
+    delay(50);
 
     currentStepIdx = b.currentStepIdx;
     _currentBand = bandIdx;
@@ -223,8 +223,6 @@ void FMTuner4735::DisplayInfo()
         return;
 
     WebSerialLogger.println("Radio info:");
-    _radio->getStatus();
-    _radio->getCurrentReceivedSignalQuality();
     WebSerialLogger.print("You are tuned on ");
     if (_radio->isCurrentTuneFM())
     {
@@ -454,11 +452,11 @@ void FMTuner4735::Loop(char ch)
             setupMQTT();
     }
 
-    if(now - _lastUpdate > 500)
+    if(now - _lastSignalUpdate > 1000)
     {
         _radio->getCurrentReceivedSignalQuality();
         SignalIndicator.SetValue(_radio->getCurrentRSSI());
-        _lastUpdate = now;
+        _lastSignalUpdate = now;
     }
 
     if(_seekmode != '0' && ch != 't')
