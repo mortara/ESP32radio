@@ -72,9 +72,9 @@ void FMTuner4735::sendMQTTState()
 
     char str[200];
     if (b.bandType == FM_BAND_TYPE)
-        sprintf(str,"Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+        sprintf(str,"Smallstep %2.2d | Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabFmStep[0], tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
     else
-        sprintf(str,"Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabAmStep[b.currentStepIdx], bandwidthAM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+        sprintf(str,"Smallstep %2.2d | Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabAmStep[0], tabAmStep[b.currentStepIdx], bandwidthAM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
 
     payload["BandData"] = String(str);
 
@@ -261,6 +261,29 @@ void FMTuner4735::DisplayInfo()
 
     if(rdsTime != NULL && rdsTime[0] != '\0')
         WebSerialLogger.println("RDS Time" + String(rdsTime));
+
+    WebSerialLogger.println("Presets for band " + String(_currentBand));
+    
+    Band b = _bands[_currentBand];
+    Preferences _prefs;
+    String prefname = "radio_tuner_" + String(b.bandName);
+    if(!_prefs.begin(prefname.c_str(), false)) 
+    {
+        WebSerialLogger.println("unable to open preferences");
+    }
+    else
+    {
+        WebSerialLogger.println("Preset 0: " + String(_prefs.getUShort("PRESET_0")));
+        WebSerialLogger.println("Preset 1: " + String(_prefs.getUShort("PRESET_1")));
+        WebSerialLogger.println("Preset 2: " + String(_prefs.getUShort("PRESET_2")));
+        WebSerialLogger.println("Preset 3: " + String(_prefs.getUShort("PRESET_3")));
+        WebSerialLogger.println("Preset 4: " + String(_prefs.getUShort("PRESET_4")));
+        WebSerialLogger.println("Preset 5: " + String(_prefs.getUShort("PRESET_5")));
+        WebSerialLogger.println("Preset 6: " + String(_prefs.getUShort("PRESET_6")));
+        WebSerialLogger.println("Preset 7: " + String(_prefs.getUShort("PRESET_7")));
+    }
+
+    _prefs.end();
 }
 
 String FMTuner4735::GetFreqDisplayText()
@@ -437,7 +460,7 @@ void FMTuner4735::Loop(char ch)
         return;
     unsigned long now = millis();
 
-    if((now - clockdisplaypagetimer) > 15000)
+    if((now - clockdisplaypagetimer) > 15000UL)
     {
         clockdisplaypage++;
         if(clockdisplaypage == 2)
@@ -452,7 +475,7 @@ void FMTuner4735::Loop(char ch)
             setupMQTT();
     }
 
-    if(now - _lastSignalUpdate > 1000)
+    if(now - _lastSignalUpdate > 1000UL)
     {
         _radio->getCurrentReceivedSignalQuality();
         SignalIndicator.SetValue(_radio->getCurrentRSSI());
@@ -474,20 +497,26 @@ void FMTuner4735::Loop(char ch)
 
     }
 
-    if(now - _lastRotaryRead > 200)
+    if(now - _lastRotaryRead > 100UL)
     {
         _lastRotaryRead = now;
-        int rotary = RotaryEncoder.GetCounter();
+        int64_t rotary = RotaryEncoder.GetCounter();
         if(rotary != _lastRotaryCount)
         {
-            int diff = (rotary - _lastRotaryCount) / 5;
-            if(diff < 1)
-                diff = 1;
+            float diff = (float)(rotary - _lastRotaryCount) / 5.0;
+            if(abs(diff) < 1.0)
+                if(diff > 0)
+                    diff = 1;
+                else if(diff < 0)
+                    diff = -1;
+                else
+                    diff = 0;
 
+            
             _lastRotaryCount = rotary;
             _seekmode = '0';
-            setFrequency(currentFrequency + _smallstep * diff);
-            frequencychangetimeout = now + 1000;
+            setFrequency((int)currentFrequency + (int)((int)_smallstep * (int)diff));
+            frequencychangetimeout = now + 500;
             return;
         }
         _lastRotaryCount = rotary;
@@ -522,14 +551,14 @@ void FMTuner4735::Loop(char ch)
             break;
         case 'u':
             _seekmode = ch;
-            _radio->frequencyUp();
+            setFrequency(currentFrequency + _smallstep);
             _seektimer = millis();
             channelchanged = true;
             WebSerialLogger.println("Start seek up");
             break;
         case 'z':
             _seekmode = ch;
-            _radio->frequencyDown();
+            setFrequency(currentFrequency - _smallstep);
             WebSerialLogger.println("Start seek down");
             _seektimer = millis();
             channelchanged = true;

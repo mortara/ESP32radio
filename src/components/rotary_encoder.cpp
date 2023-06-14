@@ -4,7 +4,7 @@ void RotaryEncoderClass::Setup(uint8_t cw, uint8_t ccw, uint8_t sw)
 {
     _sw = sw;
 
-    encoder.attachHalfQuad(cw, ccw);
+    encoder.attachSingleEdge(cw, ccw);
     encoder.setCount(0);
     pinMode(_sw, INPUT);
     _lastread = millis();
@@ -26,8 +26,9 @@ void RotaryEncoderClass::Loop()
 
     unsigned long now = millis();
 
-    if(now - _lastread > 200)
+    if(now - _lastread > 200UL)
     {
+      
       _lastread = now;
 
       int SW = digitalRead(_sw);

@@ -4,7 +4,7 @@ FrequencyDisplay::FrequencyDisplay()
 {
     WebSerialLogger.println("Setup frequency display ...");
 
-    _u8g2 = new U8G2_MAX7219_32X8_F_4W_SW_SPI(U8G2_R2, /* clock=*/ 14, /* data=*/ 13, /* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
+    _u8g2 = new U8G2_MAX7219_32X8_F_4W_SW_SPI(U8G2_R2, /* clock=*/ 3, /* data=*/ 8, /* cs=*/ 46, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     //_u8g2 = new U8G2_MAX7219_32X8_F_4W_HW_SPI(U8G2_R2,/* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     if(!_u8g2->begin())
     {

@@ -15,7 +15,7 @@ class WebSerialLoggerClass
 
     public:
         WebSerialLoggerClass();
-        void Begin();
+        void Begin(AsyncWebServer *_server);
         bool IsRunning();
         void print(const char *text);
         void print(String text = "");

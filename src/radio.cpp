@@ -22,14 +22,14 @@ Radio::Radio()
     */
 
 
-    _spk = new Speaker(27);
-    Wire.begin();
+    _spk = new Speaker(21);
+    Wire.begin(42, 41);
     //Wire.setClock(10000);
     _freq_display = new FrequencyDisplay();
     _clockDisplay = new ClockDisplay(0x27);
     _clockDisplay->DisplayText("Starte I2C Bus 2 ...",0);
 
-    _i2cwire.begin(33,32);
+    _i2cwire.begin(39,40);
 
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
@@ -54,15 +54,15 @@ Radio::Radio()
     _clockDisplay->DisplayText("Starte Internetradio ...",0);
     _inetRadio = new InternetRadio();
 
-    _clockDisplay->DisplayText("Starte Bluetooth ...",0);
-    _bluetoothplayer = new BlueToothPlayer();
+    /*_clockDisplay->DisplayText("Starte Bluetooth ...",0);
+    _bluetoothplayer = new BlueToothPlayer();*/
 
     _clockDisplay->DisplayText("Starte Frontelemente ...",0);
     TunerButtons.Setup(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
     _clockButtons = new ClockButtons(Wire, 0x20);
-    RotaryEncoder.Setup(34,35,39);
+    RotaryEncoder.Setup(45,48,14);
     
     _clockDisplay->DisplayText("Starte Temperatursensoren ...",0);
     _tempSensor1 = new TemperatureSensor(0x77);
@@ -71,7 +71,8 @@ Radio::Radio()
     _powerSensor = new PowerSensor(0x40);
     //wifi->Connect();
     
-    
+    _clockDisplay->DisplayText("Starte Webserver ...",0);
+    WebServer.Setup();
 
     _clockDisplay->DisplayText("Fertig!",0);
 
@@ -149,7 +150,7 @@ void Radio::ExecuteCommand(char ch)
             _clock->DisplayInfo();
             _fmtuner->DisplayInfo();
             _inetRadio->DisplayInfo();
-            
+            MP3Player.DisplayInfo();
             break;
         case 'n':
             _clock->SetByNTP();
@@ -300,11 +301,11 @@ char Radio::Loop()
         MP3Player.ExecuteCommand(ch);
         _inetRadio->Loop();
         
-    } else if(_currentPlayer == PLAYER_BT)
+    } /*else if(_currentPlayer == PLAYER_BT)
     {
         MP3Player.ExecuteCommand(ch);
         _bluetoothplayer->Loop(ch);
-    }
+    }*/
 
     unsigned long now = millis();
     if(now - _lastDisplayUpdate > 100)
@@ -320,10 +321,7 @@ char Radio::Loop()
         {
             _clockDisplayText0 = _inetRadio->GetClockDisplayText();
             _frequencyDisplayText = _inetRadio->GetFreqDisplayText();           
-        } else
-        {
-            _clockDisplayText0 = "BLUETOOTH";
-        }
+        } 
 
         _clockDisplay->DisplayText(_clockDisplayText0, 0);
         _freq_display->DisplayText(_frequencyDisplayText, freqfront);
@@ -349,7 +347,7 @@ char Radio::Loop()
         MQTTConnector.Loop();
 
         if(WiFi.isConnected() && !WebSerialLogger.IsRunning())
-            WebSerialLogger.Begin();
+            WebSerialLogger.Begin(WebServer.GetServer());
 
         _clockDisplayText1 = _clock->GetDateTimeString(false);
         _clockDisplay->DisplayText(_clockDisplayText1, 1);
@@ -425,8 +423,8 @@ void Radio::SwitchInput(uint8_t newinput)
         // Stopping the currently running player
         if(_currentPlayer == PLAYER_SI47XX)
             _fmtuner->Stop();
-        else if(_currentPlayer == PLAYER_BT)
-            _bluetoothplayer->Stop();
+        //else if(_currentPlayer == PLAYER_BT)
+        //    _bluetoothplayer->Stop();
         else if(_currentPlayer == PLAYER_WEBRADIO)
             _inetRadio->Stop();
         
@@ -434,8 +432,8 @@ void Radio::SwitchInput(uint8_t newinput)
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
             _fmtuner->Start(newinput - 1, _currentPreset);
-        else if(new_player == PLAYER_BT)
-            _bluetoothplayer->Start();
+        //else if(new_player == PLAYER_BT)
+        //    _bluetoothplayer->Start();
         else if(new_player == PLAYER_WEBRADIO)
         {
             if(!WIFIManager.IsConnected())

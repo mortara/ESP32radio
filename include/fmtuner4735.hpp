@@ -9,11 +9,11 @@
 #ifndef FMTUNER4735_H
 #define FMTUNER4735_H
 
-#define SI7435_RESET_PIN 2              // GPIO12
+#define SI7435_RESET_PIN 47              // GPIO12
 
 // I2C bus pin on ESP32
-#define ESP32_I2C_SDA 21     // GPIO21
-#define ESP32_I2C_SCL 22     // GPIO22 
+#define ESP32_I2C_SDA 42     // GPIO21
+#define ESP32_I2C_SCL 41     // GPIO22 
 
 #define AM_FUNCTION 1
 #define FM_FUNCTION 0

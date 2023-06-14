@@ -5,17 +5,17 @@
 #ifndef VS1053_h
 #define VS1053_h
 
-#define CLK 18       // SPI Clock, shared with SD card
-#define MISO 19      // Input data, from VS1053/SD card
-#define MOSI 23      // Output data, to VS1053/SD card
+#define CLK 6       // SPI Clock, shared with SD card
+#define MISO 7      // Input data, from VS1053/SD card
+#define MOSI 18      // Output data, to VS1053/SD card
 
 #define BREAKOUT_RESET  -1     // VS1053 reset pin (output)
-#define BREAKOUT_XDCS    16    // VS1053 Data/command select pin (output)
-#define BREAKOUT_SD_CS    17
-#define BREAKOUT_MP3_CS    5
+#define BREAKOUT_XDCS    4    // VS1053 Data/command select pin (output)
+#define BREAKOUT_SD_CS    5
+#define BREAKOUT_MP3_CS    16
 
 // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
-#define BREAKOUT_DREQ 4       // VS1053 Data request, ideally an Interrupt pin
+#define BREAKOUT_DREQ 15       // VS1053 Data request, ideally an Interrupt pin
 #define MP3buffersize 32
 
 class VS1053Player
@@ -34,6 +34,7 @@ class VS1053Player
         void PlayData(uint8_t size);
         bool ReadyForData();
         void ExecuteCommand(char ch);
+        void DisplayInfo();
 
         uint8_t Mp3buffer[MP3buffersize];
 };

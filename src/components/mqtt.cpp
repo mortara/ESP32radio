@@ -46,32 +46,41 @@ void MQTTConnectorClass::Loop()
 {
     unsigned long now = millis();
 
-    if(!_active && WiFi.status() == WL_CONNECTED && now - _lastConnectAttempt > 5000)
+    if(!_active && WiFi.status() == WL_CONNECTED && now - _lastConnectAttempt > 5000UL)
     {
-        if(_wifiClientmqtt != NULL)
-            delete _wifiClientmqtt;
-
-        _wifiClientmqtt = new WiFiClient();
-
-        _mqttClient->setClient(*_wifiClientmqtt);
-        _lastConnectAttempt = now;
-        if(!_mqttClient->connect(device_id.c_str(), MQTTUSER, MQTTPASSWORD))
-        {
-            WebSerialLogger.println("Could not connect to MQTT broker!");
-            WebSerialLogger.println("State: " + String(_mqttClient->state()));
-        }
-        else
-        {
-            _mqttClient->subscribe("motd");
-            _active = true;
-        }
+        Connect();
     }
 
-    if(now - _lastMqTTLoop > 4000)
+    if(now - _lastMqTTLoop > 4000UL)
     {
         _lastMqTTLoop = now;
         _mqttClient->loop();
     }
+}
+
+bool MQTTConnectorClass::Connect()
+{
+    WebSerialLogger.println("Connecting mqtt client ...");
+
+    if(_wifiClientmqtt == NULL)
+    {
+        _wifiClientmqtt = new WiFiClient();
+        _mqttClient->setClient(*_wifiClientmqtt);
+    }
+
+    _lastConnectAttempt = millis();
+    if(!_mqttClient->connect(device_id.c_str(), MQTTUSER, MQTTPASSWORD))
+    {
+        WebSerialLogger.println("Could not connect to MQTT broker!");
+        WebSerialLogger.println("State: " + String(_mqttClient->state()));
+    }
+    else
+    {
+        _mqttClient->subscribe("motd");
+        _active = true;
+    }
+
+    return _active;
 }
 
 bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon, String entity_category)
@@ -125,7 +134,7 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
         WebSerialLogger.println(" ... error!");
         WebSerialLogger.println("State: " + String(_mqttClient->state()));
     }
-
+    _mqttClient->loop();
     return result;
 }
 
@@ -141,6 +150,8 @@ void MQTTConnectorClass::SendPayload(String payload, String component, bool reta
 
         if(_mqttClient->state() == -3)
         {
+            WebSerialLogger.println("MQTT connection lost ...");
+            _mqttClient->disconnect();
             _active = false;
         }
     }

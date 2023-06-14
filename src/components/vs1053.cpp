@@ -4,10 +4,12 @@
 VS1053Player::VS1053Player()
 {
     WebSerialLogger.println("Creating vs1053 object");
-    _player = new Adafruit_VS1053_FilePlayer(BREAKOUT_RESET, BREAKOUT_MP3_CS, BREAKOUT_XDCS, BREAKOUT_DREQ, BREAKOUT_SD_CS);
+    _player = new Adafruit_VS1053_FilePlayer(MOSI, MISO, CLK, BREAKOUT_RESET, BREAKOUT_MP3_CS, BREAKOUT_XDCS, BREAKOUT_DREQ, BREAKOUT_SD_CS);
     if (! _player->begin()) { // initialise the music player
         WebSerialLogger.println("Couldn't find VS1053, do you have the right pins defined?");
     }
+    else
+        _active = true;
     
     _player->setVolume(100, 100);
     //_player->softReset();
@@ -32,6 +34,17 @@ void VS1053Player::End()
     WebSerialLogger.println("stopping vs1053");
     _player->stopPlaying();
     _player->setVolume(100, 100);
+}
+
+void VS1053Player::DisplayInfo()
+{
+    WebSerialLogger.println("VS1053:");
+    WebSerialLogger.println("Active = " + String(_active));
+    WebSerialLogger.println("Mode = " + String(_player->sciRead(VS1053_REG_MODE)));
+    WebSerialLogger.println("Stat = " + String(_player->sciRead(VS1053_REG_STATUS)));
+    WebSerialLogger.println("ClkF = " + String(_player->sciRead(VS1053_REG_CLOCKF)));
+    WebSerialLogger.println("Vol. = " + String(_player->sciRead(VS1053_REG_VOLUME)));
+    
 }
 
 void VS1053Player::SetVolume(uint8_t vol)
@@ -64,6 +77,7 @@ void VS1053Player::ExecuteCommand(char ch)
             SetVolume(_volume + 10);
     } else if (ch == 't') 
     {
+        WebSerialLogger.println("Beep!");
         _player->sineTest(0x44, 500);
     }
 }

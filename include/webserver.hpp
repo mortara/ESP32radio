@@ -8,14 +8,18 @@
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
-class WebServer
+class WebServerClass
 {
     private:
-        
+        AsyncWebServer *_webserver;
+        DNSServer dnsServer;
+        DisplayData _displaydata;
     public:
-        WebServer();
-        void Loop(const DisplayData &data);
+        void Setup();
+        AsyncWebServer *GetServer();
 
 } ;
+
+extern WebServerClass WebServer;
 
 #endif

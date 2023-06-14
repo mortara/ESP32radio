@@ -12,11 +12,16 @@ ClockButtons::ClockButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, a
     WebSerialLogger.println("Initializing clock buttons");
 
     _pcf = new PCF8574(&twowire,adr);
-    _pcf->pinMode(P0, INPUT_PULLUP);
-    _pcf->pinMode(P7, INPUT_PULLUP);
+    _pcf->pinMode(P0, INPUT);
+    _pcf->pinMode(P1, INPUT);
+    _pcf->pinMode(P2, INPUT);
+    _pcf->pinMode(P3, INPUT);
+    _pcf->pinMode(P4, INPUT);
+    _pcf->pinMode(P5, INPUT);
+    _pcf->pinMode(P6, INPUT);
+    _pcf->pinMode(P7, INPUT);
     _pcf->begin();
     
-
     _lastRead = millis();
 }
 
@@ -27,18 +32,7 @@ void ClockButtons::DisplayInfo()
 
     PCF8574::DigitalInput input = _pcf->digitalReadAll();
 
-    WebSerialLogger.println("Clockbuttons: " + String(input.p7));
-
-    /*WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(0)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(1)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(2)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(3)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(4)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(5)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(6)));
-    WebSerialLogger.println("Clockbuttons: " + String(_pcf8755->digitalRead(7)));
-
-    WebSerialLogger.println("Clockbuttons: " + String(read.p0) + String(read.p1) +String(read.p2) +String(read.p3) +String(read.p4) +String(read.p5) +String(read.p6) +String(read.p7));*/
+    WebSerialLogger.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3) +" " + String(input.p4) +" " + String(input.p5) +" " + String(input.p6) +" " + String(input.p7));
 }
 
 int ClockButtons::readInputs()
@@ -50,7 +44,24 @@ int ClockButtons::readInputs()
     int button = 0;
     
     PCF8574::DigitalInput read = _pcf->digitalReadAll();
-    //WebSerialLogger.println(String(read.p0) + String(read.p1) +String(read.p2) +String(read.p3) +String(read.p4) +String(read.p5) +String(read.p6) +String(read.p7));
+
+    if(read.p0 == 0)
+        button = 1;
+    else if(read.p1 == 0)
+        button = 2;
+    else if(read.p2 == 0)
+        button = 3;
+    else if(read.p3 == 0)
+        button = 4;
+    else if(read.p4 == 0)
+        button = 5;
+    else if(read.p5 == 0)
+        button = 6;
+    else if(read.p6 == 0)
+        button = 7;
+    else if(read.p7 == 0)
+        button = 8;
+   
     return button;
 }
 
@@ -58,7 +69,7 @@ int ClockButtons::readInputs()
 int ClockButtons::Loop()
 {
     unsigned long now = millis();
-    if(now - _lastRead < 500)
+    if(now - _lastRead < 500UL)
         return 0;
     _lastRead = now;
 

@@ -8,8 +8,10 @@ void DACIndicator::Setup(uint8_t channel, uint16_t minvalue, uint16_t maxvalue, 
     _min = minvalue;
     _pin = channel;
 
-    pinMode(_pin, OUTPUT);
-    dacWrite(_pin,0);
+    return;
+
+    //pinMode(_pin, OUTPUT);
+    //dacWrite(_pin,0);
     _current = -1;
 }
 
@@ -32,7 +34,7 @@ void DACIndicator::SetValue(uint16_t value)
 
     //long pwmValue = map(value, 0, 1023, _min,_max);
     //Serial.println("DAC PIN: " + String(_pin) +  " " + String(value) + " = " + String(v)); 
-    dacWrite(_pin, _current_voltage);
+    //dacWrite(_pin, _current_voltage);
     
     /*switch(_pin)
     {

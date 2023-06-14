@@ -35,6 +35,7 @@ class MQTTConnectorClass
         void SendPayload(String msg, String component, bool retain = false);
         bool isActive();
         bool SetupSensor(String topic, String sensor, String component, String deviceclass = "", String unit = "", String icon = "", String entity_category="config");
+        bool Connect();
 
         std::list<MQTTMessages *>* Tasks;
         volatile bool lock;   

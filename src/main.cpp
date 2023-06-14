@@ -3,6 +3,7 @@
 #include <SPI.h>
 #include "radio.hpp"
 #include "i2cscanner.hpp"
+#include "ArduinoOTA.h"
 
 Radio *_radio;
 I2CScanner *_i2cscanner;
@@ -10,6 +11,8 @@ unsigned long _loopStart;
 int _loopCount;
 int _loopnum = 150000;
 int mode = 0;
+bool ota_running = false;
+unsigned long ota_timer = 0;
 
 void ScanI2C()
 {
@@ -51,6 +54,45 @@ void ScanI2C()
   }
 }
 
+void start_ota()
+{
+  ArduinoOTA.onStart([]() {
+  String type;
+  if (ArduinoOTA.getCommand() == U_FLASH) {
+    type = "sketch";
+  } else {  // U_FS
+    type = "filesystem";
+  }
+
+  // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+  Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      Serial.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      Serial.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      Serial.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      Serial.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      Serial.println("End Failed");
+    }
+  });
+  ArduinoOTA.begin();
+  Serial.println("OTA started");
+  ota_running = true;
+  ota_timer = millis();
+}
+
 void setup()
 {
   setCpuFrequencyMhz(80);
@@ -65,17 +107,18 @@ void setup()
 // Main
 void loop()
 {
+    unsigned long now = millis();
     _loopCount++;
     if(_loopCount == _loopnum)
     {
-        unsigned long end = millis();
-        float duration = (float)(end - _loopStart) / (float)_loopnum;
+        
+        float duration = (float)(now - _loopStart) / (float)_loopnum;
         //Serial.print(duration);
         if(mode == 0)
           _radio->LoopTime  = duration;
           //WebSerialLogger.println("loop: " + String(duration) + "ms");
         _loopCount = 0;
-        _loopStart = end;
+        _loopStart = now;
 
         _loopnum = 100000;
 
@@ -87,6 +130,18 @@ void loop()
 
         if(duration > 5)
           _loopnum = 10000;
+    }
+
+    if(now - ota_timer > 500UL)
+    {
+      if(ota_running)
+        ArduinoOTA.handle();
+      else
+      {
+        if(WiFi.isConnected())
+          start_ota();
+      }
+      ota_timer = now;
     }
 
     if(mode == 0)

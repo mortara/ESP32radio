@@ -23,7 +23,6 @@ ChannelSwitch::ChannelSwitch(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire,
     _relais->pinMode(P5, OUTPUT, offval);
     _relais->pinMode(P6, OUTPUT, offval);
     _relais->pinMode(P7, OUTPUT, offval);
-
 }
 
 void ChannelSwitch::TurnAllOff()

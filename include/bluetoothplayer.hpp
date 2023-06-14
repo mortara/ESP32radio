@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "BluetoothA2DPSink.h"
+//#include "BluetoothA2DPSink.h"
 #include <cbuf.h>
 #include "vs1053.hpp"
 #include "webserial.hpp"
@@ -12,7 +12,7 @@
 class BlueToothPlayer
 {
     private:
-        BluetoothA2DPSink *_a2dp_sink;
+        //BluetoothA2DPSink *_a2dp_sink;
         
         void handle_stream();
        

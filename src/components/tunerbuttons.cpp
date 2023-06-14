@@ -31,7 +31,7 @@ void TunerButtonsClass::Setup(TwoWire &twowire, uint8_t adr)
 int TunerButtonsClass::Loop()
 {
     unsigned long now = millis();
-    if(now - _lastRead < 200 || !isActive())
+    if(now - _lastRead < 200UL || !isActive())
         return 0;
     _lastRead = now;    
     

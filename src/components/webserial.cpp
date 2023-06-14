@@ -21,16 +21,13 @@ WebSerialLoggerClass::WebSerialLoggerClass()
     
 }
 
-void WebSerialLoggerClass::Begin()
+void WebSerialLoggerClass::Begin(AsyncWebServer *_server)
 {
     Serial.println("Starting webserial connection!");
-    if(_server == NULL)
-    {
-        _server = new AsyncWebServer(80);
-        WebSerial.begin(_server);
-        WebSerial.msgCallback(recvMsg);
-        _server->begin();
-    }
+
+    WebSerial.begin(_server);
+    WebSerial.msgCallback(recvMsg);
+
     running = true;
 }
 

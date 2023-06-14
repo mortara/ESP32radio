@@ -20,10 +20,10 @@ BlueToothPlayer::BlueToothPlayer()
 {
     WebSerialLogger.println("BlueToothPlayer setup ...");
 
-    _a2dp_sink = new BluetoothA2DPSink();
+    //_a2dp_sink = new BluetoothA2DPSink();
 
-    _a2dp_sink->set_stream_reader(read_data_stream, false);
-    _a2dp_sink->set_avrc_metadata_callback(avrc_metadata_callback);
+    //_a2dp_sink->set_stream_reader(read_data_stream, false);
+    //_a2dp_sink->set_avrc_metadata_callback(avrc_metadata_callback);
 }
 
 void BlueToothPlayer::Start()
@@ -32,7 +32,7 @@ void BlueToothPlayer::Start()
     MP3Player.Begin();
     
     WebSerialLogger.println("Waiting for bluetooth ...");
-    _a2dp_sink->start(BLUETOOTH_NAME);
+    //_a2dp_sink->start(BLUETOOTH_NAME);
 
     WebSerialLogger.println("prepare buffer ...");
     circBuffer.flush();
@@ -46,7 +46,6 @@ void BlueToothPlayer::Stop()
 {
     WebSerialLogger.println("BlueToothPlayer stop ...");
     MP3Player.End();
-    
 }
 
 void BlueToothPlayer::Loop(char ch)
