@@ -13,4 +13,5 @@ class PreselectLeds : i2cdevice
     public:
         PreselectLeds(TwoWire &twowire, uint8_t adr);
         void SetLed(uint8_t num);
+        void ShowPercentage(int value, int max);
 };

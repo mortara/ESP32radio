@@ -1,8 +1,10 @@
 #include "temperature_sensor.hpp"
 #include "mqtt.hpp"
 
-TemperatureSensor::TemperatureSensor(uint8_t adr) : i2cdevice(adr)
+void TemperatureSensorClass::Begin(uint8_t adr) 
 {
+    i2cdevice::Setup(Wire, adr);
+
     if(!isActive())
     {
         WebSerialLogger.println("temperature sensor not found!");     
@@ -17,7 +19,7 @@ TemperatureSensor::TemperatureSensor(uint8_t adr) : i2cdevice(adr)
     _lastRead = millis();
 }
 
-bool TemperatureSensor::mqttSetup()
+bool TemperatureSensorClass::mqttSetup()
 {
     if(setupmqtt)
         return false;
@@ -38,7 +40,7 @@ bool TemperatureSensor::mqttSetup()
     return true;
 }
 
-void TemperatureSensor::DisplayInfo()
+void TemperatureSensorClass::DisplayInfo()
 {
     WebSerialLogger.print("Temperature = ");
     WebSerialLogger.print(String(_temperature));
@@ -51,7 +53,12 @@ void TemperatureSensor::DisplayInfo()
     WebSerialLogger.println("m");
 }
 
-void TemperatureSensor::Loop() {
+float TemperatureSensorClass::GetLastTemperatureReading()
+{
+    return _temperature;
+}
+
+void TemperatureSensorClass::Loop() {
 
     if(!_active)
         return;
@@ -83,3 +90,5 @@ void TemperatureSensor::Loop() {
 
     }
 }
+
+TemperatureSensorClass TemperatureSensor1;

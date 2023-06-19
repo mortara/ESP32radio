@@ -4,7 +4,9 @@
 #include "mqtt.hpp"
 #include "i2cdevice.hpp"
 
-class TemperatureSensor : i2cdevice
+#ifndef TEMPSENSOR_H
+#define TEMPSENSOR_H
+class TemperatureSensorClass : i2cdevice
 {
     private:
         Adafruit_BMP085 _bmp;
@@ -17,8 +19,13 @@ class TemperatureSensor : i2cdevice
         bool mqttSetup();
 
     public:
-        TemperatureSensor(uint8_t adr);
+        void Begin(uint8_t adr);
         void Loop();
         void DisplayInfo();
+        float GetLastTemperatureReading();
         
 };
+
+extern TemperatureSensorClass TemperatureSensor1;
+
+#endif

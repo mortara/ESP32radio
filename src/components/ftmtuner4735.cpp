@@ -91,7 +91,7 @@ void FMTuner4735::Start(uint8_t band, uint8_t preset)
 
     WebSerialLogger.println("FMTuner start ...");
 
-    
+    _radio->radioPowerUp();
     SignalIndicator.SetRange(0, 127);
     
     SwitchBand(band);
@@ -105,6 +105,7 @@ void FMTuner4735::Start(uint8_t band, uint8_t preset)
 void FMTuner4735::Stop()
 {
     WebSerialLogger.println("FMTuner stop ...");
+    _radio->powerDown();
 }
 
 void FMTuner4735::SwitchBand(uint8_t bandIdx)
@@ -310,6 +311,11 @@ String FMTuner4735::GetClockDisplayText()
         return RDSMessage;
     }
 
+    if(clockdisplaypage > 1)
+    {
+        return Menu.GetLine(-(clockdisplaypage-1), 0);
+    }
+
 
     uint8_t rssi = _radio->getCurrentRSSI();
     String t = GetFreqDisplayText() + "  RSSI: " + String(rssi) + " ";
@@ -463,7 +469,7 @@ void FMTuner4735::Loop(char ch)
     if((now - clockdisplaypagetimer) > 15000UL)
     {
         clockdisplaypage++;
-        if(clockdisplaypage == 2)
+        if(clockdisplaypage == 2 + Menu.InfoPages)
             clockdisplaypage = 0;
         
         clockdisplaypagetimer = now;

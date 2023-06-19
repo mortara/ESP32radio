@@ -51,7 +51,7 @@ void MQTTConnectorClass::Loop()
         Connect();
     }
 
-    if(now - _lastMqTTLoop > 4000UL)
+    if(now - _lastMqTTLoop > 5000UL)
     {
         _lastMqTTLoop = now;
         _mqttClient->loop();
@@ -177,7 +177,9 @@ void MQTTConnectorClass::Task1code(void *pvParameters)
     // Add a delay to give the rest of the radio some time to setup
     delay(15000);
 
-    for(;;) {
+    for(;;) 
+    {
+        delay(100);
         if(MQTTConnector.Tasks->empty() || !MQTTConnector.isActive())
         {
             delay(1000);
@@ -198,7 +200,7 @@ void MQTTConnectorClass::Task1code(void *pvParameters)
             MQTTConnector.lock = false;
             delete bt;
         }
-        }
     }
+}
 
 MQTTConnectorClass MQTTConnector;

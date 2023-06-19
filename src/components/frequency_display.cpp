@@ -12,7 +12,7 @@ FrequencyDisplay::FrequencyDisplay()
         return;
     }
     _active = true;
-    _u8g2->setContrast(5);
+    _u8g2->setContrast(3);
     //_u8g2->setPowerSave(1);
     _u8g2->clearBuffer();					// clear the internal memory
     SetFont(0);
@@ -102,4 +102,9 @@ void FrequencyDisplay::Loop()
         updateScreen();
         _update = false;
     }
+}
+
+void FrequencyDisplay::TurnOnOff(bool on)
+{
+    _u8g2->setPowerSave(!on);
 }

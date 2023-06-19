@@ -27,6 +27,9 @@
 #include "webserial.hpp"
 #include "uptime_formatter.h"
 #include "webserver.hpp"
+#include "auxplayer.hpp"
+#include "menu.hpp"
+#include "PWMFanController.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -66,9 +69,6 @@ class Radio
         Clock *_clock;
         FrequencyDisplay *_freq_display;
         ClockDisplay *_clockDisplay;
-        
-        TemperatureSensor *_tempSensor1;
-        PowerSensor *_powerSensor;
         ClockButtons *_clockButtons;
         
         uint8_t _currentPreset = 0;
@@ -80,15 +80,22 @@ class Radio
         void setupMQTT();
         unsigned long _lastClockUpdate;
         unsigned long _lastDisplayUpdate;
-
+        unsigned long _lastMQTTUpdate;
+        
         String _frequencyDisplayText;
         String _clockDisplayText0;
         String _clockDisplayText1;
+
+        PWMFanController pwmFan1;
+
+        int _powersavemode = 0;
     public:
         Radio();
         char Loop();
         void ExecuteCommand(char ch);
         void SwitchInput(uint8_t newinput);
+        void ShowPercentage(int value, int max);
+        void EnterPowerSaveMode(int lvl);
         void Stop();
         void Start();
 

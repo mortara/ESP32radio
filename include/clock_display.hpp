@@ -17,5 +17,6 @@ class ClockDisplay : i2cdevice
         ClockDisplay(uint8_t adr);
         void DisplayText(String text, uint8_t row);
         void Loop();
+        void TurnOnOff(bool on);
 
 };

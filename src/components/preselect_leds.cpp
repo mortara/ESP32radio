@@ -27,6 +27,41 @@ PreselectLeds::PreselectLeds(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire,
 
 }
 
+void PreselectLeds::ShowPercentage(int value, int max)
+{
+    int perc = (int)((float)value / (float)max * 8.0);
+
+    PCF8574::DigitalInput digitalInput;
+
+    digitalInput.p0 = LOW;
+    digitalInput.p1 = LOW;
+    digitalInput.p2 = LOW;
+    digitalInput.p3 = LOW;
+    digitalInput.p4 = LOW;
+    digitalInput.p5 = LOW;
+    digitalInput.p6 = LOW;
+    digitalInput.p7 = LOW;
+
+    if(perc > 0)
+        digitalInput.p0 = HIGH;
+    if(perc > 1)
+        digitalInput.p1 = HIGH;
+    if(perc > 2)
+        digitalInput.p2 = HIGH;
+    if(perc > 3)
+        digitalInput.p3 = HIGH;
+    if(perc > 4)
+        digitalInput.p4 = HIGH;
+    if(perc > 5)
+        digitalInput.p5 = HIGH;
+    if(perc > 6)
+        digitalInput.p6 = HIGH;
+    if(perc > 7)
+        digitalInput.p7 = HIGH;
+
+    _pcf8754->digitalWriteAll(digitalInput);
+}
+
 void PreselectLeds::SetLed(uint8_t num)
 {
     if(!isActive())

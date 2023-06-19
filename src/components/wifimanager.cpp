@@ -3,6 +3,8 @@
 
 void WIFIManagerClass::StartUp()
 {
+    WiFi.disconnect();
+
     WiFi.mode(WIFI_STA);
     WiFi.setSleep(true);
     WiFi.setAutoReconnect(true);

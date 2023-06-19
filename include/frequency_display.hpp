@@ -39,5 +39,6 @@ class FrequencyDisplay
         FrequencyDisplay();
         void SetFont(uint8_t fontindx);
         void DisplayText(String text, uint8_t font);
+        void TurnOnOff(bool on);
         void Loop();
 };

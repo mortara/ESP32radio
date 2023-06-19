@@ -64,21 +64,25 @@ Radio::Radio()
     _clockButtons = new ClockButtons(Wire, 0x20);
     RotaryEncoder.Setup(45,48,14);
     
-    _clockDisplay->DisplayText("Starte Temperatursensoren ...",0);
-    _tempSensor1 = new TemperatureSensor(0x77);
-    
-    _clockDisplay->DisplayText("Starte Energiesensor ...",0);
-    _powerSensor = new PowerSensor(0x40);
-    //wifi->Connect();
-    
+    _clockDisplay->DisplayText("Starte Sensoren ...",0);
+    TemperatureSensor1.Begin(0x77);
+    PowerSensor.Begin(0x40);
+
     _clockDisplay->DisplayText("Starte Webserver ...",0);
     WebServer.Setup();
 
     _clockDisplay->DisplayText("Fertig!",0);
 
-    _lastClockUpdate = millis();
+    _lastMQTTUpdate = _lastClockUpdate = millis();
+
+    pwmFan1.Begin(10);
 
     WebSerialLogger.println("Radio setup complete!");
+}
+
+void Radio::ShowPercentage(int value, int max)
+{
+    _preselectLeds->ShowPercentage(value, max);
 }
 
 void Radio::Stop()
@@ -142,8 +146,8 @@ void Radio::ExecuteCommand(char ch)
         case 'j':
             FrequencyIndicator.DisplayInfo();
             SignalIndicator.DisplayInfo();
-            _powerSensor->DisplayInfo();
-            _tempSensor1->DisplayInfo();
+            PowerSensor.DisplayInfo();
+            TemperatureSensor1.DisplayInfo();
             break;
         case 'J':    
             _clockButtons->DisplayInfo();
@@ -154,6 +158,14 @@ void Radio::ExecuteCommand(char ch)
             break;
         case 'n':
             _clock->SetByNTP();
+            break;
+        case 'p':
+            _powersavemode++;
+            EnterPowerSaveMode(_powersavemode);
+            break;
+        case 'P':
+            _powersavemode--;
+            EnterPowerSaveMode(_powersavemode);
             break;
         case 'q':
             ESP.restart();
@@ -170,6 +182,12 @@ void Radio::ExecuteCommand(char ch)
         case 'w':
             WIFIManager.DisplayInfo();
             break;
+        case 'x':
+            pwmFan1.StartFan();
+            break;
+        case 'X':
+            pwmFan1.StopFan();
+            break;
         case '1':
         case '2':
         case '3':
@@ -178,15 +196,19 @@ void Radio::ExecuteCommand(char ch)
         case '6':
         case '7':
         case '8':
-            int preset = ch - '1';
-            WebSerialLogger.println("Switch to preset: " + String(ch));
-            _preselectLeds->SetLed(preset);
-            if(_currentOutput == OUTPUT_SI47XX)
-                _fmtuner->SwitchPreset(preset);
-            else if(_currentInput == INPUT_INET)
-                _inetRadio->SwitchPreset(preset);
-
-            _currentPreset = preset;
+            if(_currentPlayer != PLAYER_EXT)
+            {
+                int preset = ch - '1';
+                WebSerialLogger.println("Switch to preset: " + String(ch));
+                _preselectLeds->SetLed(preset);
+                if(_currentOutput == OUTPUT_SI47XX)
+                    _fmtuner->SwitchPreset(preset);
+                else if(_currentInput == INPUT_INET)
+                    _inetRadio->SwitchPreset(preset);
+                
+                _currentPreset = preset;
+            }
+            
             break;
     }
 }
@@ -214,9 +236,41 @@ void Radio::setupMQTT()
     MQTTConnector.SetupSensor("ClockDisplay2", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("UpTime", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("LoopTime", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("PowerSaveMode", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("FanRunning", "sensor", "ESP32Radio", "", "", "");
     WebSerialLogger.println("mqtt setup done!");
 
     mqttsetup = true;
+}
+
+void Radio::EnterPowerSaveMode(int lvl)
+{
+    WebSerialLogger.println("Entering powersaving mode " + String(lvl));
+
+    switch(lvl)
+    {
+        case 0:  // No power saving
+            _freq_display->TurnOnOff(true);
+            _clockDisplay->TurnOnOff(true);
+            break;
+        case 1: // minimal power saving
+            _freq_display->TurnOnOff(true);
+            _clockDisplay->TurnOnOff(false);
+            break;
+        case 2: // maximal power saving
+            _freq_display->TurnOnOff(false);
+            _clockDisplay->TurnOnOff(false);
+            _preselectLeds->SetLed(99);
+            break;
+        default: // all other value lead to immediate shutdown
+            _freq_display->TurnOnOff(false);
+            _clockDisplay->TurnOnOff(false);
+            this->Stop();
+            break;
+
+    }
+
+    _powersavemode = lvl;
 }
 
 char Radio::Loop()
@@ -321,7 +375,11 @@ char Radio::Loop()
         {
             _clockDisplayText0 = _inetRadio->GetClockDisplayText();
             _frequencyDisplayText = _inetRadio->GetFreqDisplayText();           
-        } 
+        } else if(_currentPlayer == PLAYER_EXT)
+        {
+            _clockDisplayText0 = AuxPlayer.GetClockDisplayText();
+            _frequencyDisplayText = AuxPlayer.GetFreqDisplayText();
+        }
 
         _clockDisplay->DisplayText(_clockDisplayText0, 0);
         _freq_display->DisplayText(_frequencyDisplayText, freqfront);
@@ -333,9 +391,17 @@ char Radio::Loop()
     if(now - _lastClockUpdate > 1000)
     {
         _lastClockUpdate = millis();
-        _tempSensor1->Loop();
-        _powerSensor->Loop();
+        TemperatureSensor1.Loop();
+        PowerSensor.Loop();
         WIFIManager.Loop();
+
+        if(TemperatureSensor1.GetLastTemperatureReading() > 45 && pwmFan1.FanState == false)
+            pwmFan1.StartFan();
+
+        if(TemperatureSensor1.GetLastTemperatureReading() < 40 && pwmFan1.FanState == true)
+            pwmFan1.StopFan();
+
+
         if(!WIFIManager.IsConnected() && _lastClockUpdate - WIFIManager.LastConnectionTry() > 10000)
         {
             if(!WIFIManager.Connect())
@@ -355,29 +421,35 @@ char Radio::Loop()
         if(WiFi.isConnected() && MQTTConnector.isActive() && !mqttsetup)
             setupMQTT();
 
-        DynamicJsonDocument payload(2048);
-        payload["Input"] = String(_currentInput);
-        payload["Preset"] = String(_currentPreset + 1);
-        payload["DateTime"] = _clock->GetDateTimeString();
-        payload["FreeHeap"] = String(esp_get_free_heap_size());
-        payload["FreePSRAM"] = String(ESP.getFreePsram());
-        payload["FreeSketchSpace"] = String(ESP.getFreeSketchSpace());
-        payload["ChipCores"] = String(ESP.getChipCores());
-        payload["CPUFreqpCores"] = String(ESP.getCpuFreqMHz());
-        payload["ChipModel"] = String(ESP.getChipModel());
-        payload["FlashSize"] = String(ESP.getFlashChipSize());
-        payload["FlashMode"] = String(ESP.getFlashChipMode());
+        if(mqttsetup && (now - _lastMQTTUpdate > 5000UL))
+        {
+            DynamicJsonDocument payload(2048);
+            payload["Input"] = String(_currentInput);
+            payload["Preset"] = String(_currentPreset + 1);
+            payload["DateTime"] = _clock->GetDateTimeString();
+            payload["FreeHeap"] = String(esp_get_free_heap_size());
+            payload["FreePSRAM"] = String(ESP.getFreePsram());
+            payload["FreeSketchSpace"] = String(ESP.getFreeSketchSpace());
+            payload["ChipCores"] = String(ESP.getChipCores());
+            payload["CPUFreqpCores"] = String(ESP.getCpuFreqMHz());
+            payload["ChipModel"] = String(ESP.getChipModel());
+            payload["FlashSize"] = String(ESP.getFlashChipSize());
+            payload["FlashMode"] = String(ESP.getFlashChipMode());
 
-        payload["FrequencyDisplay"] = _frequencyDisplayText;
-        payload["ClockDisplay1"] = _clockDisplayText0;
-        payload["ClockDisplay2"] = _clockDisplayText1;
-        payload["UpTime"] =  uptime_formatter::getUptime();
-        payload["LoopTime"] =  String(LoopTime);
+            payload["FrequencyDisplay"] = _frequencyDisplayText;
+            payload["ClockDisplay1"] = _clockDisplayText0;
+            payload["ClockDisplay2"] = _clockDisplayText1;
+            payload["UpTime"] =  uptime_formatter::getUptime();
+            payload["LoopTime"] =  String(LoopTime);
+            payload["PowerSaveMode"] = String(_powersavemode);
+            payload["FanRunning"] = String(pwmFan1.FanState);
 
-        String state_payload  = "";
-        serializeJson(payload, state_payload);
-        
-        MQTTConnector.PublishMessage(state_payload, "ESP32Radio");
+            String state_payload  = "";
+            serializeJson(payload, state_payload);
+            
+            MQTTConnector.PublishMessage(state_payload, "ESP32Radio");
+            _lastMQTTUpdate = now;
+        }
     }
 
     return ch;
@@ -443,6 +515,9 @@ void Radio::SwitchInput(uint8_t newinput)
                 }
                     
             _inetRadio->Start(_currentPreset);
+        } else if(new_player == PLAYER_EXT)
+        {
+            _preselectLeds->SetLed(99);
         }
     }
 

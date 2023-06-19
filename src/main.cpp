@@ -57,20 +57,24 @@ void ScanI2C()
 void start_ota()
 {
   ArduinoOTA.onStart([]() {
-  String type;
-  if (ArduinoOTA.getCommand() == U_FLASH) {
-    type = "sketch";
-  } else {  // U_FS
-    type = "filesystem";
-  }
 
-  // NOTE: if updating FS this would be the place to unmount FS using FS.end()
-  Serial.println("Start updating " + type);
+    _radio->Stop();
+
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else {  // U_FS
+      type = "filesystem";
+    }
+
+    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+    WebSerialLogger.println("Start updating " + type);
   });
   ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
+    WebSerialLogger.println("\nEnd");
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    _radio->ShowPercentage(progress, total);
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
   });
   ArduinoOTA.onError([](ota_error_t error) {

@@ -66,3 +66,13 @@ void ClockDisplay::Loop()
         }
     }
 }
+
+void ClockDisplay::TurnOnOff(bool on)
+{
+
+    if(on)
+        _lcd->backlight();
+    else
+        _lcd->noBacklight();
+
+}
