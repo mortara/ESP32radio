@@ -3,7 +3,10 @@
 
 #include "i2cdevice.hpp"
 
-class PowerSensor : i2cdevice
+#ifndef POWERSENSOR_H
+#define POWERSENSOR_H
+
+class PowerSensorClass : i2cdevice
 {
     private:
         Adafruit_INA219 _ina;
@@ -18,7 +21,13 @@ class PowerSensor : i2cdevice
         bool mqttSetup();
 
     public:
-        PowerSensor(uint8_t adr);
+        void Begin(uint8_t adr);
         void Loop();
         void DisplayInfo();
+
+        float GetLastCurrentReading();
 };
+
+extern PowerSensorClass PowerSensor;
+
+#endif

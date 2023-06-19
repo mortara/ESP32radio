@@ -1,8 +1,10 @@
 #include "power_sensor.hpp"
 #include "mqtt.hpp"
 
-PowerSensor::PowerSensor(uint8_t adr) : i2cdevice(adr)
+void PowerSensorClass::Begin(uint8_t adr)
 {
+    i2cdevice::Setup(Wire, adr);
+
     WebSerialLogger.println("Initializing power sensor");
     if(!isActive())
     {
@@ -15,10 +17,9 @@ PowerSensor::PowerSensor(uint8_t adr) : i2cdevice(adr)
         _ina.setCalibration_16V_400mA();
         _active = true;
     }
-
 }
 
-bool PowerSensor::mqttSetup()
+bool PowerSensorClass::mqttSetup()
 {
     if(setupmqtt)
         return false;
@@ -34,7 +35,7 @@ bool PowerSensor::mqttSetup()
     MQTTConnector.SetupSensor("BusVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
     MQTTConnector.SetupSensor("ShuntVoltage", "sensor", "INA219", "voltage", "mV", "mdi:flash-triangle");
     MQTTConnector.SetupSensor("LoadVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("Power", "sensor", "INA219", "power", "mW", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("Power", "sensor", "INA219", "power", "W", "mdi:flash-triangle");
 
     setupmqtt = true;
 
@@ -42,7 +43,7 @@ bool PowerSensor::mqttSetup()
     return true;
 }
 
-void PowerSensor::DisplayInfo()
+void PowerSensorClass::DisplayInfo()
 {
     WebSerialLogger.print("Current = ");
     WebSerialLogger.print(String(_current));
@@ -61,7 +62,12 @@ void PowerSensor::DisplayInfo()
     WebSerialLogger.println(" mW");
 }
 
-void PowerSensor::Loop() {
+float PowerSensorClass::GetLastCurrentReading()
+{
+    return _current;
+}
+
+void PowerSensorClass::Loop() {
 
     if(!_active)
         return;
@@ -79,7 +85,7 @@ void PowerSensor::Loop() {
     _busvoltage = _ina.getBusVoltage_V();
     _shuntvoltage = _ina.getShuntVoltage_mV();
     _loadvoltage = _busvoltage + (_shuntvoltage / 1000.0);
-    _power = _ina.getPower_mW();
+    _power = _ina.getPower_mW() / 1000.0;
 
     if(setupmqtt)
     {
@@ -96,3 +102,5 @@ void PowerSensor::Loop() {
         MQTTConnector.PublishMessage(state_payload, "INA219");
     }
 }
+
+PowerSensorClass PowerSensor;
