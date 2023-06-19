@@ -1,0 +1,14 @@
+#include <Arduino.h>
+#include "webserial.hpp"
+
+class FanController
+{
+        uint8_t pwmpin;
+        uint8_t pwmchannel = 0;
+    public:
+        void Begin(uint8_t pin);
+        void StartFan();
+        void StopFan();
+        bool FanState = false;
+
+};
