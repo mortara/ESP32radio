@@ -9,9 +9,9 @@ ClockDisplay::ClockDisplay(uint8_t adr) : i2cdevice(adr)
         WebSerialLogger.println("clock display not found");
     }
 
-    _lcd = new LiquidCrystal_I2C(adr,16,2);
-    _lcd->init();                      // initialize the lcd 
-    _lcd->backlight();
+    _lcd = new hd44780_I2Cexp(adr);
+    _lcd->begin(16,2);
+    //_lcd->backlight();
     
     _active = true;
 }
@@ -69,6 +69,7 @@ void ClockDisplay::Loop()
 
 void ClockDisplay::TurnOnOff(bool on)
 {
+    WebSerialLogger.println("turning clock display on/off: " + String(on));
 
     if(on)
         _lcd->backlight();

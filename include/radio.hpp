@@ -29,7 +29,7 @@
 #include "webserver.hpp"
 #include "auxplayer.hpp"
 #include "menu.hpp"
-#include "PWMFanController.hpp"
+#include "FanController.hpp"
 
 #define INPUT_LW 1
 #define INPUT_MW 2
@@ -86,7 +86,7 @@ class Radio
         String _clockDisplayText0;
         String _clockDisplayText1;
 
-        PWMFanController pwmFan1;
+        FanController pwmFan1;
 
         int _powersavemode = 0;
     public:

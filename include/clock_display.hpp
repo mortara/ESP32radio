@@ -1,12 +1,14 @@
 #include <Arduino.h>
-#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <hd44780.h>
+#include <hd44780ioClass/hd44780_I2Cexp.h>
 #include <SPI.h>
 #include "i2cdevice.hpp"
 
 class ClockDisplay : i2cdevice
 {
     private:
-        LiquidCrystal_I2C *_lcd;
+        hd44780_I2Cexp *_lcd;
         String _texts[2];
 
         unsigned long _scroll_row1_timer;
