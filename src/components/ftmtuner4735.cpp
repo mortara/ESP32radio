@@ -493,7 +493,7 @@ void FMTuner4735::Loop(char ch)
         _radio->getCurrentReceivedSignalQuality();
         uint8_t rssi = _radio->getCurrentRSSI();
         uint8_t snr = _radio->getCurrentSNR();
-        if(rssi < 23 || (now - _seektimer) > 6000)
+        if(rssi < 23 || (now - _seektimer) > 6000UL)
         {
             ch = _seekmode;
             char str[100];
