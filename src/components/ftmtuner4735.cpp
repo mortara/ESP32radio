@@ -148,7 +148,6 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
     else
     {
         WebSerialLogger.println("... AM Mode band " + String(b.bandName));
-        b.disableAgc = b.disableAgc;
 
         // char str[100];
         // sprintf(str,"Pos %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", bandIdx, disableAgc, agcIdx, agcNdx, avcIdx );
@@ -343,7 +342,7 @@ void FMTuner4735::SaveCurrentChannel(uint8_t preset)
 void FMTuner4735::LoadPresets()
 {
     WebSerialLogger.println("Load presets for band " + String(_currentBand));
-    if(_currentBand < 0 || _currentBand > 7)
+    if(_currentBand < 0 || _currentBand > 6)
     {
         WebSerialLogger.println(" ... invalid band");
         return; 
