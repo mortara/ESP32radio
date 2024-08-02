@@ -1,7 +1,7 @@
 #include "preselect_buttons.hpp"
 
 
-PreselectButtons::PreselectButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
+PreselectButtons::PreselectButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {

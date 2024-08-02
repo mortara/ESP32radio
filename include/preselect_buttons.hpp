@@ -11,6 +11,6 @@ class PreselectButtons : i2cdevice
         unsigned long _lastRead = 0;
         bool _active = false;
     public:
-        PreselectButtons(TwoWire &twowire, uint8_t adr);
+        PreselectButtons(TwoWire* twowire, uint8_t adr);
         int Loop();
 };

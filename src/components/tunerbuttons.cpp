@@ -1,7 +1,7 @@
 #include "tunerbuttons.hpp"
 
 
-void TunerButtonsClass::Setup(TwoWire &twowire, uint8_t adr)
+void TunerButtonsClass::Setup(TwoWire *twowire, uint8_t adr)
 {
     i2cdevice::Setup(twowire, adr);
 
@@ -13,7 +13,7 @@ void TunerButtonsClass::Setup(TwoWire &twowire, uint8_t adr)
 
     WebSerialLogger.println("Initializing tuner buttons switcher");
 
-    _pcf8754 = new PCF8574(&twowire,adr);
+    _pcf8754 = new PCF8574(twowire,adr);
     _pcf8754->begin();
    
     _pcf8754->pinMode(P0, INPUT);

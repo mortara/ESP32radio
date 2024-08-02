@@ -14,7 +14,7 @@ class TunerButtonsClass : i2cdevice
         unsigned long _lastRead = 0;
         
     public:
-        void Setup(TwoWire &twowire, uint8_t adr);
+        void Setup(TwoWire* twowire, uint8_t adr);
         int Loop();
         bool SavePresetButtonPressed = false;
 };
