@@ -102,10 +102,10 @@ void setup()
   setCpuFrequencyMhz(80);
   
   Serial.begin(115200);
- 
+  while(!Serial);
   //Wire.begin(41,42);
-  
-  //WebSerialLogger.println("Hello world!");
+  Serial.println("Hello Serial!");
+  WebSerialLogger.println("Hello world!");
   //ScanI2C();
 
 

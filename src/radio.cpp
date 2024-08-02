@@ -23,6 +23,7 @@ void Radio::Setup()
 
    Serial.println("new radio()");
 
+    Wire.begin(41,42);
     _i2cwire = new TwoWire(1);
 
     _spk = new Speaker(21);
