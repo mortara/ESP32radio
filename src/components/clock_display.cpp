@@ -2,6 +2,14 @@
 
 ClockDisplayClass::ClockDisplayClass(uint8_t adr) : i2cdevice(adr)
 {
+    
+    i2cadr = adr;
+}
+
+void ClockDisplayClass::StartUp()
+{
+    i2cdevice::Setup(&Wire, i2cadr);
+
     if(isActive())
         WebSerialLogger.println("Initialize clock display");
     else
@@ -9,11 +17,6 @@ ClockDisplayClass::ClockDisplayClass(uint8_t adr) : i2cdevice(adr)
         WebSerialLogger.println("clock display not found");
     }
 
-    i2cadr = adr;
-}
-
-void ClockDisplayClass::StartUp()
-{
     _lcd = new hd44780_I2Cexp(i2cadr);
     _lcd->begin(16,2);
     //_lcd->backlight();
