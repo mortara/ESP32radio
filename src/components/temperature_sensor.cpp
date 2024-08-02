@@ -3,7 +3,7 @@
 
 void TemperatureSensorClass::Begin(uint8_t adr) 
 {
-    i2cdevice::Setup(Wire, adr);
+    i2cdevice::Setup(&Wire, adr);
 
     if(!isActive())
     {

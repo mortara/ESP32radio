@@ -14,7 +14,7 @@ class ChannelButtons : i2cdevice
         int currentchannel = 0;
         bool _active = false;
     public:
-        ChannelButtons(TwoWire &twowire, uint8_t adr);
+        ChannelButtons(TwoWire* twowire, uint8_t adr);
         int Loop();
 
 };

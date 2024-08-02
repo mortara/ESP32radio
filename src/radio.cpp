@@ -67,7 +67,7 @@ void Radio::Setup()
     TunerButtons.Setup(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
-    _clockButtons = new ClockButtons(Wire, 0x20);
+    _clockButtons = new ClockButtons(&Wire, 0x20);
     RotaryEncoder.Setup(45,48,14);
     
     ClockDisplay.DisplayText("Starte Sensoren ...",0);

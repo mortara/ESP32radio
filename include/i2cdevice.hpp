@@ -37,14 +37,14 @@ class i2cdevice
             if(wire == &Wire)
                 wirenum = 0;
 
-            /*WebSerialLogger.println("Testing device 0x" + String(hexadecimalnum) + " on wire " + String(wirenum));
-            wire.beginTransmission(address);
-            uint8_t error = wire.endTransmission();
+            WebSerialLogger.println("Testing device 0x" + String(hexadecimalnum) + " on wire " + String(wirenum));
+            wire->beginTransmission(address);
+            uint8_t error = wire->endTransmission();
             if (error != 0)
             {
                 WebSerialLogger.println("Device 0x" + String(hexadecimalnum) + " not found on wire 2");
                 return;
-            }*/
+            }
             _active = true;
         }
 

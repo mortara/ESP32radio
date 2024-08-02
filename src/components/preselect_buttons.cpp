@@ -11,7 +11,7 @@ PreselectButtons::PreselectButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(tw
 
     WebSerialLogger.println("Initializing preselect buttons");
 
-    _pcf8574 = new PCF8574(&twowire,adr);
+    _pcf8574 = new PCF8574(twowire,adr);
     _pcf8574->begin();
 
     _pcf8574->pinMode(P0, INPUT);

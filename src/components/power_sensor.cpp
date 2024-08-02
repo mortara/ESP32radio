@@ -3,7 +3,7 @@
 
 void PowerSensorClass::Begin(uint8_t adr)
 {
-    i2cdevice::Setup(Wire, adr);
+    i2cdevice::Setup(&Wire, adr);
 
     WebSerialLogger.println("Initializing power sensor");
     if(!isActive())

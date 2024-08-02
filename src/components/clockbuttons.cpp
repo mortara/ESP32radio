@@ -1,7 +1,7 @@
 #include "clock_buttons.hpp"
 
 
-ClockButtons::ClockButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
+ClockButtons::ClockButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -11,7 +11,7 @@ ClockButtons::ClockButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, a
 
     WebSerialLogger.println("Initializing clock buttons");
 
-    _pcf = new PCF8574(&twowire,adr);
+    _pcf = new PCF8574(twowire,adr);
     _pcf->pinMode(P0, INPUT);
     _pcf->pinMode(P1, INPUT);
     _pcf->pinMode(P2, INPUT);

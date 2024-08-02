@@ -1,6 +1,6 @@
 #include "channelbuttons.hpp"
 
-ChannelButtons::ChannelButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
+ChannelButtons::ChannelButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -10,7 +10,7 @@ ChannelButtons::ChannelButtons(TwoWire &twowire, uint8_t adr) : i2cdevice(twowir
 
     WebSerialLogger.println("Initializing channel buttons");
    
-    _pcf8754 = new PCF8574(&twowire,adr);
+    _pcf8754 = new PCF8574(twowire,adr);
     _pcf8754->begin();
    
     _pcf8754->pinMode(P0, INPUT);

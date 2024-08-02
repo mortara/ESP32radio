@@ -13,7 +13,7 @@ class ClockButtons : i2cdevice
         bool _active = false;
         int readInputs();
     public:
-        ClockButtons(TwoWire &twowire, uint8_t adr);
+        ClockButtons(TwoWire* twowire, uint8_t adr);
         void DisplayInfo();
         int Loop();
 

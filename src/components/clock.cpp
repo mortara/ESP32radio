@@ -1,7 +1,7 @@
 #include "clock.hpp"
 
 
-Clock::Clock(TwoWire &wire) : i2cdevice(wire, 0x68)
+Clock::Clock(TwoWire &wire) : i2cdevice(&wire, 0x68)
 {
     _rtc.begin();
 
