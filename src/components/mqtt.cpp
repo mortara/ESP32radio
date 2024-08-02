@@ -9,9 +9,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
     WebSerialLogger.println(msg);
 }
 
-MQTTConnectorClass::MQTTConnectorClass()
+
+void MQTTConnectorClass::Setup()
 {
-    WebSerialLogger.println("Initializing MQTT client");
+     WebSerialLogger.println("Initializing MQTT client");
 
     _wifiClientmqtt = new WiFiClient();
 
@@ -83,7 +84,7 @@ bool MQTTConnectorClass::Connect()
     return _active;
 }
 
-bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon, String entity_category)
+bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon)
 {
     if(!_active)
         return false;
@@ -111,8 +112,7 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
     root["uniq_id"] = name;
     root["state_topic"] = "homeassistant/sensor/" + device_id + "_" + component + "/state";
 
-    if(entity_category != "")
-        root["entity_category"] = entity_category;
+    root["entity_category"] = "diagnostic";
 
     JsonObject devobj = root.createNestedObject("dev");
     JsonArray deviceids = devobj.createNestedArray("ids");

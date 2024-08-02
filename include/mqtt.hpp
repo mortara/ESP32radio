@@ -29,12 +29,12 @@ class MQTTConnectorClass
 
         
     public:
-        MQTTConnectorClass();
+        void Setup();
         void Loop();
         void PublishMessage(String msg, String component, bool retain = false);
         void SendPayload(String msg, String component, bool retain = false);
         bool isActive();
-        bool SetupSensor(String topic, String sensor, String component, String deviceclass = "", String unit = "", String icon = "", String entity_category="config");
+        bool SetupSensor(String topic, String sensor, String component, String deviceclass = "", String unit = "", String icon = "");
         bool Connect();
 
         std::list<MQTTMessages *>* Tasks;

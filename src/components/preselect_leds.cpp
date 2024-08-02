@@ -1,7 +1,7 @@
 #include "preselect_leds.hpp"
 
 
-PreselectLeds::PreselectLeds(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire, adr)
+PreselectLeds::PreselectLeds(TwoWire *twowire, uint8_t adr) : i2cdevice(twowire, adr)
 {
     if(!isActive())
     {
@@ -11,7 +11,7 @@ PreselectLeds::PreselectLeds(TwoWire &twowire, uint8_t adr) : i2cdevice(twowire,
 
     WebSerialLogger.println("Initializing preselect led strip");
     
-    _pcf8754 = new PCF8574(&twowire,adr);
+    _pcf8754 = new PCF8574(twowire,adr);
     _pcf8754->begin();
    
     _pcf8754->pinMode(P0, OUTPUT, LOW);

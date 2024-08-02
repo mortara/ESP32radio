@@ -55,7 +55,7 @@ class Radio
 {
 
     private:
-        TwoWire _i2cwire = TwoWire(1);
+        TwoWire *_i2cwire;
         Speaker *_spk;
 
         ChannelSwitch *_channel;
@@ -68,7 +68,7 @@ class Radio
         ChannelButtons *_channelButtons;
         Clock *_clock;
         FrequencyDisplay *_freq_display;
-        ClockDisplay *_clockDisplay;
+        
         ClockButtons *_clockButtons;
         
         uint8_t _currentPreset = 0;
@@ -90,7 +90,7 @@ class Radio
 
         int _powersavemode = 0;
     public:
-        Radio();
+        void Setup();
         char Loop();
         void ExecuteCommand(char ch);
         void SwitchInput(uint8_t newinput);

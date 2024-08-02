@@ -1,7 +1,9 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <WebSerial.h>
+#include "AsyncTCP.h"
+#include "ESPAsyncWebServer.h"
+//#include <WebSerial.h>
 
 #ifndef WEBSERIAL_H
 #define WEBSERIAL_H
@@ -14,7 +16,7 @@ class WebSerialLoggerClass
         bool running = false;
 
     public:
-        WebSerialLoggerClass();
+        void Start();
         void Begin(AsyncWebServer *_server);
         bool IsRunning();
         void print(const char *text);
@@ -24,6 +26,7 @@ class WebSerialLoggerClass
         void Flush();
         char GetInput();
 };
-#endif
+
 
 extern WebSerialLoggerClass WebSerialLogger;
+#endif

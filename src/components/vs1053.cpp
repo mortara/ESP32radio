@@ -1,7 +1,7 @@
 #include "vs1053.hpp"
 
 
-VS1053Player::VS1053Player()
+void VS1053Player::Setup()
 {
     WebSerialLogger.println("Creating vs1053 object");
     _player = new Adafruit_VS1053_FilePlayer(MOSI, MISO, CLK, BREAKOUT_RESET, BREAKOUT_MP3_CS, BREAKOUT_XDCS, BREAKOUT_DREQ, BREAKOUT_SD_CS);

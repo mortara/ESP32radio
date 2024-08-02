@@ -1,6 +1,6 @@
 #include "clock_display.hpp"
 
-ClockDisplay::ClockDisplay(uint8_t adr) : i2cdevice(adr)
+ClockDisplayClass::ClockDisplayClass(uint8_t adr) : i2cdevice(adr)
 {
     if(isActive())
         WebSerialLogger.println("Initialize clock display");
@@ -9,17 +9,23 @@ ClockDisplay::ClockDisplay(uint8_t adr) : i2cdevice(adr)
         WebSerialLogger.println("clock display not found");
     }
 
-    _lcd = new hd44780_I2Cexp(adr);
+    i2cadr = adr;
+}
+
+void ClockDisplayClass::StartUp()
+{
+    _lcd = new hd44780_I2Cexp(i2cadr);
     _lcd->begin(16,2);
     //_lcd->backlight();
     
     _active = true;
 }
 
-void ClockDisplay::DisplayText(String text, uint8_t row)
+void ClockDisplayClass::DisplayText(String text, uint8_t row)
 {
     if(text == _texts[row])
         return;
+
     _texts[row] = text;
     
     if(!_active)
@@ -47,7 +53,7 @@ void ClockDisplay::DisplayText(String text, uint8_t row)
     }
 }
 
-void ClockDisplay::Loop()
+void ClockDisplayClass::Loop()
 {
     if(_texts[0].length() > 16 && _active)
     {
@@ -67,7 +73,7 @@ void ClockDisplay::Loop()
     }
 }
 
-void ClockDisplay::TurnOnOff(bool on)
+void ClockDisplayClass::TurnOnOff(bool on)
 {
     WebSerialLogger.println("turning clock display on/off: " + String(on));
 
@@ -77,3 +83,5 @@ void ClockDisplay::TurnOnOff(bool on)
         _lcd->noBacklight();
 
 }
+
+ClockDisplayClass ClockDisplay(0x27); 

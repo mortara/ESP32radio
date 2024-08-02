@@ -117,7 +117,7 @@ void WIFIManagerClass::Loop()
         if(!mqttsetup)
             setupMQTT();
 
-        DynamicJsonDocument payload(2048);
+        JsonDocument payload;
         payload["SSID"] = _credentials.SSID;
         payload["BSSID"] = WiFi.BSSIDstr();
         payload["WIFI_RSSI"] = String(WiFi.RSSI());
@@ -127,10 +127,10 @@ void WIFIManagerClass::Loop()
         payload["Gateway"] = WiFi.gatewayIP().toString();
         payload["DNS"] = WiFi.dnsIP().toString();;
         
-        String state_payload  = "";
-        serializeJson(payload, state_payload);
+        char json_string[2048];
+        serializeJson(payload, json_string);
         
-        MQTTConnector.PublishMessage(state_payload, "WIFI");
+        MQTTConnector.PublishMessage(json_string, "WIFI");
         _lastMqttupdate = currentMillis;
     }
 

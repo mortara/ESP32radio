@@ -5,7 +5,10 @@
 #include <SPI.h>
 #include "i2cdevice.hpp"
 
-class ClockDisplay : i2cdevice
+#ifndef CLOCKDISPLAY_H
+#define CLOCKDISPLAY_H
+
+class ClockDisplayClass : i2cdevice
 {
     private:
         hd44780_I2Cexp *_lcd;
@@ -14,11 +17,16 @@ class ClockDisplay : i2cdevice
         unsigned long _scroll_row1_timer;
         uint8_t _scroll_row1_offset;
         bool _active = false;
-
+        uint8_t i2cadr;
     public:
-        ClockDisplay(uint8_t adr);
+        ClockDisplayClass(uint8_t adr);
+        void StartUp();
         void DisplayText(String text, uint8_t row);
         void Loop();
         void TurnOnOff(bool on);
 
 };
+
+extern ClockDisplayClass ClockDisplay;
+
+#endif

@@ -16,7 +16,7 @@ void handleRoot(AsyncWebServerRequest *request) {
                     <html>\
                     <head>\
                         <meta http-equiv='refresh' content='15'/>\
-                        <title>ESP8266 AIO Sensor</title>\
+                        <title>ESP32 Radio</title>\
                         <style>\
                         body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }\
                         </style>\

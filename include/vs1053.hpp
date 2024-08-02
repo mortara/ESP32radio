@@ -26,7 +26,7 @@ class VS1053Player
         bool _active = false;
         
     public:
-        VS1053Player();
+        void Setup();
 
         void Begin();
         void End();

@@ -10,6 +10,9 @@ void FanController::Begin(uint8_t pin)
 
 void FanController::StartFan()
 {
+    if(pwmpin == 0)
+        return;
+
     WebSerialLogger.println("Start fan ...");
     digitalWrite(pwmpin, HIGH);
     FanState = true;
@@ -17,6 +20,9 @@ void FanController::StartFan()
 
 void FanController::StopFan()
 {
+    if(pwmpin == 0)
+        return;
+
     WebSerialLogger.println("Stop fan ...");
     digitalWrite(pwmpin, LOW);
     FanState = false;

@@ -3,7 +3,7 @@
 
 class FanController
 {
-        uint8_t pwmpin;
+        uint8_t pwmpin = 0;
         uint8_t pwmchannel = 0;
     public:
         void Begin(uint8_t pin);

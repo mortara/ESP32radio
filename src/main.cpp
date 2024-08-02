@@ -100,17 +100,23 @@ void start_ota()
 void setup()
 {
   setCpuFrequencyMhz(80);
-
+  
   Serial.begin(115200);
-  WebSerialLogger.println("Hello world!");
+ 
+  //Wire.begin(41,42);
+  
+  //WebSerialLogger.println("Hello world!");
   //ScanI2C();
-  _radio = new Radio();
 
+
+  _radio = new Radio();
+  _radio->Setup();
 }
 
 // Main
 void loop()
 {
+
     unsigned long now = millis();
     _loopCount++;
     if(_loopCount == _loopnum)
@@ -172,6 +178,8 @@ void loop()
     {
       _i2cscanner->loop();
     }
+
+    Serial.println("Loop");
 }
 
 
