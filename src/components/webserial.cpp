@@ -50,39 +50,39 @@ void WebSerialLoggerClass::print(const char *text)
 {
     Serial.print(text);
 
-    /*if(running)
-        WebSerial.print(text);*/
+    if(running)
+        WebSerial.print(text);
 }
 
 void WebSerialLoggerClass::print(String text)
 {
     Serial.print(text);
 
-    /*if(running)
-        WebSerial.print(text);*/
+    if(running)
+        WebSerial.print(text);
 }
 
 void WebSerialLoggerClass::println(const char *text)
 {
     Serial.println(text);
 
-    /*if(running)
-        WebSerial.println(text);*/
+    if(running)
+        WebSerial.println(text);
 }
 
 void WebSerialLoggerClass::println(String text)
 {
     Serial.println(text);
 
-    /*if(running)
-        WebSerial.println(text);*/
+    if(running)
+        WebSerial.println(text);
 
 }
 
 void WebSerialLoggerClass::Flush()
 {
-    /*if(running)
-        WebSerial.flush();*/
+    if(running)
+        WebSerial.flush();
 
 }
 

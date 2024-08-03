@@ -3,7 +3,7 @@
 #include <WiFi.h>
 #include "AsyncTCP.h"
 #include "ESPAsyncWebServer.h"
-//#include <WebSerial.h>
+#include <WebSerial.h>
 
 #ifndef WEBSERIAL_H
 #define WEBSERIAL_H
