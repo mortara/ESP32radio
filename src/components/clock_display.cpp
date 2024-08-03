@@ -1,6 +1,6 @@
 #include "clock_display.hpp"
 
-ClockDisplayClass::ClockDisplayClass(uint8_t adr) : i2cdevice(adr)
+ClockDisplayClass::ClockDisplayClass(uint8_t adr) : i2cdevice()
 {
     
     i2cadr = adr;
