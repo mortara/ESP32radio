@@ -13,13 +13,13 @@ void VS1053Player::Setup()
     
     _player->setVolume(100, 100);
     //_player->softReset();
-
+/*
     if (!SD.begin(BREAKOUT_SD_CS)) {
         WebSerialLogger.println("SD failed, or not present");
     }
     else
         WebSerialLogger.println("SD OK!");
-
+*/
 }
 
 void VS1053Player::Begin()

@@ -126,11 +126,8 @@ void WIFIManagerClass::Loop()
         payload["SubnetMask"] = WiFi.subnetMask().toString();
         payload["Gateway"] = WiFi.gatewayIP().toString();
         payload["DNS"] = WiFi.dnsIP().toString();;
-        
-        char json_string[2048];
-        serializeJson(payload, json_string);
-        
-        MQTTConnector.PublishMessage(json_string, "WIFI");
+
+        MQTTConnector.PublishMessage(payload, "WIFI");
         _lastMqttupdate = currentMillis;
     }
 

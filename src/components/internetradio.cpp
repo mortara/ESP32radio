@@ -11,6 +11,7 @@ InternetRadio::InternetRadio()
     _http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
     _signaltimer = millis();
+    clockdisplaypagetimer = _signaltimer;
 }
 
 void InternetRadio::setupMQTT()
@@ -18,10 +19,8 @@ void InternetRadio::setupMQTT()
     if(mqttsetup)
         return;
 
-    WebSerialLogger.println("Setting up Internetradio MQTT client");
-
-    MQTTConnector.SetupSensor("Station", "sensor", "Internetradio", "", "", "");
-    MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "", "", "mdi:radio");
+    MQTTConnector.SetupSensor("Station", "sensor", "Internetradio", "text", "", "");
+    MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "data_size", "B", "mdi:radio");
 
     WebSerialLogger.println("Internetradio Sensor mqtt setup done!");
 
@@ -37,9 +36,8 @@ void InternetRadio::SwitchPreset(uint8_t num)
 
 void InternetRadio::StartStream(Station station)
 {
-    Serial.print("connecting to ");
-    Serial.println(station.url);
-
+    WebSerialLogger.println("connecting to " + String(station.url));
+   
     _http.end();
     delay(100);
     bytes_served = 0;
@@ -137,14 +135,13 @@ void InternetRadio::Loop()
         {   
             Station st = stationlist[_current_station_preset];
 
-            DynamicJsonDocument payload(2048);
+            JsonDocument payload;
             payload["Station"] = String(st.name);
-            payload["BytesPlayed"] = String(bytes_served);
+            payload["BytesPlayed"] = bytes_served;
 
-            String state_payload  = "";
-            serializeJson(payload, state_payload);
-            
-            MQTTConnector.PublishMessage(state_payload, "Internetradio");
+            //WebSerialLogger.println("Sending internetradio mqtt: " + String(st.name) + "/"+ String(bytes_served));
+
+            MQTTConnector.PublishMessage(payload, "Internetradio");
         }
     }
 

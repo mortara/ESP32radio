@@ -95,10 +95,12 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
     String config_topic = sensor_topic_head + "_" + topic + "/config";
 	String name = device_id + "_" + topic;
 
-    DynamicJsonDocument root(2048);
+    JsonDocument root;
 
     if(deviceclass != "")
         root["device_class"] = deviceclass;
+    else
+        root["device_class"] = "None";
 
     root["name"] = name;
 
@@ -113,22 +115,22 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
     root["state_topic"] = "homeassistant/sensor/" + device_id + "_" + component + "/state";
 
     root["entity_category"] = "diagnostic";
-
-    JsonObject devobj = root.createNestedObject("dev");
-    JsonArray deviceids = devobj.createNestedArray("ids");
+    
+    JsonObject devobj = root["dev"].to<JsonObject>();
+    JsonArray deviceids = devobj["ids"].to<JsonArray>();
     deviceids.add(device_id);
 
     devobj["name"] = device_id;
     devobj["mf"] = "Patrick Mortara";
     devobj["mdl"] = "ESP32Radio";
 
-    String config_payload  = "";
+    char config_payload[4096];
     serializeJson(root, config_payload);
 
     WebSerialLogger.println("Topic: " + config_topic);
 
     //WebSerialLogger.println("Payload: " + config_payload);
-    bool result = _mqttClient->publish(config_topic.c_str(), config_payload.c_str(), true);
+    bool result = _mqttClient->publish(config_topic.c_str(), config_payload, true);
     if(!result)
     {
         WebSerialLogger.println(" ... error!");
@@ -157,8 +159,15 @@ void MQTTConnectorClass::SendPayload(String payload, String component, bool reta
     }
 }
 
-void MQTTConnectorClass::PublishMessage(String msg, String component, bool retain)
+void MQTTConnectorClass::PublishMessage(JsonDocument root, String component, bool retain)
 {
+    char msg[4096];
+    size_t size = serializeJson(root, msg);
+
+    //WebSerialLogger.println("Sending mqtt message: " + String(msg));
+    if(size > 1024)
+        WebSerialLogger.println("Size : " + String(size));
+
     MQTTMessages *bt = new MQTTMessages();
     bt->payload = msg;
     bt->component = component;
@@ -176,7 +185,7 @@ void MQTTConnectorClass::Task1code(void *pvParameters)
 {
     // Add a delay to give the rest of the radio some time to setup
     delay(15000);
-
+    WebSerial.println("MQTT Loop starting ...");
     for(;;) 
     {
         delay(100);

@@ -78,15 +78,12 @@ void TemperatureSensorClass::Loop() {
     
     if(setupmqtt)
     {
-        DynamicJsonDocument payload(2048);
+        JsonDocument payload;
         payload["Temperature"] = String(_temperature);
         payload["Pressure"] = String(_pressure);
         payload["Altitude"] = String(_altitude);
         
-        String state_payload  = "";
-        serializeJson(payload, state_payload);
-        
-        MQTTConnector.PublishMessage(state_payload, "BMP180");
+        MQTTConnector.PublishMessage(payload, "BMP180");
 
     }
 }

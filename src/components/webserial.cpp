@@ -4,7 +4,7 @@ String inputString;
 
 void recvMsg(const uint8_t *data, size_t len)
 {
-    Serial.println("Received Data...");
+    Serial0.println("Received Data...");
     String d = "";
     for(int i=0; i < len; i++){
         d += char(data[i]);
@@ -12,21 +12,21 @@ void recvMsg(const uint8_t *data, size_t len)
 
     inputString = inputString + d;
 
-    Serial.println(d);
+    Serial0.println(d);
 }
 
 void WebSerialLoggerClass::Start()
 {
-    Serial.println("Starting webserial server!");
+    Serial0.println("Starting webserial server!");
     
 }
 
 void WebSerialLoggerClass::Begin(AsyncWebServer *_server)
 {
-    Serial.println("Starting webserial connection!");
+    Serial0.println("Starting webserial connection!");
 
-    /*WebSerial.begin(_server);
-    WebSerial.onMessage(recvMsg);*/
+    WebSerial.begin(_server);
+    WebSerial.onMessage(recvMsg);
 
     running = true;
 }
@@ -48,7 +48,7 @@ bool WebSerialLoggerClass::IsRunning()
 
 void WebSerialLoggerClass::print(const char *text)
 {
-    Serial.print(text);
+    Serial0.print(text);
 
     if(running)
         WebSerial.print(text);
@@ -56,7 +56,7 @@ void WebSerialLoggerClass::print(const char *text)
 
 void WebSerialLoggerClass::print(String text)
 {
-    Serial.print(text);
+    Serial0.print(text);
 
     if(running)
         WebSerial.print(text);
@@ -64,7 +64,7 @@ void WebSerialLoggerClass::print(String text)
 
 void WebSerialLoggerClass::println(const char *text)
 {
-    Serial.println(text);
+    Serial0.println(text);
 
     if(running)
         WebSerial.println(text);
@@ -72,7 +72,7 @@ void WebSerialLoggerClass::println(const char *text)
 
 void WebSerialLoggerClass::println(String text)
 {
-    Serial.println(text);
+    Serial0.println(text);
 
     if(running)
         WebSerial.println(text);

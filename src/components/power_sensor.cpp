@@ -89,17 +89,14 @@ void PowerSensorClass::Loop() {
 
     if(setupmqtt)
     {
-        DynamicJsonDocument payload(2048);
+        JsonDocument payload;
         payload["Current"] = String(_current);
         payload["BusVoltage"] = String(_busvoltage);
         payload["ShuntVoltage"] = String(_shuntvoltage);
         payload["LoadVoltage"] = String(_loadvoltage);
         payload["Power"] = String(_power);
 
-        String state_payload  = "";
-        serializeJson(payload, state_payload);
-        
-        MQTTConnector.PublishMessage(state_payload, "INA219");
+        MQTTConnector.PublishMessage(payload, "INA219");
     }
 }
 

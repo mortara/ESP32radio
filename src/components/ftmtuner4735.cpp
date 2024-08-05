@@ -60,7 +60,7 @@ void FMTuner4735::sendMQTTState()
 {
     Band b = _bands[_currentBand];
 
-    DynamicJsonDocument payload(2048);
+    JsonDocument payload;
     payload["Frequency"] = _radio->getCurrentFrequency();
     payload["RSSI"] = _radio->getCurrentRSSI();
     payload["SNR"] = _radio->getCurrentSNR();
@@ -78,15 +78,12 @@ void FMTuner4735::sendMQTTState()
 
     payload["BandData"] = String(str);
 
-    String state_payload  = "";
-    serializeJson(payload, state_payload);
-    
-    MQTTConnector.PublishMessage(state_payload, "SI4735");
+    MQTTConnector.PublishMessage(payload, "SI4735");
 }
 
 void FMTuner4735::Start(uint8_t band, uint8_t preset)
 {
-    if(!_active)
+    if(!_active || _radio == NULL)
         return;
 
     WebSerialLogger.println("FMTuner start ...");
@@ -112,7 +109,8 @@ void FMTuner4735::SwitchBand(uint8_t bandIdx)
 {
     if(!_active)
         return;
-
+        
+    _seekmode = '0';
     WebSerialLogger.println("Switch to band " + String(bandIdx));
     if(bandIdx == _currentBand)
     {
@@ -300,7 +298,7 @@ String FMTuner4735::GetFreqDisplayText()
 
 String FMTuner4735::GetClockDisplayText()
 {
-    if(!_active)
+    if(!_active || _radio == NULL)
     {
         return "Tuner not found!";
     }
@@ -329,6 +327,7 @@ void FMTuner4735::SwitchPreset(uint8_t num)
     WebSerialLogger.println("FMTuner::SwitchPreset to " + String(num));
     _current_station_preset = num;
     currentFrequency = setFrequency(_station_presets[num]);
+    _seekmode = '0';
 }
 
 void FMTuner4735::SaveCurrentChannel(uint8_t preset)
@@ -337,6 +336,7 @@ void FMTuner4735::SaveCurrentChannel(uint8_t preset)
     _station_presets[preset] = currentFrequency;
 
     SavePresets();
+    _seekmode = '0';
 }
 
 void FMTuner4735::LoadPresets()

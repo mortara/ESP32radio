@@ -102,9 +102,19 @@ void setup()
   setCpuFrequencyMhz(80);
   
   Serial.begin(115200);
-  while(!Serial);
+  Serial0.begin(115200);
+  Serial1.begin(115200);
+  Serial2.begin(115200);
+  
+  delay(100);
+  //while(!Serial)
+  //  delay(100);
   //Wire.begin(41,42);
-  Serial.println("Hello Serial!");
+  //Serial.println("Hello Serial!");
+  Serial.println("Serial Hello!");
+  Serial0.println("Serial0 Hello!");
+  Serial1.println("Serial1 Hello!");
+  Serial2.println("Serial2 Hello!");
   WebSerialLogger.println("Hello world!");
   //ScanI2C();
 
@@ -179,7 +189,6 @@ void loop()
       _i2cscanner->loop();
     }
 
-    Serial.println("Loop");
 }
 
 

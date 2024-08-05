@@ -19,8 +19,8 @@ class ClockDisplayClass : i2cdevice
         bool _active = false;
         uint8_t i2cadr;
     public:
-        ClockDisplayClass(uint8_t adr);
-        void StartUp();
+
+        void StartUp(uint8_t adr);
         void DisplayText(String text, uint8_t row);
         void Loop();
         void TurnOnOff(bool on);

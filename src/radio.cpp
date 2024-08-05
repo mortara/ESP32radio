@@ -21,16 +21,14 @@ void Radio::Setup()
     
     */
 
-   Serial.println("new radio()");
-
-    Wire.begin(41,42);
+    Wire.begin(42,41, 10000);
     _i2cwire = new TwoWire(1);
 
     _spk = new Speaker(21);
 
     //Wire.setClock(10000);
     _freq_display = new FrequencyDisplay();
-    ClockDisplay.StartUp();
+    ClockDisplay.StartUp(0x27);
     ClockDisplay.DisplayText("Starte I2C Bus 2 ...",0);
 
     _i2cwire->begin(39,40);
@@ -430,7 +428,8 @@ char Radio::Loop()
 
         if(mqttsetup && (now - _lastMQTTUpdate > 5000UL))
         {
-            JsonDocument payload;
+           
+            JsonDocument payload;      
             payload["Input"] = String(_currentInput);
             payload["Preset"] = String(_currentPreset + 1);
             payload["DateTime"] = _clock->GetDateTimeString();
@@ -439,9 +438,12 @@ char Radio::Loop()
             payload["FreeSketchSpace"] = String(ESP.getFreeSketchSpace());
             payload["ChipCores"] = String(ESP.getChipCores());
             payload["CPUFreqpCores"] = String(ESP.getCpuFreqMHz());
+         
             payload["ChipModel"] = String(ESP.getChipModel());
+         
             payload["FlashSize"] = String(ESP.getFlashChipSize());
-            payload["FlashMode"] = String(ESP.getFlashChipMode());
+     
+            payload["FlashMode"] = ""; // String(ESP.getFlashChipMode());
 
             payload["FrequencyDisplay"] = _frequencyDisplayText;
             payload["ClockDisplay1"] = _clockDisplayText0;
@@ -450,12 +452,10 @@ char Radio::Loop()
             payload["LoopTime"] =  String(LoopTime);
             payload["PowerSaveMode"] = String(_powersavemode);
             payload["FanRunning"] = String(pwmFan1.FanState);
-
-            String state_payload  = "";
-            serializeJson(payload, state_payload);
-            
-            MQTTConnector.PublishMessage(state_payload, "ESP32Radio");
+           
+            MQTTConnector.PublishMessage(payload, "ESP32Radio");
             _lastMQTTUpdate = now;
+
         }
     }
 

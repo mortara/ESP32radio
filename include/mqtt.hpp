@@ -31,7 +31,7 @@ class MQTTConnectorClass
     public:
         void Setup();
         void Loop();
-        void PublishMessage(String msg, String component, bool retain = false);
+        void PublishMessage(JsonDocument msg, String component, bool retain = false);
         void SendPayload(String msg, String component, bool retain = false);
         bool isActive();
         bool SetupSensor(String topic, String sensor, String component, String deviceclass = "", String unit = "", String icon = "");
