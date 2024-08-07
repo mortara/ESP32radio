@@ -10,6 +10,9 @@ class ClockButtons : i2cdevice
         PCF8574 *_pcf;
         unsigned long _lastRead = 0;
         
+        bool button1_pressed = false;
+        bool button2_pressed = false;
+
         bool _active = false;
         int readInputs();
     public:

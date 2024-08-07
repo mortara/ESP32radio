@@ -12,6 +12,7 @@ int _loopCount;
 int _loopnum = 150000;
 int mode = 0;
 bool ota_running = false;
+bool crashed = false;
 unsigned long ota_timer = 0;
 
 void ScanI2C()
@@ -118,9 +119,16 @@ void setup()
   WebSerialLogger.println("Hello world!");
   //ScanI2C();
 
-
-  _radio = new Radio();
-  _radio->Setup();
+  try
+  {
+     _radio = new Radio();
+      _radio->Setup();
+  }
+  catch(const std::exception& e)
+  {
+    crashed = true;
+    WIFIManager.Connect();
+  }
 }
 
 // Main
@@ -152,8 +160,15 @@ void loop()
           _loopnum = 10000;
     }
 
-    if(now - ota_timer > 500UL)
+    if(now - ota_timer > 100UL)
     {
+      if(crashed)
+      {
+        if(!WiFi.isConnected())
+          WIFIManager.Connect();
+
+      }
+
       if(ota_running)
         ArduinoOTA.handle();
       else
@@ -166,23 +181,31 @@ void loop()
 
     if(mode == 0)
     {
-      char ch = _radio->Loop();
-      switch(ch)
+      try
       {
-        case 'D':
-          _radio->Stop();
-          ScanI2C();
-          break;
-        case 'S':
-          _radio->Stop();
+        char ch = _radio->Loop();
 
-          _i2cscanner = new I2CScanner();
-          _i2cscanner->setup();
-          mode = 1;
-          break;
-        case 'L':
-          WebSerialLogger.println("loop: " + String(_loopCount));
-          break;
+        switch(ch)
+        {
+          case 'D':
+            _radio->Stop();
+            ScanI2C();
+            break;
+          case 'S':
+            _radio->Stop();
+
+            _i2cscanner = new I2CScanner();
+            _i2cscanner->setup();
+            mode = 1;
+            break;
+          case 'L':
+            WebSerialLogger.println("loop: " + String(_loopCount));
+            break;
+        }
+      }
+      catch(const std::exception& e)
+      {
+        crashed = true;
       }
     } else if(mode == 1)
     {

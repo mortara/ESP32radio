@@ -55,8 +55,8 @@ class FMTuner4735
         uint16_t _station_presets[8];
         
         uint8_t _currentBand = 99;
-        uint8_t _smallstep = 5;
-        uint8_t _step = 10;
+        uint8_t _smallstep = 10;
+        uint8_t _step = 50;
         unsigned long _lastSignalUpdate;
         
         uint16_t setFrequency(u_int16_t freq);
@@ -114,7 +114,7 @@ class FMTuner4735
         const int lastAmStep = (sizeof tabAmStep / sizeof(int)) - 1;
         int idxAmStep = 3;
 
-        int tabFmStep[3] = {5, 10, 20};
+        int tabFmStep[3] = {10, 20, 50};
         const int lastFmStep = (sizeof tabFmStep / sizeof(int)) - 1;
         
         uint16_t currentStepIdx = 1;
@@ -142,7 +142,7 @@ class FMTuner4735
             {"SW1", SW_BAND_TYPE, 4000, 5500, 4885, 1, 4, 1, 0, 0, 32, 0},
             {"SW2", SW_BAND_TYPE, 5500, 6500, 6000, 1, 4, 1, 0, 0, 32, 0},
             {"SW3", SW_BAND_TYPE, 7200, 8000, 7200, 1, 4, 1, 0, 0, 40, 0},
-            {"UKW", FM_BAND_TYPE, 8790, 10800, 10390, 1, 0, 1, 0, 0, 0, 0},
+            {"UKW", FM_BAND_TYPE, 8790, 10800, 10390, 0, 0, 1, 0, 0, 0, 0},
             {"ALL", SW_BAND_TYPE, 150, 30000, 15000, 0, 4, 1, 0, 0, 48, 0} // All band. LW, MW and SW (from 150kHz to 30MHz)
         };
 

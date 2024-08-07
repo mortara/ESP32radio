@@ -42,14 +42,21 @@ int ClockButtons::readInputs()
 
 
     int button = 0;
-    
+    button1_pressed = false;
+    button2_pressed = false;
     PCF8574::DigitalInput read = _pcf->digitalReadAll();
 
     if(read.p0 == 0)
-        button = 1;
-    else if(read.p1 == 0)
-        button = 2;
-    else if(read.p2 == 0)
+    {
+        button1_pressed = true;
+    }
+    
+    if(read.p1 == 0)
+    {
+        button2_pressed = true;
+    }
+    
+    if(read.p2 == 0)
         button = 3;
     else if(read.p3 == 0)
         button = 4;

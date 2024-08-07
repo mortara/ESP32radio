@@ -49,7 +49,12 @@ void WIFIManagerClass::setupMQTT()
 
     WebSerialLogger.println("Setting up Wifi MQTT client");
 
-    MQTTConnector.SetupSensor("SSID", "sensor", "WIFI", "", "", "");
+    if(!MQTTConnector.SetupSensor("SSID", "sensor", "WIFI", "", "", ""))
+    {
+        WebSerialLogger.println("Unable to setup WIFI MQTT client");            
+        return;
+    }
+
     MQTTConnector.SetupSensor("BSSID", "sensor", "WIFI", "", "", "");
     MQTTConnector.SetupSensor("WIFI_RSSI", "sensor", "WIFI", "signal_strength", "dB", "mdi:sine-wave");
     MQTTConnector.SetupSensor("Hostname", "sensor", "WIFI", "", "", "");
@@ -115,20 +120,24 @@ void WIFIManagerClass::Loop()
     if(currentMillis - _lastMqttupdate > 30000 && connected && MQTTConnector.isActive())
     {
         if(!mqttsetup)
+        {
             setupMQTT();
+        }
+        else
+        {
+            JsonDocument payload;
+            payload["SSID"] = _credentials.SSID;
+            payload["BSSID"] = WiFi.BSSIDstr();
+            payload["WIFI_RSSI"] = String(WiFi.RSSI());
+            payload["Hostname"] = String(WiFi.getHostname());
+            payload["IP"] = WiFi.localIP().toString();
+            payload["SubnetMask"] = WiFi.subnetMask().toString();
+            payload["Gateway"] = WiFi.gatewayIP().toString();
+            payload["DNS"] = WiFi.dnsIP().toString();;
 
-        JsonDocument payload;
-        payload["SSID"] = _credentials.SSID;
-        payload["BSSID"] = WiFi.BSSIDstr();
-        payload["WIFI_RSSI"] = String(WiFi.RSSI());
-        payload["Hostname"] = String(WiFi.getHostname());
-        payload["IP"] = WiFi.localIP().toString();
-        payload["SubnetMask"] = WiFi.subnetMask().toString();
-        payload["Gateway"] = WiFi.gatewayIP().toString();
-        payload["DNS"] = WiFi.dnsIP().toString();;
-
-        MQTTConnector.PublishMessage(payload, "WIFI");
-        _lastMqttupdate = currentMillis;
+            MQTTConnector.PublishMessage(payload, "WIFI");
+            _lastMqttupdate = currentMillis;
+        }
     }
 
     // if WiFi is down, try reconnecting

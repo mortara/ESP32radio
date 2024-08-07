@@ -225,7 +225,12 @@ void Radio::setupMQTT()
 
     WebSerialLogger.println("Setting up MQTT client");
 
-    MQTTConnector.SetupSensor("Input", "sensor", "ESP32Radio", "", "", "");
+    if(!MQTTConnector.SetupSensor("Input", "sensor", "ESP32Radio", "", "", ""))
+    {
+        WebSerialLogger.println("Unable to setup MQTT client");
+        return;
+    }
+
     MQTTConnector.SetupSensor("Preset", "sensor", "ESP32Radio", "", "", "mdi:radio");
     MQTTConnector.SetupSensor("DateTime", "sensor", "ESP32Radio", "", "", "");
     MQTTConnector.SetupSensor("FreeHeap", "sensor", "ESP32Radio", "", "", "");
@@ -399,7 +404,8 @@ char Radio::Loop()
         TemperatureSensor1.Loop();
         PowerSensor.Loop();
         WIFIManager.Loop();
-
+        WebSerialLogger.Loop();
+        
         if(TemperatureSensor1.GetLastTemperatureReading() > 45 && pwmFan1.FanState == false)
             pwmFan1.StartFan();
 

@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <Preferences.h>
 #include "vs1053.hpp"
 #include "dacindicator.hpp"
 
@@ -45,7 +47,10 @@ class InternetRadio
         {"http://dispatcher.rndfnk.com/rbb/rbb888/live/mp3/mid","RBB"},
         {"http://rnrw.cast.addradio.de/rnrw-0182/deinrock/low/stream.mp3","NRW Rockradio"}};
         
-        
+        std::list<Station *>* Stations;
+        uint8_t bufferindex = 0;
+        const char *countries[10] = {"ALL", "DE", "US", "FR", "GB", "IT", "CA", "JP", "SE", "IE"};
+        const char *categories[9] = {"ALL", "pop", "music", "news", "rock", "classical", "talk", "hits", "radio"};
     public:
         InternetRadio();
         void Loop();
@@ -53,8 +58,11 @@ class InternetRadio
         void Start(uint8_t preset);
         void StartStream(Station station);
         void SwitchPreset(uint8_t num);
+        void UpdateMQTT();
         void DisplayInfo();
+        void GetStationList();
         String GetFreqDisplayText();
         String GetClockDisplayText();
- 
+        void LoadPresets();
+        void SavePresets();
 };

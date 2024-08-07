@@ -94,6 +94,8 @@ void FrequencyDisplay::Loop()
             _update = true;
         }
     }
+    else if(_displayText.length() <= 5 )
+        _start_x = -_displayText.length();
     else
         _start_x = 0;
 

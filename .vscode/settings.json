@@ -54,7 +54,12 @@
         "list": "cpp",
         "future": "cpp",
         "thread": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "condition_variable": "cpp",
+        "ratio": "cpp",
+        "set": "cpp",
+        "iostream": "cpp",
+        "mutex": "cpp"
     },
     "idf.portWin": "COM11"
 }

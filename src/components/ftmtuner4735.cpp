@@ -43,7 +43,12 @@ void FMTuner4735::setupMQTT()
 
     WebSerialLogger.println("Setting up si4735 MQTT client");
 
-    MQTTConnector.SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
+    if(!MQTTConnector.SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave"))
+    {
+        WebSerialLogger.println("Unable to setup si4735 MQTT client");            
+        return;
+    }
+    
     MQTTConnector.SetupSensor("Band", "sensor", "SI4735", "", "", "mdi:radio");
     MQTTConnector.SetupSensor("BandLowerLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
     MQTTConnector.SetupSensor("BandHighLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
@@ -303,7 +308,7 @@ String FMTuner4735::GetClockDisplayText()
         return "Tuner not found!";
     }
 
-    if(clockdisplaypage == 1)
+    if(clockdisplaypage == 1 || _seekmode != '0')
     {
         return RDSMessage;
     }
@@ -336,7 +341,6 @@ void FMTuner4735::SaveCurrentChannel(uint8_t preset)
     _station_presets[preset] = currentFrequency;
 
     SavePresets();
-    _seekmode = '0';
 }
 
 void FMTuner4735::LoadPresets()
@@ -489,6 +493,7 @@ void FMTuner4735::Loop(char ch)
 
     if(_seekmode != '0' && ch != 't')
     {
+        delay(100);
         _radio->getCurrentReceivedSignalQuality();
         uint8_t rssi = _radio->getCurrentRSSI();
         uint8_t snr = _radio->getCurrentSNR();
@@ -588,7 +593,7 @@ void FMTuner4735::Loop(char ch)
     currentFrequency = _radio->getCurrentFrequency();
     if(previousFrequency != currentFrequency && now > frequencychangetimeout) 
     {
-        WebSerialLogger.println("Frequency changed!");
+        WebSerialLogger.println("Frequency changed to " + String(currentFrequency) );
         previousFrequency = currentFrequency;
         
         if(TunerButtons.SavePresetButtonPressed)
@@ -597,6 +602,7 @@ void FMTuner4735::Loop(char ch)
         RDSMessage.clear();
         RDSStationName.clear();
         RDSTime.clear();
+        delay(200);
         _lastRDSUpdate = now;
     }
 
