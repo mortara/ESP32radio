@@ -47,13 +47,17 @@ class InternetRadio
         {"http://dispatcher.rndfnk.com/rbb/rbb888/live/mp3/mid","RBB"},
         {"http://rnrw.cast.addradio.de/rnrw-0182/deinrock/low/stream.mp3","NRW Rockradio"}};
         
-        std::list<Station *>* Stations;
-        uint8_t bufferindex = 0;
+        std::vector<Station *>* Stations;
+        uint8_t seekindex = 0;
+        uint8_t seekpage = 0;
+        uint8_t seek_country = 0;
+        uint8_t seek_category = 0;
+        bool seekmode = false;
         const char *countries[10] = {"ALL", "DE", "US", "FR", "GB", "IT", "CA", "JP", "SE", "IE"};
         const char *categories[9] = {"ALL", "pop", "music", "news", "rock", "classical", "talk", "hits", "radio"};
     public:
         InternetRadio();
-        void Loop();
+        void Loop(char ch);
         void Stop();
         void Start(uint8_t preset);
         void StartStream(Station station);

@@ -10,7 +10,7 @@ InternetRadio::InternetRadio()
      _http.setConnectTimeout(5000);
     _http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
-    Stations = new std::list<Station *>();
+    Stations = new std::vector<Station *>();
 
     _signaltimer = millis();
     clockdisplaypagetimer = _signaltimer;
@@ -167,7 +167,7 @@ void InternetRadio::UpdateMQTT()
     MQTTConnector.PublishMessage(payload, "Internetradio");
 }
 
-void InternetRadio::Loop()
+void InternetRadio::Loop(char ch)
 {
     unsigned long now = millis();
     if((now - clockdisplaypagetimer) > 15000)
@@ -219,6 +219,50 @@ void InternetRadio::Loop()
         StartStream(stationlist[_current_station_preset]);
     }
 
+    bool stationchanged = false;
+
+    switch(ch)
+    {
+        case 'o': // small step up
+            
+            WebSerialLogger.println("");
+            break;
+        case 'i': // small step down
+            
+            WebSerialLogger.println("");
+            break;
+        case 'I': // step up
+            WebSerialLogger.println("");
+            break;
+        case 'O': // step down
+            WebSerialLogger.println("");
+            break;
+        case 'u': // start seek up
+            WebSerialLogger.println("");
+            stationchanged = true;
+            seekindex++;
+            if(seekindex >= Stations->size());
+                seekindex = seekindex>Stations->size() -1;
+            break;
+        case 'z': // start seek down
+            WebSerialLogger.println("");
+            stationchanged = true;
+            seekindex--;
+            if(seekindex < 0)
+                seekindex = 0;
+
+            break;
+        case 't': // stop/start seek
+            WebSerialLogger.println("");
+            
+            break;       
+    }
+
+    if(stationchanged)
+    {
+        Station s = Stations->at(seekindex);
+        StartStream(s);
+    }
 }
 
 void InternetRadio::GetStationList()
