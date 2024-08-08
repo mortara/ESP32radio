@@ -150,7 +150,7 @@ class FMTuner4735
         FMTuner4735();
         void Loop(char ch);
         void Stop();
-        void Start(uint8_t band, uint8_t preset);
+        uint8_t Start(uint8_t band);
         void SwitchPreset(uint8_t num);
         void SwitchBand(uint8_t band);
         void DisplayInfo();

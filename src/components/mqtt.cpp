@@ -123,28 +123,18 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
     devobj["mf"] = "Patrick Mortara";
     devobj["mdl"] = "ESP32Radio";
 
-    char config_payload[512];
-    uint8_t size = serializeJson(root, config_payload);
-
+   
     //WebSerialLogger.println("Size: " + String(size));
-
-    //WebSerialLogger.println("Payload: " + String(config_payload));
-    bool result = _mqttClient->publish(config_topic.c_str(), config_payload, false);
-    if(!result)
-    {
-        WebSerialLogger.println(" ... error!");
-        WebSerialLogger.println("State: " + String(_mqttClient->state()));
-    }
-    //WebSerialLogger.println("Configured sensor "+ topic);
-    _mqttClient->loop();
-    return result;
+    PublishMessage(root, component, true, config_topic);
+   
+    return true;
 }
 
-void MQTTConnectorClass::SendPayload(String payload, String component, bool retain)
+bool MQTTConnectorClass::SendPayload(String payload, String topic, String component, bool retain)
 {
     if(!_active)
-        return;
-    String topic = "homeassistant/sensor/" + device_id + "_" + component + "/state";
+        return false;
+    
     if(!_mqttClient->publish(topic.c_str(), payload.c_str(), retain))
     {
         WebSerialLogger.println("Error publishing data!");
@@ -156,21 +146,28 @@ void MQTTConnectorClass::SendPayload(String payload, String component, bool reta
             _mqttClient->disconnect();
             _active = false;
         }
+        return false;
     }
+
+    return true;
 }
 
-void MQTTConnectorClass::PublishMessage(JsonDocument root, String component, bool retain)
+void MQTTConnectorClass::PublishMessage(JsonDocument root, String component, bool retain, String topic)
 {
-    char msg[2048];
+    String msg;
     size_t size = serializeJson(root, msg);
 
     //WebSerialLogger.println("Sending mqtt message: " + String(msg));
     if(size > 1024)
         WebSerialLogger.println("Size : " + String(size));
 
+    if(topic == "")
+        topic = "homeassistant/sensor/" + device_id + "_" + component + "/state";
+
     MQTTMessages *bt = new MQTTMessages();
     bt->payload = msg;
     bt->component = component;
+    bt->topic = topic;
     bt->Retain = retain;
 
     while(lock)
@@ -208,12 +205,20 @@ void MQTTConnectorClass::Task1code(void *pvParameters)
             MQTTMessages *bt = MQTTConnector.Tasks->front();
             MQTTConnector.lock = false;
             
-            MQTTConnector.SendPayload(bt->payload, bt->component);
+            bool ok = MQTTConnector.SendPayload(bt->payload, bt->topic, bt->component);
 
             MQTTConnector.lock = true;
             MQTTConnector.Tasks->remove(bt);
+            if(!ok)
+            {
+                WebSerialLogger.println("unable to publish mqtt message ...");
+                MQTTConnector.Tasks->push_back(bt);
+                delay(1000);
+            }
+            else
+                delete bt;
             MQTTConnector.lock = false;
-            delete bt;
+            
         }
     }
 }

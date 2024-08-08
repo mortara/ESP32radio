@@ -18,7 +18,7 @@ class InternetRadio
 
         uint8_t clockdisplaypage = 0;
         unsigned long clockdisplaypagetimer = 0;
-
+        unsigned long _connectiontimer = 0;
         unsigned long _signaltimer = 0;
 
         bool mqttsetup = false;
@@ -35,7 +35,8 @@ class InternetRadio
         } Station;
 
         #define STATIONS 8 //number of stations in the list
-
+        #define COUNTRIES 10
+        #define CATEGORIES 9
         //station list can easily be modified to support other stations
         Station stationlist[STATIONS] = {
         {"http://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high","HR-Info"},
@@ -52,19 +53,24 @@ class InternetRadio
         uint8_t seekpage = 0;
         uint8_t seek_country = 0;
         uint8_t seek_category = 0;
+
+        bool updatelistrequested = false;
+        unsigned long updatelistmillis = 0;
+        bool stationswitchrequested = false;
+        unsigned long stationswitchmillis = 0;
         bool seekmode = false;
-        const char *countries[10] = {"ALL", "DE", "US", "FR", "GB", "IT", "CA", "JP", "SE", "IE"};
-        const char *categories[9] = {"ALL", "pop", "music", "news", "rock", "classical", "talk", "hits", "radio"};
+        const char *countries[COUNTRIES] = {"ALL", "DE", "US", "FR", "GB", "IT", "CA", "JP", "SE", "IE"};
+        const char *categories[CATEGORIES] = {"ALL", "pop", "music", "news", "rock", "classical", "talk", "hits", "radio"};
     public:
         InternetRadio();
         void Loop(char ch);
         void Stop();
-        void Start(uint8_t preset);
-        void StartStream(Station station);
+        uint8_t Start();
+        void StartStream(Station &station);
         void SwitchPreset(uint8_t num);
         void UpdateMQTT();
         void DisplayInfo();
-        void GetStationList();
+        uint8_t GetStationList();
         String GetFreqDisplayText();
         String GetClockDisplayText();
         void LoadPresets();

@@ -86,10 +86,10 @@ void FMTuner4735::sendMQTTState()
     MQTTConnector.PublishMessage(payload, "SI4735");
 }
 
-void FMTuner4735::Start(uint8_t band, uint8_t preset)
+uint8_t FMTuner4735::Start(uint8_t band)
 {
     if(!_active || _radio == NULL)
-        return;
+        return 0;
 
     WebSerialLogger.println("FMTuner start ...");
 
@@ -99,9 +99,11 @@ void FMTuner4735::Start(uint8_t band, uint8_t preset)
     SwitchBand(band);
     _radio->setVolume(_volume);
     
-    SwitchPreset(preset);
+    SwitchPreset(_current_station_preset);
 
     DisplayInfo();
+
+    return _current_station_preset;
 }
 
 void FMTuner4735::Stop()

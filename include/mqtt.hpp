@@ -14,6 +14,7 @@ struct MQTTMessages
 {
     String payload;
     String component;
+    String topic;
     bool Retain = false;
 };
 
@@ -31,8 +32,8 @@ class MQTTConnectorClass
     public:
         void Setup();
         void Loop();
-        void PublishMessage(JsonDocument msg, String component, bool retain = false);
-        void SendPayload(String msg, String component, bool retain = false);
+        void PublishMessage(JsonDocument msg, String component, bool retain = false, String topic = "");
+        bool SendPayload(String msg, String component, String topic, bool retain = false);
         bool isActive();
         bool SetupSensor(String topic, String sensor, String component, String deviceclass = "", String unit = "", String icon = "");
         bool Connect();

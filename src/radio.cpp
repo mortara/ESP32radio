@@ -363,7 +363,7 @@ char Radio::Loop()
     } else if(_currentPlayer == PLAYER_WEBRADIO)
     {
         MP3Player.ExecuteCommand(ch);
-        _inetRadio->Loop();
+        _inetRadio->Loop(ch);
         
     } /*else if(_currentPlayer == PLAYER_BT)
     {
@@ -444,13 +444,9 @@ char Radio::Loop()
             payload["FreeSketchSpace"] = String(ESP.getFreeSketchSpace());
             payload["ChipCores"] = String(ESP.getChipCores());
             payload["CPUFreqpCores"] = String(ESP.getCpuFreqMHz());
-         
             payload["ChipModel"] = String(ESP.getChipModel());
-         
             payload["FlashSize"] = String(ESP.getFlashChipSize());
-     
             payload["FlashMode"] = ""; // String(ESP.getFlashChipMode());
-
             payload["FrequencyDisplay"] = _frequencyDisplayText;
             payload["ClockDisplay1"] = _clockDisplayText0;
             payload["ClockDisplay2"] = _clockDisplayText1;
@@ -516,7 +512,10 @@ void Radio::SwitchInput(uint8_t newinput)
         WebSerialLogger.println("Starting new player");
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
-            _fmtuner->Start(newinput - 1, _currentPreset);
+        {
+            _currentPreset = _fmtuner->Start(newinput - 1);
+            _preselectLeds->SetLed(_currentPreset);
+        }
         //else if(new_player == PLAYER_BT)
         //    _bluetoothplayer->Start();
         else if(new_player == PLAYER_WEBRADIO)
@@ -527,7 +526,8 @@ void Radio::SwitchInput(uint8_t newinput)
                     WebSerialLogger.println("Could not connect to WIFI network!");
                 }
                     
-            _inetRadio->Start(_currentPreset);
+            _currentPreset = _inetRadio->Start();
+            _preselectLeds->SetLed(_currentPreset);
         } else if(new_player == PLAYER_EXT)
         {
             _preselectLeds->SetLed(99);

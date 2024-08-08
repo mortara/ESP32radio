@@ -23,7 +23,7 @@ void ClockDisplayClass::DisplayText(String text, uint8_t row)
     if(text == _texts[row])
         return;
 
-    _texts[row] = text;
+    _texts[row] = String(text);
     
     if(!_active)
     {
@@ -36,7 +36,7 @@ void ClockDisplayClass::DisplayText(String text, uint8_t row)
 
     String t1 = text;
     while(t1.length() < 16)
-        t1 = t1 + " ";
+        t1 += " ";
 
     _lcd->setCursor(0,row);
 

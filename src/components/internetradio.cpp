@@ -1,7 +1,7 @@
 #include "internetradio.hpp"
 #include "mqtt.hpp"
-
-
+#include "tunerbuttons.hpp"
+#include <iterator>
 
 InternetRadio::InternetRadio()
 {
@@ -34,19 +34,25 @@ void InternetRadio::setupMQTT()
 
     mqttsetup = true;
 
-    GetStationList();
 }
 
 void InternetRadio::SwitchPreset(uint8_t num)
 {
+    
+
     WebSerialLogger.println("InternetRadio::SwitchPreset to " + String(num));
     _current_station_preset = num;
+
+    if(seekmode)
+        return;
+
     StartStream(stationlist[_current_station_preset]);
     UpdateMQTT();
 }
 
-void InternetRadio::StartStream(Station station)
+void InternetRadio::StartStream(Station &station)
 {
+    _connectiontimer = millis();
     WebSerialLogger.println("connecting to " + String(station.url));
    
     _http.end();
@@ -58,29 +64,32 @@ void InternetRadio::StartStream(Station station)
     // Send HTTP GET request
     int httpResponseCode = _http.GET();
     
-    WebSerialLogger.print("return code: ");
-    WebSerialLogger.println(String(httpResponseCode));
-
-    if (httpResponseCode>0) {
-        if(httpResponseCode == HTTP_CODE_OK) {
-                if(_http.getStreamPtr() != nullptr)
-                    WebSerialLogger.println("Stream started!");
+    WebSerialLogger.print("return code: " + String(httpResponseCode));
+ 
+    if(httpResponseCode == HTTP_CODE_OK) {
+       
+        if(_http.getStreamPtr() != nullptr)
+            WebSerialLogger.println("Stream started!");
+        else
+        {
+            WebSerialLogger.println("Stream not started!");
         }
     }
+    
 }
 
-void InternetRadio::Start(uint8_t preset)
+uint8_t InternetRadio::Start()
 {
     WebSerialLogger.println("InternetRadio start ...");
     SignalIndicator.SetRange(0, 120);
     MP3Player.Begin();
     LoadPresets();
     
-    _current_station_preset = preset;
-
     StartStream(stationlist[_current_station_preset]);
 
     UpdateMQTT();
+
+    return _current_station_preset;
 }
 
 void InternetRadio::Stop()
@@ -103,6 +112,11 @@ String InternetRadio::GetFreqDisplayText()
     WiFiClient *_client = _http.getStreamPtr();
     if(_client != nullptr && _client->connected())
     {
+        if(seekmode)
+        {
+            return String(Stations->at(seekindex)->name);
+        }
+
         Station st = stationlist[_current_station_preset];
         return String(st.name);
     }
@@ -112,6 +126,20 @@ String InternetRadio::GetFreqDisplayText()
 
 String InternetRadio::GetClockDisplayText()
 {
+    if(seekmode)
+    {
+        if(updatelistrequested)
+        {
+            String result =  String(countries[seek_country]);
+            result += "-";
+            result += String(categories[seek_category]);
+
+            return result;
+        }
+
+        return String(Stations->at(seekindex)->name);
+    }
+
     if(clockdisplaypage == 0)
     {
         WiFiClient *_client = _http.getStreamPtr();
@@ -191,14 +219,18 @@ void InternetRadio::Loop(char ch)
     }
 
     WiFiClient *_client = _http.getStreamPtr();
-    if(_client != nullptr && _client->connected())
+    if(_client != nullptr)
     {
         if (MP3Player.ReadyForData()) 
         {
-            if (_client->available() >= MP3buffersize) {
+            int available = _client->available();
+            if(available > MP3buffersize)
+                available = MP3buffersize;
+
+            if (available >= MinSizeToPlay) {
                 //Serial.println("playing data");
                 // The buffer size 64 seems to be optimal. At 32 and 128 the sound might be brassy.
-                uint8_t bytesread = _client->read(MP3Player.Mp3buffer, MP3buffersize);
+                uint8_t bytesread = _client->read(MP3Player.Mp3buffer, available);
                 bytes_served += bytesread;
                 if(bytesread > 0)
                 {
@@ -213,66 +245,173 @@ void InternetRadio::Loop(char ch)
         }  
 
     } 
-    else if(WiFi.status() == WL_CONNECTED )
+    else if(WiFi.status() == WL_CONNECTED && now - _connectiontimer > 10000)
     {
         WebSerialLogger.println("Try to connect ...");
         StartStream(stationlist[_current_station_preset]);
     }
 
-    bool stationchanged = false;
+    if(seekmode)
+    {
+        if(updatelistrequested && now - updatelistmillis > 3000)
+        {
+            seekpage = 0;
+            GetStationList();
+            seekindex = 0;
+            updatelistrequested = false;
+        } else if(stationswitchrequested && now - stationswitchmillis > 3000)
+        {
+            stationswitchrequested = false;
+            Station *s = Stations->at(seekindex);
+            StartStream(*s);
+
+            if(TunerButtons.SavePresetButtonPressed)
+            {
+                Station ps;
+                
+                String *name = new String(s->name);
+                String *url = new String(s->url);
+
+                ps.name = name->c_str();
+                ps.url = url->c_str();
+
+                stationlist[_current_station_preset] = ps;
+            }
+        }
+    }
 
     switch(ch)
     {
         case 'o': // small step up
             
-            WebSerialLogger.println("");
+            WebSerialLogger.println("Next category");
+            seek_category++;
+            
+            if(seek_category >= CATEGORIES)
+                seek_category = 0;
+            updatelistrequested = true;
+            updatelistmillis = millis();
             break;
         case 'i': // small step down
-            
-            WebSerialLogger.println("");
+            seek_category--;
+            if(seek_category < 0)
+                seek_category = CATEGORIES-1;
+            WebSerialLogger.println("previous category");
+            updatelistrequested = true;
+            updatelistmillis = millis();
             break;
         case 'I': // step up
-            WebSerialLogger.println("");
+            WebSerialLogger.println("Next country");
+            seek_country++;
+            
+            if(seek_country >= COUNTRIES)
+                seek_country = 0;
+            updatelistrequested = true;
+            updatelistmillis = millis();
             break;
         case 'O': // step down
-            WebSerialLogger.println("");
+            seek_country--;
+            if(seek_country < 0)
+                seek_country = COUNTRIES-1;
+            WebSerialLogger.println("previous country");
+            updatelistrequested = true;
+            updatelistmillis = millis();
             break;
         case 'u': // start seek up
-            WebSerialLogger.println("");
-            stationchanged = true;
+            WebSerialLogger.println("Next station ...");
+            stationswitchrequested = true;
+            stationswitchmillis = millis();
             seekindex++;
             if(seekindex >= Stations->size());
-                seekindex = seekindex>Stations->size() -1;
+            {               
+                seekpage++;
+                uint8_t nstations = GetStationList();
+                if(nstations == 0)
+                {
+                    seekpage--;
+                    GetStationList();
+                }
+                seekindex = 0;
+            }
             break;
         case 'z': // start seek down
-            WebSerialLogger.println("");
-            stationchanged = true;
+            WebSerialLogger.println("previous station ...");
+            stationswitchrequested = true;
+            stationswitchmillis = millis();
             seekindex--;
             if(seekindex < 0)
-                seekindex = 0;
+            {
+                if(seekpage>0)
+                    seekpage--;
 
+                GetStationList();
+
+                seekindex = Stations->size()-1;
+            }
             break;
         case 't': // stop/start seek
             WebSerialLogger.println("");
-            
+            if(seekmode)
+            {
+                updatelistrequested = false;
+                stationswitchrequested = false;
+                SavePresets();
+            }
+            else
+            {
+                updatelistrequested = true;
+                updatelistmillis = millis();
+            }
+
+            seekmode = !seekmode;
+            delay(100);
             break;       
     }
 
-    if(stationchanged)
-    {
-        Station s = Stations->at(seekindex);
-        StartStream(s);
-    }
+    
 }
 
-void InternetRadio::GetStationList()
+uint8_t InternetRadio::GetStationList()
 {
     WebSerialLogger.println("Download internetradio stations!");
 
+    if(Stations->size() > 0)
+    {
+        for(int i = 0; i<Stations->size(); i++)
+        {
+            Station *s = Stations->at(i);
+            delete s;
+        }
+           
+    }
+
     Stations->clear();
 
+    int offset = seekpage * 10;
+    String country = String(countries[seek_country]);
+    String tags = String(categories[seek_category]);
+
+    String url = "https://de1.api.radio-browser.info/json/stations/search?limit=10&offset="; 
+    url += String(offset);
+
+    if(seek_country > 0)
+    {
+        url += "&countrycode=";
+        url += country;
+    }
+
+    if(seek_category > 0)
+    {
+        url += "&tagList=";
+        url += tags;
+    }
+    url += "&hidebroken=true&order=clickcount&reverse=true";
+
     HTTPClient http;
-    http.begin("https://de1.api.radio-browser.info/json/stations/search?limit=10&countrycode=DE&hidebroken=true&order=clickcount&reverse=true");
+    http.begin(url);
+
+    WebSerialLogger.println("[HTTP] URL... : " + url);
+
     int httpCode = http.GET();
     if (httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
@@ -298,11 +437,21 @@ void InternetRadio::GetStationList()
         for(int i = 0; i < arraysize; i++)
         {
             JsonVariant item = array[i];
-            Station *s = new Station();
-            s->name = item["name"].as<String>().c_str();
-            s->url = item["url"].as<String>().c_str();
+
+            String *name = new String(item["name"].as<String>());
+            String *rurl = new String(item["url"].as<String>());
+
+            if(*name != "" && rurl->startsWith("http"))
+            {
+                Station *s = new Station();
+                s->name = name->c_str();
+                s->url =  rurl->c_str();
+                
+                Stations->push_back(s);
+
+                WebSerialLogger.println(*name + ":" + *rurl);
+            }
             
-            Stations->push_back(s);
         }
 
       }
@@ -312,11 +461,14 @@ void InternetRadio::GetStationList()
     }
 
     http.end();
+
+    return Stations->size();
 }
 
 void InternetRadio::LoadPresets()
 {
     WebSerialLogger.println("Loading internetradio presets");
+    _current_station_preset = 0;
    
     Preferences _prefs;
     String prefname = "internetradio";
@@ -330,15 +482,20 @@ void InternetRadio::LoadPresets()
 
         for(int i=0;i<8;i++)
         {
-            String name = _prefs.getString(String("STATIONNAME_" + String(i)).c_str(), "");
-            String url = _prefs.getString(String("STATIONURL_" + String(i)).c_str(), "");
+            String *name = new String(_prefs.getString(String("STATIONNAME_" + String(i)).c_str(), ""));
+            String *url = new String(_prefs.getString(String("STATIONURL_" + String(i)).c_str(), ""));
 
-            if(name != "")
+            if(*name != "")
             {
-                stationlist[i].name = name.c_str();
-                stationlist[i].url = url.c_str();
+                Station s;
+
+                s.name = name->c_str();
+                s.url = url->c_str();
+                stationlist[i] = s;
             }
         }
+
+        _current_station_preset = _prefs.getUShort("LASTPRESET", 0);
 
         _prefs.end();
 
@@ -364,6 +521,7 @@ void InternetRadio::SavePresets()
         _prefs.putString(String("STATIONURL_" + String(i)).c_str(), stationlist[i].url);
     }
 
+    _prefs.putUShort("LASTPRESET", _current_station_preset);
 
     _prefs.end();
 }
