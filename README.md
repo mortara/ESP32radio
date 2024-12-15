@@ -3,6 +3,26 @@
 A ESP32 based Radio. Take a look at my homepage for more details.
 https://www.mortara.org/allgemein/esp32-radio/
 
+# Components
+
+The main components are :
+
+- A Lolin S3 ESP32 as main controller
+- A NE5532 base pre-amplifier module
+- A 2 x 50W amplifier module to drive the main speakers
+- A Si4735 for FM/AM reception
+- A VS1053 to play internet radio streams
+- A HD44780 LCD for clock and status information on the right side
+- A MAX7219 8 x 32 LED matrix display for current station and frequency on the left
+- A 8 channel magnet relais for input switching
+- A 4 channel magnet relais for speaker switching
+- 2 x PCF8574 io expander
+- A DS3231 real time clock module
+- A INA219 module to measure current power consumption
+- A BMP180 temperature sensor to measure the temp on the pre-amplifiers bridge rectifiers
+- A small fan to cool down the bridge rectifiers if they get too hot
+- A 220V to 18V transformer as main power source
+- Several LED, cables, switches etc
 
 # Wiring
 
