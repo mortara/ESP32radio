@@ -11,7 +11,7 @@
 class ClockDisplayClass : i2cdevice
 {
     private:
-        hd44780_I2Cexp *_lcd;
+        hd44780_I2Cexp *_lcd = nullptr;
         String _texts[2];
 
         unsigned long _scroll_row1_timer;

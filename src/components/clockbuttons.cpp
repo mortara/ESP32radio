@@ -22,7 +22,7 @@ ClockButtons::ClockButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire, a
     _pcf->pinMode(P7, INPUT);
     _pcf->begin();
     
-    _lastRead = millis();
+    _lastRead = millis() - 505;
 }
 
 void ClockButtons::DisplayInfo()

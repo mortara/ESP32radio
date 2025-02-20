@@ -1,4 +1,6 @@
 #include <Arduino.h>
+
+#define PREFER_SDFAT_LIBRARY YES
 #include <Adafruit_VS1053.h>
 #include "webserial.hpp"
 
@@ -13,6 +15,8 @@
 #define BREAKOUT_XDCS    4    // VS1053 Data/command select pin (output)
 #define BREAKOUT_SD_CS    5
 #define BREAKOUT_MP3_CS    16
+
+
 
 // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
 #define BREAKOUT_DREQ 15       // VS1053 Data request, ideally an Interrupt pin

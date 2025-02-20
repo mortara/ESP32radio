@@ -6,6 +6,8 @@ Speaker::Speaker(int pin)
     _relaispin = pin;
 
     WebSerialLogger.println("Setup speaker");
+
+    pinMode(_relaispin, OUTPUT);
     digitalWrite(_relaispin, HIGH);
     pinMode(_relaispin, OUTPUT);
     _onoff = false;

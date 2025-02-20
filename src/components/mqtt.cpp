@@ -1,6 +1,7 @@
 #include "mqtt.hpp"
 
 void callback(char* topic, byte* payload, unsigned int length) {
+    
     String msg;
     for (byte i = 0; i < length; i++) {
         char tmp = char(payload[i]);
@@ -19,7 +20,7 @@ void MQTTConnectorClass::Setup()
     _mqttClient = new PubSubClient(MQTTBROKER, 1883, *_wifiClientmqtt);
     _mqttClient->setBufferSize(4096);
     _mqttClient->setCallback(callback);
-
+    
     Tasks = new std::list<MQTTMessages *>();
     TaskHandle_t xHandle = NULL;
 
@@ -87,6 +88,7 @@ bool MQTTConnectorClass::Connect()
 
 bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String component, String deviceclass, String unit, String icon)
 {
+    
     if(!_active)
         return false;
 
@@ -123,8 +125,6 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
     devobj["mf"] = "Patrick Mortara";
     devobj["mdl"] = "ESP32Radio";
 
-   
-    //WebSerialLogger.println("Size: " + String(size));
     PublishMessage(root, component, true, config_topic);
    
     return true;
@@ -132,6 +132,7 @@ bool MQTTConnectorClass::SetupSensor(String topic, String sensor, String compone
 
 bool MQTTConnectorClass::SendPayload(String payload, String topic, String component, bool retain)
 {
+    
     if(!_active)
         return false;
     
@@ -154,9 +155,13 @@ bool MQTTConnectorClass::SendPayload(String payload, String topic, String compon
 
 void MQTTConnectorClass::PublishMessage(JsonDocument root, String component, bool retain, String topic)
 {
+    
+    if(root == NULL)
+        return;
+
     String msg;
     size_t size = serializeJson(root, msg);
-
+    
     //WebSerialLogger.println("Sending mqtt message: " + String(msg));
     if(size > 1024)
         WebSerialLogger.println("Size : " + String(size));
@@ -187,7 +192,7 @@ void MQTTConnectorClass::Task1code(void *pvParameters)
     
     // Add a delay to give the rest of the radio some time to setup
     delay(15000);
-    WebSerial.println("MQTT Loop starting ...");
+    WebSerialLogger.println("MQTT Loop starting ...");
     
     for(;;) 
     {

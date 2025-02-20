@@ -77,6 +77,8 @@ class Radio
         uint8_t _currentOutput = 0; // The selected output channel
 
         bool mqttsetup = false;
+        bool setupdone = false;
+        
         void setupMQTT();
         unsigned long _lastClockUpdate;
         unsigned long _lastDisplayUpdate;
@@ -100,5 +102,5 @@ class Radio
         void Start();
 
         float LoopTime = 0;
-
+        bool OTAOnly = false;
 };

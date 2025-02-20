@@ -3,7 +3,7 @@
 #include <WiFi.h>
 #include "AsyncTCP.h"
 #include "ESPAsyncWebServer.h"
-#include <WebSerial.h>
+#include <MycilaWebSerial.h>
 
 #ifndef WEBSERIAL_H
 #define WEBSERIAL_H
@@ -12,7 +12,8 @@
 class WebSerialLoggerClass
 {
     private:
-        AsyncWebServer *_server;
+        
+        WebSerial webSerial;
         bool running = false;
 
     public:

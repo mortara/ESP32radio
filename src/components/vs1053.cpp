@@ -32,7 +32,7 @@ void VS1053Player::Begin()
 void VS1053Player::End()
 {
     WebSerialLogger.println("stopping vs1053");
-    _player->stopPlaying();
+    //_player->stopPlaying();
     _player->setVolume(100, 100);
 }
 

@@ -6,7 +6,8 @@
 FMTuner4735::FMTuner4735()
 {
     WebSerialLogger.println("Start Si4735 ...");
-
+    
+    pinMode(SI7435_RESET_PIN, OUTPUT);
     digitalWrite(SI7435_RESET_PIN, HIGH);
     //Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL, 10000);
 
@@ -206,6 +207,7 @@ uint16_t FMTuner4735::setFrequency(u_int16_t freq)
     if(!_active)
         return currentFrequency;
 
+    WebSerialLogger.print("Set frequency to " + String(freq) + " ... ");    
 
     Band b = _bands[_currentBand];
     uint16_t fwidth = b.maximumFreq - b.minimumFreq;
@@ -219,15 +221,20 @@ uint16_t FMTuner4735::setFrequency(u_int16_t freq)
     _radio->setFrequency(freq);
     currentFrequency = _radio->getCurrentFrequency();
     FrequencyIndicator.SetValue(currentFrequency);
+
     return currentFrequency;
 }
 
 void FMTuner4735::DisplayInfo()
 {
-    if(!_active)
-        return;
-
     WebSerialLogger.println("Radio info:");
+
+    if(!_active)
+    {
+        WebSerialLogger.println(" -- inactive --");
+        return;
+    }
+    
     WebSerialLogger.print("You are tuned on ");
     if (_radio->isCurrentTuneFM())
     {

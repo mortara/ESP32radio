@@ -20,7 +20,7 @@ bool WIFIManagerClass::Connect()
         //WebSerialLogger.println("Already connected or connecting");
         return true;
     }
-
+    
     connecting = true;
     WiFi.disconnect();
     WiFi.begin(_credentials.SSID.c_str(), _credentials.PASS.c_str());
@@ -48,7 +48,7 @@ void WIFIManagerClass::setupMQTT()
         return;
 
     WebSerialLogger.println("Setting up Wifi MQTT client");
-
+    
     if(!MQTTConnector.SetupSensor("SSID", "sensor", "WIFI", "", "", ""))
     {
         WebSerialLogger.println("Unable to setup WIFI MQTT client");            

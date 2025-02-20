@@ -3,17 +3,24 @@
 #include <SPI.h>
 #include "radio.hpp"
 #include "i2cscanner.hpp"
-#include "ArduinoOTA.h"
+#include "ota_handler.h"
 
 Radio *_radio;
 I2CScanner *_i2cscanner;
-unsigned long _loopStart;
-int _loopCount;
-int _loopnum = 150000;
+ota_handler OTAHandler;
+unsigned long _lastLoop;
+
+unsigned long _loopTimeMax = 0;
+unsigned long _loopTimeMin = 9999999;
+unsigned long _loopTimeSum = 0;
+float _loopTimeAverage = 0;
+int _loopTimeCount = 0;
+int _loopsToCount = 1000;
+
 int mode = 0;
-bool ota_running = false;
+
 bool crashed = false;
-unsigned long ota_timer = 0;
+
 
 void ScanI2C()
 {
@@ -55,74 +62,33 @@ void ScanI2C()
   }
 }
 
-void start_ota()
-{
-  ArduinoOTA.onStart([]() {
-
-    _radio->Stop();
-
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH) {
-      type = "sketch";
-    } else {  // U_FS
-      type = "filesystem";
-    }
-
-    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
-    WebSerialLogger.println("Start updating " + type);
-  });
-  ArduinoOTA.onEnd([]() {
-    WebSerialLogger.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    _radio->ShowPercentage(progress, total);
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) {
-      Serial.println("Auth Failed");
-    } else if (error == OTA_BEGIN_ERROR) {
-      Serial.println("Begin Failed");
-    } else if (error == OTA_CONNECT_ERROR) {
-      Serial.println("Connect Failed");
-    } else if (error == OTA_RECEIVE_ERROR) {
-      Serial.println("Receive Failed");
-    } else if (error == OTA_END_ERROR) {
-      Serial.println("End Failed");
-    }
-  });
-  ArduinoOTA.begin();
-  Serial.println("OTA started");
-  ota_running = true;
-  ota_timer = millis();
-}
-
 void setup()
 {
   setCpuFrequencyMhz(80);
   
   Serial.begin(115200);
-  Serial0.begin(115200);
+  /*Serial0.begin(115200);
   Serial1.begin(115200);
-  Serial2.begin(115200);
+  Serial2.begin(115200);*/
   
-  delay(100);
+  //delay(100);
   //while(!Serial)
   //  delay(100);
   //Wire.begin(41,42);
   //Serial.println("Hello Serial!");
-  Serial.println("Serial Hello!");
-  Serial0.println("Serial0 Hello!");
+  //Serial.println("Serial Hello!");
+  /*Serial0.println("Serial0 Hello!");
   Serial1.println("Serial1 Hello!");
-  Serial2.println("Serial2 Hello!");
+  Serial2.println("Serial2 Hello!");*/
   WebSerialLogger.println("Hello world!");
   //ScanI2C();
 
   try
   {
-     _radio = new Radio();
+      _radio = new Radio();
       _radio->Setup();
+      if(_radio->OTAOnly)
+        OTAHandler.OTAOnly = true;
   }
   catch(const std::exception& e)
   {
@@ -131,86 +97,82 @@ void setup()
   }
 }
 
+void DisplayLoopTime()
+{
+    unsigned long now = millis();
+    unsigned long looptime = now - _lastLoop;
+    _lastLoop = now;
+
+    if(looptime > _loopTimeMax)
+      _loopTimeMax = looptime;
+
+    if(looptime < _loopTimeMin)
+      _loopTimeMin = looptime;
+
+    _loopTimeSum += looptime;
+    _loopTimeCount++;
+
+    if(_loopTimeCount == _loopsToCount)
+    {
+      _loopTimeAverage = (float)_loopTimeSum / (float)_loopTimeCount;
+      Serial.printf("Looptime: Avg: %f   Min: %u  Max: %u \r\n", _loopTimeAverage, _loopTimeMin, _loopTimeMax);
+
+      _loopTimeCount = 0;
+      _loopTimeSum = 0;
+      _loopTimeMax = 0;
+      _loopTimeMin = 9999999;
+    }
+
+}
+
+
 // Main
 void loop()
 {
+  DisplayLoopTime();
+   
+  if(OTAHandler.OTAOnly)
+  {
+    WIFIManager.Loop();
+    OTAHandler.Loop();
+    return;
+  }
+  OTAHandler.Loop();
 
-    unsigned long now = millis();
-    _loopCount++;
-    if(_loopCount == _loopnum)
+  if(mode == 0)
+  {
+    try
     {
-        
-        float duration = (float)(now - _loopStart) / (float)_loopnum;
-        //Serial.print(duration);
-        if(mode == 0)
-          _radio->LoopTime  = duration;
-          //WebSerialLogger.println("loop: " + String(duration) + "ms");
-        _loopCount = 0;
-        _loopStart = now;
+      char ch = _radio->Loop();
 
-        _loopnum = 100000;
+      switch(ch)
+      {
+        case 'D':
+          _radio->Stop();
+          ScanI2C();
+          break;
+        case 'S':
+          _radio->Stop();
 
-        if(duration > 0.01)
-          _loopnum = 50000;
-
-        if(duration > 0.5)
-          _loopnum = 25000;
-
-        if(duration > 5)
-          _loopnum = 10000;
+          _i2cscanner = new I2CScanner();
+          _i2cscanner->setup();
+          mode = 1;
+          break;
+        case 'L':
+          Serial.printf("Looptime: Avg: %f   Min: %u  Max: %u \r\n", _loopTimeAverage, _loopTimeMin, _loopTimeMax);
+          WebSerialLogger.println("loop: Avg. " + String(_loopTimeAverage));
+          break;
+      }
     }
-
-    if(now - ota_timer > 100UL)
+    catch(const std::exception& e)
     {
-      if(crashed)
-      {
-        if(!WiFi.isConnected())
-          WIFIManager.Connect();
-
-      }
-
-      if(ota_running)
-        ArduinoOTA.handle();
-      else
-      {
-        if(WiFi.isConnected())
-          start_ota();
-      }
-      ota_timer = now;
+      crashed = true;
     }
-
-    if(mode == 0)
-    {
-      try
-      {
-        char ch = _radio->Loop();
-
-        switch(ch)
-        {
-          case 'D':
-            _radio->Stop();
-            ScanI2C();
-            break;
-          case 'S':
-            _radio->Stop();
-
-            _i2cscanner = new I2CScanner();
-            _i2cscanner->setup();
-            mode = 1;
-            break;
-          case 'L':
-            WebSerialLogger.println("loop: " + String(_loopCount));
-            break;
-        }
-      }
-      catch(const std::exception& e)
-      {
-        crashed = true;
-      }
-    } else if(mode == 1)
-    {
-      _i2cscanner->loop();
-    }
+  } 
+  else if(mode == 1)
+  {
+    _i2cscanner->loop();
+  }
 
 }
 

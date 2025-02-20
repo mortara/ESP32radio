@@ -25,7 +25,7 @@ void ClockDisplayClass::DisplayText(String text, uint8_t row)
 
     _texts[row] = String(text);
     
-    if(!_active)
+    if(!_active || _lcd == nullptr)
     {
         WebSerialLogger.println(String(row) + ": " + text);
         return;

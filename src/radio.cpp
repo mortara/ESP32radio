@@ -1,5 +1,7 @@
 #include "radio.hpp"
 
+
+
 void Radio::Setup()
 {
     /*
@@ -22,67 +24,80 @@ void Radio::Setup()
     */
 
     Wire.begin(42,41, 10000);
-    _i2cwire = new TwoWire(1);
+
+    _clockButtons = new ClockButtons(&Wire, 0x20);
+    delay(100);
+    if(_clockButtons->Loop() == 8)
+    {
+        WIFIManager.StartUp();
+        OTAOnly = true;
+        return;
+    }
 
     _spk = new Speaker(21);
-
+    
     //Wire.setClock(10000);
     _freq_display = new FrequencyDisplay();
     ClockDisplay.StartUp(0x27);
     ClockDisplay.DisplayText("Starte I2C Bus 2 ...",0);
-
+    
+    _i2cwire = new TwoWire(1);
     _i2cwire->begin(39,40);
-
+    
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
-
+    
     ClockDisplay.DisplayText("Starte WIFI ...",0);
     WIFIManager.StartUp();
-
+    
     MQTTConnector.Setup();
-
+    
     ClockDisplay.DisplayText("Starte RTC ...",0);
     _clock = new Clock(Wire);
-
+    
     ClockDisplay.DisplayText("Starte Kanalrelais ...",0);
     _channel = new ChannelSwitch(_i2cwire, 0x24);
 
     FrequencyIndicator.Setup(26, 8800,10800, 8800);
     SignalIndicator.Setup(25, 0,5, 0);
-
+    
     ClockDisplay.DisplayText("Starte VS1053 ...",0);
     MP3Player.Setup();
-
+    
     ClockDisplay.DisplayText("Starte Si4735 ...",0);
     _fmtuner = new FMTuner4735();
-
+    
     ClockDisplay.DisplayText("Starte Internetradio ...",0);
     _inetRadio = new InternetRadio();
 
     /*_clockDisplay->DisplayText("Starte Bluetooth ...",0);
     _bluetoothplayer = new BlueToothPlayer();*/
-
+    
     ClockDisplay.DisplayText("Starte Frontelemente ...",0);
     TunerButtons.Setup(_i2cwire, 0x22);
     _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
-    _clockButtons = new ClockButtons(&Wire, 0x20);
+    
+
+    
+
     RotaryEncoder.Setup(45,48,14);
     
     ClockDisplay.DisplayText("Starte Sensoren ...",0);
     TemperatureSensor1.Begin(0x77);
     PowerSensor.Begin(0x40);
-
+    
     ClockDisplay.DisplayText("Starte Webserver ...",0);
     WebServer.Setup();
-
+    
     ClockDisplay.DisplayText("Fertig!",0);
 
     _lastMQTTUpdate = _lastClockUpdate = millis();
 
     pwmFan1.Begin(10);
-
+    
     WebSerialLogger.println("Radio setup complete!");
+    setupdone = true;
 }
 
 void Radio::ShowPercentage(int value, int max)
@@ -121,6 +136,8 @@ void Radio::ExecuteCommand(char ch)
     // x -> FMTuner toggle save mode
     // n -> Display current Time of RTC
     // j -> Display Powersensor info
+
+    WebSerialLogger.println("Executing keypress command: " + String(ch));
 
     switch(ch)
     {
@@ -285,16 +302,22 @@ void Radio::EnterPowerSaveMode(int lvl)
 
 char Radio::Loop()
 {
-    RotaryEncoder.Loop();
+    if(!setupdone || OTAOnly)
+        return ' '; 
 
+    RotaryEncoder.Loop();
+    
     char ch = ' ';
     if (Serial.available())
         ch = Serial.read();
 
+    
     if(ch == ' ')
         ch = WebSerialLogger.GetInput();
-
+    
+        
     int cha_btn = _channelButtons->Loop();
+    
     if(cha_btn != 0)
     {
         WebSerialLogger.println("Channel button pressed: " + String(cha_btn));
@@ -310,7 +333,7 @@ char Radio::Loop()
             case 8: ch = 'h'; break;  // tape1 (internet)
         }
     }
-
+    
     int pre_btn = _preselectButtons->Loop();
     if(pre_btn != 0)
     {
@@ -328,7 +351,7 @@ char Radio::Loop()
         }
         
     }
-
+    
     int btn = TunerButtons.Loop();
     if(btn != 0)
     {
@@ -355,7 +378,7 @@ char Radio::Loop()
     {
         ExecuteCommand(ch);
     }
-
+    
     if(_currentPlayer == PLAYER_SI47XX)
     {
         _fmtuner->Loop(ch);
@@ -370,7 +393,7 @@ char Radio::Loop()
         MP3Player.ExecuteCommand(ch);
         _bluetoothplayer->Loop(ch);
     }*/
-
+    
     unsigned long now = millis();
     if(now - _lastDisplayUpdate > 100)
     {
