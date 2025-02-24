@@ -3,8 +3,8 @@
 #include <SI4735.h>
 #include <Preferences.h>
 #include "dacindicator.hpp"
-#include "mqtt.hpp"
-#include "webserial.hpp"
+#include "MQTT/mqtt.hpp"
+#include "Webserial/webserial.hpp"
 #include "menu.hpp"
 
 #ifndef FMTUNER4735_H

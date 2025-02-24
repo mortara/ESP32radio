@@ -2,7 +2,7 @@
 
 #define PREFER_SDFAT_LIBRARY YES
 #include <Adafruit_VS1053.h>
-#include "webserial.hpp"
+#include "Webserial/webserial.hpp"
 
 #ifndef VS1053_h
 #define VS1053_h

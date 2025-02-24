@@ -2,8 +2,8 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "radio.hpp"
-#include "i2cscanner.hpp"
-#include "ota_handler.h"
+#include "I2C/i2cscanner.hpp"
+#include "OTA/ota_handler.h"
 
 Radio *_radio;
 I2CScanner *_i2cscanner;

@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "PCF8574.h"
-#include "i2cdevice.hpp"
+#include "I2C/i2cdevice.hpp"
 
 class ClockButtons : i2cdevice
 {

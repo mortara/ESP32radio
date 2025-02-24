@@ -1,7 +1,5 @@
 #include "radio.hpp"
-
-
-
+#include "webserver_callbacks.hpp"
 void Radio::Setup()
 {
     /*
@@ -29,7 +27,7 @@ void Radio::Setup()
     delay(100);
     if(_clockButtons->Loop() == 8)
     {
-        WIFIManager.StartUp();
+        WIFIManager.Setup(DEVICE_NAME, WIFISSID, WIFIPASS);
         OTAOnly = true;
         return;
     }
@@ -48,9 +46,9 @@ void Radio::Setup()
     _preselectLeds->SetLed(0);
     
     ClockDisplay.DisplayText("Starte WIFI ...",0);
-    WIFIManager.StartUp();
+    WIFIManager.Setup(DEVICE_NAME, WIFISSID, WIFIPASS);
     
-    MQTTConnector.Setup();
+    MQTTConnector.Setup(DEVICE_NAME, MQTTBROKER, 1883, MQTTUSER, MQTTPASSWORD);
     
     ClockDisplay.DisplayText("Starte RTC ...",0);
     _clock = new Clock(Wire);
@@ -88,7 +86,7 @@ void Radio::Setup()
     PowerSensor.Begin(0x40);
     
     ClockDisplay.DisplayText("Starte Webserver ...",0);
-    WebServer.Setup();
+    WebServer.Setup(handleRoot, notFound);
     
     ClockDisplay.DisplayText("Fertig!",0);
 

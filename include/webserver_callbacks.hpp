@@ -1,4 +1,4 @@
-#include "webserver.hpp"
+#include "Webserver/webserver.hpp"
 
 void notFound(AsyncWebServerRequest *request) {
     request->send(404, "text/plain", "Not found");
@@ -36,20 +36,3 @@ void handleRoot(AsyncWebServerRequest *request) {
     request->send(200, "text/html", html);
   
 }
-
-void WebServerClass::Setup()
-{
-    _webserver = new AsyncWebServer(80);
-    _webserver->on("/", handleRoot);
-
-    dnsServer.start(53, "*", WiFi.softAPIP());
-    _webserver->onNotFound(notFound);
-    _webserver->begin();
-}
-
-AsyncWebServer *WebServerClass::GetServer()
-{
-    return _webserver;
-}
-
-WebServerClass WebServer;

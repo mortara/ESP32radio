@@ -1,5 +1,4 @@
 #include "power_sensor.hpp"
-#include "mqtt.hpp"
 
 void PowerSensorClass::Begin(uint8_t adr)
 {

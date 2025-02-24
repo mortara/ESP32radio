@@ -4,7 +4,7 @@
 #include <Preferences.h>
 #include "clock.hpp"
 #include "SPIFFS.h"
-
+#include "secrets.h"
 #include "speaker.hpp"
 #include "fmtuner4735.hpp"
 #include "internetradio.hpp"
@@ -12,7 +12,7 @@
 #include "channelswitch.hpp"
 #include "vs1053.hpp"
 #include "tunerbuttons.hpp"
-#include "wifimanager.hpp"
+#include "Wifi/wifimanager.hpp"
 #include "preselect_leds.hpp"
 #include "preselect_buttons.hpp"
 #include "channelbuttons.hpp"
@@ -20,13 +20,14 @@
 #include "clock_display.hpp"
 #include "dacindicator.hpp"
 #include "rotary_encoder.hpp"
-#include "mqtt.hpp"
+#include "MQTT/mqtt.hpp"
 #include "temperature_sensor.hpp"
 #include "power_sensor.hpp"
 #include "clock_buttons.hpp"
-#include "webserial.hpp"
+#include "Webserial/webserial.hpp"
 #include "uptime_formatter.h"
-#include "webserver.hpp"
+
+#include "Webserver/webserver.hpp"
 #include "auxplayer.hpp"
 #include "menu.hpp"
 #include "FanController.hpp"
@@ -50,6 +51,8 @@
 #define OUTPUT_VS1053 1
 #define OUTPUT_AUX 3
 #define OUTPUT_AUX2 4
+
+
 
 class Radio
 {

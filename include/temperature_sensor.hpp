@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include <Adafruit_BMP085.h>
 #include <WiFi.h>
-#include "mqtt.hpp"
-#include "i2cdevice.hpp"
+#include "MQTT/mqtt.hpp"
+#include "I2C/i2cdevice.hpp"
+
 
 #ifndef TEMPSENSOR_H
 #define TEMPSENSOR_H

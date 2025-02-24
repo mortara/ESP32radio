@@ -3,7 +3,7 @@
 #include <hd44780.h>
 #include <hd44780ioClass/hd44780_I2Cexp.h>
 #include <SPI.h>
-#include "i2cdevice.hpp"
+#include "I2C/i2cdevice.hpp"
 
 #ifndef CLOCKDISPLAY_H
 #define CLOCKDISPLAY_H
