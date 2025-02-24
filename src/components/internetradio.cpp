@@ -28,9 +28,8 @@ void InternetRadio::setupMQTT()
         return;
     }
 
-
     MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "data_size", "B", "mdi:radio");
-
+    MQTTConnector.SetupSensor("URL", "sensor", "Internetradio", "", "", "");
     WebSerialLogger.println("Internetradio Sensor mqtt setup done!");
 
     mqttsetup = true;
@@ -184,11 +183,13 @@ void InternetRadio::UpdateMQTT()
     {
         Station st = stationlist[_current_station_preset];
         payload["Station"] = String(st.name);
+        payload["URL"] = String(st.url);
         payload["BytesPlayed"] = String(bytes_served);
     }
     else
     {
         payload["Station"] = "Not connected";
+        payload["URL"] = "-";
         payload["BytesPlayed"] = String(0);
     }
     //WebSerialLogger.println("Sending internetradio mqtt: " + String(st.name) + "/"+ String(bytes_served));

@@ -5,7 +5,6 @@
 #include "I2C/i2cscanner.hpp"
 #include "OTA/ota_handler.h"
 
-Radio *_radio;
 I2CScanner *_i2cscanner;
 ota_handler OTAHandler;
 unsigned long _lastLoop;
@@ -85,9 +84,8 @@ void setup()
 
   try
   {
-      _radio = new Radio();
-      _radio->Setup();
-      if(_radio->OTAOnly)
+      _radio.Setup();
+      if(_radio.OTAOnly)
         OTAHandler.OTAOnly = true;
   }
   catch(const std::exception& e)
@@ -143,16 +141,16 @@ void loop()
   {
     try
     {
-      char ch = _radio->Loop();
+      char ch = _radio.Loop();
 
       switch(ch)
       {
         case 'D':
-          _radio->Stop();
+          _radio.Stop();
           ScanI2C();
           break;
         case 'S':
-          _radio->Stop();
+          _radio.Stop();
 
           _i2cscanner = new I2CScanner();
           _i2cscanner->setup();

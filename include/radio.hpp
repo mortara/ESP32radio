@@ -32,6 +32,9 @@
 #include "menu.hpp"
 #include "FanController.hpp"
 
+#ifndef RADIO_H
+#define RADIO_H
+
 #define INPUT_LW 1
 #define INPUT_MW 2
 #define INPUT_SW1 3
@@ -51,8 +54,6 @@
 #define OUTPUT_VS1053 1
 #define OUTPUT_AUX 3
 #define OUTPUT_AUX2 4
-
-
 
 class Radio
 {
@@ -93,10 +94,13 @@ class Radio
 
         FanController pwmFan1;
 
+        TaskHandle_t Task1;
+
         int _powersavemode = 0;
     public:
         void Setup();
         char Loop();
+        void SecondaryLoop();
         void ExecuteCommand(char ch);
         void SwitchInput(uint8_t newinput);
         void ShowPercentage(int value, int max);
@@ -107,3 +111,7 @@ class Radio
         float LoopTime = 0;
         bool OTAOnly = false;
 };
+
+extern Radio _radio;
+
+#endif

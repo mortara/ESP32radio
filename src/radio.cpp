@@ -1,5 +1,19 @@
 #include "radio.hpp"
 #include "webserver_callbacks.hpp"
+
+void Task1code(void *parameter) 
+{
+
+    Serial.println("Starting wifi connection...");
+    WIFIManager.Connect();
+
+    
+    for(;;) {
+      delay(50);
+      _radio.SecondaryLoop();
+    }
+}
+
 void Radio::Setup()
 {
     /*
@@ -48,7 +62,7 @@ void Radio::Setup()
     ClockDisplay.DisplayText("Starte WIFI ...",0);
     WIFIManager.Setup(DEVICE_NAME, WIFISSID, WIFIPASS);
     
-    MQTTConnector.Setup(DEVICE_NAME, MQTTBROKER, 1883, MQTTUSER, MQTTPASSWORD);
+    MQTTConnector.Setup(DEVICE_NAME, "RS555", "Patrick Mortara", MQTTBROKER, 1883, MQTTUSER, MQTTPASSWORD);
     
     ClockDisplay.DisplayText("Starte RTC ...",0);
     _clock = new Clock(Wire);
@@ -76,9 +90,6 @@ void Radio::Setup()
     _preselectButtons = new PreselectButtons(_i2cwire, 0x23);
     _channelButtons = new ChannelButtons(_i2cwire, 0x25);
     
-
-    
-
     RotaryEncoder.Setup(45,48,14);
     
     ClockDisplay.DisplayText("Starte Sensoren ...",0);
@@ -93,10 +104,22 @@ void Radio::Setup()
     _lastMQTTUpdate = _lastClockUpdate = millis();
 
     pwmFan1.Begin(10);
+
+    Serial.println("Starting secondary features task...");
+    xTaskCreatePinnedToCore(
+    Task1code, /* Function to implement the task */
+    "Task1", /* Name of the task */
+    10000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    0,  /* Priority of the task */
+    &Task1,  /* Task handle. */
+    0); /* Core where the task should run */
     
     WebSerialLogger.println("Radio setup complete!");
     setupdone = true;
 }
+
+
 
 void Radio::ShowPercentage(int value, int max)
 {
@@ -240,29 +263,29 @@ void Radio::setupMQTT()
 
     WebSerialLogger.println("Setting up MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Input", "sensor", "ESP32Radio", "", "", ""))
+    if(!MQTTConnector.SetupSensor("Input", "sensor", "Radio", "", "", ""))
     {
         WebSerialLogger.println("Unable to setup MQTT client");
         return;
     }
 
-    MQTTConnector.SetupSensor("Preset", "sensor", "ESP32Radio", "", "", "mdi:radio");
-    MQTTConnector.SetupSensor("DateTime", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FreeHeap", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FreePSRAM", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FreeSketchSpace", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("ChipCores", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("CPUFreqpCores", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("ChipModel", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FlashSize", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FlashMode", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FrequencyDisplay", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("ClockDisplay1", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("ClockDisplay2", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("UpTime", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("LoopTime", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("PowerSaveMode", "sensor", "ESP32Radio", "", "", "");
-    MQTTConnector.SetupSensor("FanRunning", "sensor", "ESP32Radio", "", "", "");
+    MQTTConnector.SetupSensor("Preset", "sensor", "Radio", "", "", "mdi:radio");
+    MQTTConnector.SetupSensor("DateTime", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FreeHeap", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FreePSRAM", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FreeSketchSpace", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("ChipCores", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("CPUFreqpCores", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("ChipModel", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FlashSize", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FlashMode", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FrequencyDisplay", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("ClockDisplay1", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("ClockDisplay2", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("UpTime", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("LoopTime", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("PowerSaveMode", "sensor", "Radio", "", "", "");
+    MQTTConnector.SetupSensor("FanRunning", "sensor", "Radio", "", "", "");
     WebSerialLogger.println("mqtt setup done!");
 
     mqttsetup = true;
@@ -419,6 +442,18 @@ char Radio::Loop()
         ClockDisplay.Loop();
     }
 
+    
+
+    return ch;
+}
+
+void Radio::SecondaryLoop()
+{
+    if(!setupdone || OTAOnly)
+        return; 
+
+    unsigned long now = millis();
+
     if(now - _lastClockUpdate > 1000)
     {
         _lastClockUpdate = millis();
@@ -476,13 +511,11 @@ char Radio::Loop()
             payload["PowerSaveMode"] = String(_powersavemode);
             payload["FanRunning"] = String(pwmFan1.FanState);
            
-            MQTTConnector.PublishMessage(payload, "ESP32Radio");
+            MQTTConnector.PublishMessage(payload, "Radio");
             _lastMQTTUpdate = now;
 
         }
     }
-
-    return ch;
 }
 
 void Radio::SwitchInput(uint8_t newinput)
@@ -573,3 +606,5 @@ void Radio::SwitchInput(uint8_t newinput)
     
     WebSerialLogger.println("Input switch done!");
 }
+
+Radio _radio;
