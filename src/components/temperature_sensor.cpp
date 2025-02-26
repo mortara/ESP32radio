@@ -26,14 +26,14 @@ bool TemperatureSensorClass::mqttSetup()
 
     WebSerialLogger.println("Setting up MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Temperature", "sensor", "BMP180", "temperature", "°C", "mdi:temperature-celsius"))
+    if(!MQTTConnector.SetupSensor("Temperature", "BMP180", "temperature", "°C", "mdi:temperature-celsius"))
     {
         WebSerialLogger.println("Could not setup temperature sensor!");
         return false;
     }
 
-    MQTTConnector.SetupSensor("Pressure", "sensor", "BMP180", "pressure", "Pa", "mdi:air-filter");
-    MQTTConnector.SetupSensor("Altitude", "sensor", "BMP180", "", "m", "");
+    MQTTConnector.SetupSensor("Pressure", "BMP180", "pressure", "Pa", "mdi:air-filter");
+    MQTTConnector.SetupSensor("Altitude", "BMP180", "", "m", "");
     setupmqtt = true;
 
     WebSerialLogger.println("Temperature Sensor mqtt setup done!");

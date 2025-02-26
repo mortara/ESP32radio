@@ -2,6 +2,7 @@
 #include "MQTT/mqtt.hpp"
 #include "tunerbuttons.hpp"
 #include <iterator>
+#include <vector>
 
 InternetRadio::InternetRadio()
 {
@@ -22,14 +23,18 @@ void InternetRadio::setupMQTT()
     if(mqttsetup)
         return;
 
-    if(!MQTTConnector.SetupSensor("Station", "sensor", "Internetradio", "", "", "mdi:radio"))
+    if(!MQTTConnector.SetupSensor("Station", "Internetradio", "", "", "mdi:radio"))
     {
         WebSerialLogger.println("Could not setup Internetradio mqtt!");
         return;
     }
 
-    MQTTConnector.SetupSensor("BytesPlayed", "sensor", "Internetradio", "data_size", "B", "mdi:radio");
-    MQTTConnector.SetupSensor("URL", "sensor", "Internetradio", "", "", "");
+    MQTTConnector.SetupSensor("BytesPlayed", "Internetradio", "data_size", "B", "mdi:radio");
+    MQTTConnector.SetupSensor("URL", "Internetradio", "", "", "");
+
+    MQTTConnector.SetupSelect("Country", "Internetradio", "", "mdi:radio", std::vector<String>(countries));
+    MQTTConnector.SetupSelect("Category", "Internetradio", "", "mdi:radio", std::vector<String>(categories));
+
     WebSerialLogger.println("Internetradio Sensor mqtt setup done!");
 
     mqttsetup = true;
@@ -174,8 +179,6 @@ String InternetRadio::GetClockDisplayText()
 
 void InternetRadio::UpdateMQTT()
 {
-    
-
     JsonDocument payload;
 
     WiFiClient *_client = _http.getStreamPtr();
@@ -195,6 +198,22 @@ void InternetRadio::UpdateMQTT()
     //WebSerialLogger.println("Sending internetradio mqtt: " + String(st.name) + "/"+ String(bytes_served));
 
     MQTTConnector.PublishMessage(payload, "Internetradio");
+
+    JsonDocument payload2;
+    payload2["Country"] = String(countries[seek_country]);
+    payload2["Category"] = String(categories[seek_category]);
+
+    if(Stations->size() > 0)
+    {
+        Station *s = Stations->at(seekindex);
+        payload2["SeekStation"] = String(s->name);
+    }
+    else
+    {
+        payload2["SeekStation"] = "No stations";
+    }
+
+    MQTTConnector.PublishMessage(payload2, "Internetradio", "", "select");
 }
 
 void InternetRadio::Loop(char ch)
@@ -289,7 +308,7 @@ void InternetRadio::Loop(char ch)
             WebSerialLogger.println("Next category");
             seek_category++;
             
-            if(seek_category >= CATEGORIES)
+            if(seek_category >= categories.size())
                 seek_category = 0;
             updatelistrequested = true;
             updatelistmillis = millis();
@@ -297,7 +316,7 @@ void InternetRadio::Loop(char ch)
         case 'i': // small step down
             seek_category--;
             if(seek_category < 0)
-                seek_category = CATEGORIES-1;
+                seek_category = categories.size()-1;
             WebSerialLogger.println("previous category");
             updatelistrequested = true;
             updatelistmillis = millis();
@@ -306,7 +325,7 @@ void InternetRadio::Loop(char ch)
             WebSerialLogger.println("Next country");
             seek_country++;
             
-            if(seek_country >= COUNTRIES)
+            if(seek_country >= countries.size())
                 seek_country = 0;
             updatelistrequested = true;
             updatelistmillis = millis();
@@ -314,7 +333,7 @@ void InternetRadio::Loop(char ch)
         case 'O': // step down
             seek_country--;
             if(seek_country < 0)
-                seek_country = COUNTRIES-1;
+                seek_country = countries.size()-1;
             WebSerialLogger.println("previous country");
             updatelistrequested = true;
             updatelistmillis = millis();
@@ -373,6 +392,49 @@ void InternetRadio::Loop(char ch)
     
 }
 
+void InternetRadio::SetSeekCountry(String country)
+{
+    for(int i = 0; i < countries.size(); i++)
+    {
+        if(countries[i] == country)
+        {
+            seek_country = i;
+            break;
+        }
+    }
+
+    GetStationList();
+}
+
+void InternetRadio::SetSeekCategory(String category)
+{
+    for(int i = 0; i < categories.size(); i++)
+    {
+        if(categories[i] == category)
+        {
+            seek_category = i;
+            break;
+        }
+    }
+
+    GetStationList();
+}
+
+void InternetRadio::SetStation(String name)
+{
+    for(int i = 0; i < Stations->size(); i++)
+    {
+        Station *s = Stations->at(i);
+        if(String(s->name) == name)
+        {
+            seekindex = i;
+            break;
+        }
+    }
+
+}
+
+
 uint8_t InternetRadio::GetStationList()
 {
     WebSerialLogger.println("Download internetradio stations!");
@@ -388,6 +450,7 @@ uint8_t InternetRadio::GetStationList()
     }
 
     Stations->clear();
+    std::vector<String> _names;
 
     int offset = seekpage * 10;
     String country = String(countries[seek_country]);
@@ -450,7 +513,7 @@ uint8_t InternetRadio::GetStationList()
                 s->url =  rurl->c_str();
                 
                 Stations->push_back(s);
-
+                _names.push_back(*name);
                 WebSerialLogger.println(*name + ":" + *rurl);
             }
             
@@ -463,6 +526,8 @@ uint8_t InternetRadio::GetStationList()
     }
 
     http.end();
+
+    MQTTConnector.SetupSelect("SeekStation", "Internetradio", "", "mdi:radio", _names);
 
     return Stations->size();
 }

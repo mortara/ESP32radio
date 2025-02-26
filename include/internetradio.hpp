@@ -35,8 +35,7 @@ class InternetRadio
         } Station;
 
         #define STATIONS 8 //number of stations in the list
-        #define COUNTRIES 10
-        #define CATEGORIES 9
+
         //station list can easily be modified to support other stations
         Station stationlist[STATIONS] = {
         {"http://dispatcher.rndfnk.com/hr/hrinfo/live/mp3/high","HR-Info"},
@@ -59,8 +58,8 @@ class InternetRadio
         bool stationswitchrequested = false;
         unsigned long stationswitchmillis = 0;
         bool seekmode = false;
-        const char *countries[COUNTRIES] = {"ALL", "DE", "US", "FR", "GB", "IT", "CA", "JP", "SE", "IE"};
-        const char *categories[CATEGORIES] = {"ALL", "pop", "music", "news", "rock", "classical", "talk", "hits", "radio"};
+        std::vector<String> countries = std::vector<String>({"ALL", "DE", "US", "FR", "GB", "IT", "CA", "JP", "SE", "IE"});
+        std::vector<String> categories = std::vector<String>({"ALL", "pop", "music", "news", "rock", "classical", "talk", "hits", "radio"});
     public:
         InternetRadio();
         void Loop(char ch);
@@ -75,4 +74,8 @@ class InternetRadio
         String GetClockDisplayText();
         void LoadPresets();
         void SavePresets();
+
+        void SetSeekCountry(String country);
+        void SetSeekCategory(String category);
+        void SetStation(String name);
 };

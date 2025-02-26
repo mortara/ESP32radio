@@ -25,16 +25,16 @@ bool PowerSensorClass::mqttSetup()
 
     WebSerialLogger.println("Setting up MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Current", "sensor", "INA219", "current", "mA", "mdi:current-dc"))
+    if(!MQTTConnector.SetupSensor("Current", "INA219", "current", "mA", "mdi:current-dc"))
     {
         WebSerialLogger.println("Could not setup current sensor!");
         return false;
     }
 
-    MQTTConnector.SetupSensor("BusVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("ShuntVoltage", "sensor", "INA219", "voltage", "mV", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("LoadVoltage", "sensor", "INA219", "voltage", "V", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("Power", "sensor", "INA219", "power", "W", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("BusVoltage", "INA219", "voltage", "V", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("ShuntVoltage", "INA219", "voltage", "mV", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("LoadVoltage", "INA219", "voltage", "V", "mdi:flash-triangle");
+    MQTTConnector.SetupSensor("Power", "INA219", "power", "W", "mdi:flash-triangle");
 
     setupmqtt = true;
 

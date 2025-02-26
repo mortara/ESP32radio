@@ -64,7 +64,7 @@ class Radio
 
         ChannelSwitch *_channel;
         FMTuner4735 *_fmtuner;
-        InternetRadio *_inetRadio;
+        
         //BlueToothPlayer *_bluetoothplayer;
 
         PreselectLeds *_preselectLeds;
@@ -110,6 +110,8 @@ class Radio
 
         float LoopTime = 0;
         bool OTAOnly = false;
+
+        InternetRadio *_inetRadio;
 };
 
 extern Radio _radio;

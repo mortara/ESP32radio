@@ -44,19 +44,19 @@ void FMTuner4735::setupMQTT()
 
     WebSerialLogger.println("Setting up si4735 MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Frequency", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave"))
+    if(!MQTTConnector.SetupSensor("Frequency", "SI4735", "frequency", "Hz", "mdi:sine-wave"))
     {
         WebSerialLogger.println("Unable to setup si4735 MQTT client");            
         return;
     }
     
-    MQTTConnector.SetupSensor("Band", "sensor", "SI4735", "", "", "mdi:radio");
-    MQTTConnector.SetupSensor("BandLowerLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
-    MQTTConnector.SetupSensor("BandHighLimit", "sensor", "SI4735", "frequency", "Hz", "mdi:sine-wave");
-    MQTTConnector.SetupSensor("RSSI", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
-    MQTTConnector.SetupSensor("SNR", "sensor", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
-    MQTTConnector.SetupSensor("RDSMSG", "sensor", "SI4735", "", "", "mdi:message-processing");
-    MQTTConnector.SetupSensor("BandData", "sensor", "SI4735", "", "", "mdi:radio-tower");
+    MQTTConnector.SetupSensor("Band", "SI4735", "", "", "mdi:radio");
+    MQTTConnector.SetupSensor("BandLowerLimit", "SI4735", "frequency", "Hz", "mdi:sine-wave");
+    MQTTConnector.SetupSensor("BandHighLimit", "SI4735", "frequency", "Hz", "mdi:sine-wave");
+    MQTTConnector.SetupSensor("RSSI", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
+    MQTTConnector.SetupSensor("SNR", "SI4735", "signal_strength", "dB", "mdi:radio-tower");
+    MQTTConnector.SetupSensor("RDSMSG", "SI4735", "", "", "mdi:message-processing");
+    MQTTConnector.SetupSensor("BandData", "SI4735", "", "", "mdi:radio-tower");
     WebSerialLogger.println("si4735 Sensor mqtt setup done!");
 
     mqttsetup = true;
