@@ -2,13 +2,13 @@
 
 FrequencyDisplay::FrequencyDisplay()
 {
-    WebSerialLogger.println("Setup frequency display ...");
+    pmLogging.LogLn("Setup frequency display ...");
 
     _u8g2 = new U8G2_MAX7219_32X8_F_4W_SW_SPI(U8G2_R2, /* clock=*/ 3, /* data=*/ 8, /* cs=*/ 46, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     //_u8g2 = new U8G2_MAX7219_32X8_F_4W_HW_SPI(U8G2_R2,/* cs=*/ 15, /* dc=*/ U8X8_PIN_NONE, /* reset=*/ U8X8_PIN_NONE);
     if(!_u8g2->begin())
     {
-        WebSerialLogger.println("display not found!");
+        pmLogging.LogLn("display not found!");
         return;
     }
     _active = true;
@@ -31,7 +31,7 @@ void FrequencyDisplay::SetFont(uint8_t fontindx)
     if(_currenFontIndex == fontindx)
         return;
 
-    WebSerialLogger.println("Freq. display set font " + String(fontindx));
+    pmLogging.LogLn("Freq. display set font " + String(fontindx));
 
     _currentFont = _fontsettings[fontindx];
     _u8g2->setFont(_currentFont._font);
@@ -46,7 +46,7 @@ void FrequencyDisplay::DisplayText(String text, uint8_t font)
     if(text == _displayText_original)
         return;
 
-    //WebSerialLogger.println("Displaytext: " + text);
+    //pmLogging.LogLn("Displaytext: " + text);
 
     SetFont(font);
 

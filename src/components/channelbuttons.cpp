@@ -4,11 +4,11 @@ ChannelButtons::ChannelButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(twowir
 {
     if(!isActive())
     {
-        WebSerialLogger.println("channel buttons not found!");
+        pmLogging.LogLn("channel buttons not found!");
         return;
     }
 
-    WebSerialLogger.println("Initializing channel buttons");
+    pmLogging.LogLn("Initializing channel buttons");
    
     _pcf8754 = new PCF8574(twowire,adr);
     _pcf8754->begin();
@@ -55,7 +55,7 @@ int ChannelButtons::Loop()
 
     if(channel != currentchannel)
     {   
-        WebSerialLogger.println("Channel button switched from " + String(currentchannel) + " to " + String(channel));
+        pmLogging.LogLn("Channel button switched from " + String(currentchannel) + " to " + String(channel));
         currentchannel = channel;
         return channel;
     }

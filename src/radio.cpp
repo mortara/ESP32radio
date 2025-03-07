@@ -3,11 +3,8 @@
 
 void Task1code(void *parameter) 
 {
+    pmCommonLib.Start();
 
-    Serial.println("Starting wifi connection...");
-    WIFIManager.Connect();
-
-    
     for(;;) {
       delay(50);
       _radio.SecondaryLoop();
@@ -22,7 +19,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
         msg += tmp;
     }
 
-    WebSerialLogger.println(topicstr + ": " + msg);
+    pmLogging.LogLn(topicstr + ": " + msg);
 
     if(topicstr == "homeassistant/select/ESP32Radio_Radio/Preset")
     {
@@ -44,7 +41,17 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
         _radio._inetRadio->SetStation(msg);
     }
 
-    
+    if(topicstr == "homeassistant/button/ESP32Radio_SI4735/StartSeek" && msg == "PRESS")
+    {
+
+        _radio.ExecuteCommand('u');
+    }
+
+    if(topicstr == "homeassistant/button/ESP32Radio_SI4735/StopSeek" && msg == "PRESS")
+    {
+
+        _radio.ExecuteCommand('t');
+    }
 }
 
 void Radio::Setup()
@@ -72,9 +79,9 @@ void Radio::Setup()
 
     _clockButtons = new ClockButtons(&Wire, 0x20);
     delay(100);
+
     if(_clockButtons->Loop() == 8)
     {
-        WIFIManager.Setup(DEVICE_NAME, WIFISSID, WIFIPASS);
         OTAOnly = true;
         return;
     }
@@ -91,11 +98,6 @@ void Radio::Setup()
     
     _preselectLeds  = new PreselectLeds(_i2cwire, 0x21);
     _preselectLeds->SetLed(0);
-    
-    ClockDisplay.DisplayText("Starte WIFI ...",0);
-    WIFIManager.Setup(DEVICE_NAME, WIFISSID, WIFIPASS);
-    
-    MQTTConnector.Setup(DEVICE_NAME, "RS555", "Patrick Mortara", MQTTBROKER, 1883, MQTTUSER, MQTTPASSWORD, mqtt_callback);
     
     ClockDisplay.DisplayText("Starte RTC ...",0);
     _clock = new Clock(Wire);
@@ -129,9 +131,6 @@ void Radio::Setup()
     TemperatureSensor1.Begin(0x77);
     PowerSensor.Begin(0x40);
     
-    ClockDisplay.DisplayText("Starte Webserver ...",0);
-    WebServer.Setup(handleRoot, notFound);
-    
     ClockDisplay.DisplayText("Fertig!",0);
 
     _lastMQTTUpdate = _lastClockUpdate = millis();
@@ -148,7 +147,7 @@ void Radio::Setup()
     &Task1,  /* Task handle. */
     0); /* Core where the task should run */
     
-    WebSerialLogger.println("Radio setup complete!");
+    pmLogging.LogLn("Radio setup complete!");
     setupdone = true;
 }
 
@@ -191,7 +190,7 @@ void Radio::ExecuteCommand(char ch)
     // n -> Display current Time of RTC
     // j -> Display Powersensor info
 
-    WebSerialLogger.println("Executing keypress command: " + String(ch));
+    pmLogging.LogLn("Executing keypress command: " + String(ch));
 
     switch(ch)
     {
@@ -250,19 +249,25 @@ void Radio::ExecuteCommand(char ch)
             _spk->Toggle();
             break;
         case 'v':
-            WIFIManager.Connect();
+            pmCommonLib.WiFiManager.Connect();
             break;
         case 'V':
-            WIFIManager.Disconnect();
+            pmCommonLib.WiFiManager.Disconnect();
             break;
         case 'w':
-            WIFIManager.DisplayInfo();
+            pmCommonLib.WiFiManager.DisplayInfo();
             break;
         case 'x':
             pwmFan1.StartFan();
             break;
         case 'X':
             pwmFan1.StopFan();
+            break;
+        case 'u':
+            _fmtuner->Loop('u');
+            break;
+        case 't':
+            _fmtuner->Loop('t');
             break;
         case '1':
         case '2':
@@ -275,7 +280,7 @@ void Radio::ExecuteCommand(char ch)
             if(_currentPlayer != PLAYER_EXT)
             {
                 int preset = ch - '1';
-                WebSerialLogger.println("Switch to preset: " + String(ch));
+                pmLogging.LogLn("Switch to preset: " + String(ch));
                 _preselectLeds->SetLed(preset);
                 if(_currentOutput == OUTPUT_SI47XX)
                     _fmtuner->SwitchPreset(preset);
@@ -294,39 +299,39 @@ void Radio::setupMQTT()
     if(mqttsetup)
         return;
 
-    WebSerialLogger.println("Setting up MQTT client");
+    pmLogging.LogLn("Setting up MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Input","Radio", "", ""))
+    if(!pmCommonLib.MQTTConnector.SetupSensor("Input","Radio", "", ""))
     {
-        WebSerialLogger.println("Unable to setup MQTT client");
+        pmLogging.LogLn("Unable to setup MQTT client");
         return;
     }
 
-    MQTTConnector.SetupSelect("Preset", "Radio", "", "mdi:radio", std::vector<String>({"1","2","3","4","5","6","7","8"}));
-    MQTTConnector.SetupSensor("DateTime", "Radio", "", "");
-    MQTTConnector.SetupSensor("FreeHeap", "Radio", "", "");
-    MQTTConnector.SetupSensor("FreePSRAM", "Radio", "", "");
-    MQTTConnector.SetupSensor("FreeSketchSpace", "Radio", "", "");
-    MQTTConnector.SetupSensor("ChipCores", "Radio", "", "");
-    MQTTConnector.SetupSensor("CPUFreqpCores", "Radio", "", "");
-    MQTTConnector.SetupSensor("ChipModel", "Radio", "", "");
-    MQTTConnector.SetupSensor("FlashSize", "Radio", "", "");
-    MQTTConnector.SetupSensor("FlashMode", "Radio", "", "");
-    MQTTConnector.SetupSensor("FrequencyDisplay", "Radio", "", "");
-    MQTTConnector.SetupSensor("ClockDisplay1", "Radio", "", "");
-    MQTTConnector.SetupSensor("ClockDisplay2", "Radio", "", "");
-    MQTTConnector.SetupSensor("UpTime",  "Radio", "", "");
-    MQTTConnector.SetupSensor("LoopTime", "Radio", "", "");
-    MQTTConnector.SetupSensor("PowerSaveMode",  "Radio", "", "");
-    MQTTConnector.SetupSensor("FanRunning", "Radio", "", "");
-    WebSerialLogger.println("mqtt setup done!");
+    pmCommonLib.MQTTConnector.SetupSelect("Preset", "Radio", "", "mdi:radio", std::vector<String>({"1","2","3","4","5","6","7","8"}));
+    pmCommonLib.MQTTConnector.SetupSensor("DateTime", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FreeHeap", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FreePSRAM", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FreeSketchSpace", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("ChipCores", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("CPUFreqpCores", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("ChipModel", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FlashSize", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FlashMode", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FrequencyDisplay", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("ClockDisplay1", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("ClockDisplay2", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("UpTime",  "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("LoopTime", "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("PowerSaveMode",  "Radio", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("FanRunning", "Radio", "", "");
+    pmLogging.LogLn("mqtt setup done!");
 
     mqttsetup = true;
 }
 
 void Radio::EnterPowerSaveMode(int lvl)
 {
-    WebSerialLogger.println("Entering powersaving mode " + String(lvl));
+    pmLogging.LogLn("Entering powersaving mode " + String(lvl));
 
     switch(lvl)
     {
@@ -367,14 +372,14 @@ char Radio::Loop()
 
     
     if(ch == ' ')
-        ch = WebSerialLogger.GetInput();
+        ch = pmCommonLib.WebSerial.GetInput();
     
         
     int cha_btn = _channelButtons->Loop();
     
     if(cha_btn != 0)
     {
-        WebSerialLogger.println("Channel button pressed: " + String(cha_btn));
+        pmLogging.LogLn("Channel button pressed: " + String(cha_btn));
         switch(cha_btn)
         {
             case 1: ch = 'a'; break;  // lw
@@ -391,7 +396,7 @@ char Radio::Loop()
     int pre_btn = _preselectButtons->Loop();
     if(pre_btn != 0)
     {
-        WebSerialLogger.println("Preselect button pressed: " + String(pre_btn));
+        pmLogging.LogLn("Preselect button pressed: " + String(pre_btn));
         switch(pre_btn)
         {
             case 1: ch = '1'; break;
@@ -409,7 +414,7 @@ char Radio::Loop()
     int btn = TunerButtons.Loop();
     if(btn != 0)
     {
-        WebSerialLogger.println("Tunerbutton pressed: " + String(btn));
+        pmLogging.LogLn("Tunerbutton pressed: " + String(btn));
         switch(btn)
         {
             case 16: ch = 't'; break; // Stop seek
@@ -487,38 +492,24 @@ void Radio::SecondaryLoop()
 
     unsigned long now = millis();
 
+    pmCommonLib.Loop();
+
     if(now - _lastClockUpdate > 1000)
     {
         _lastClockUpdate = millis();
         TemperatureSensor1.Loop();
         PowerSensor.Loop();
-        WIFIManager.Loop();
-        WebSerialLogger.Loop();
-        
+       
         if(TemperatureSensor1.GetLastTemperatureReading() > 45 && pwmFan1.FanState == false)
             pwmFan1.StartFan();
 
         if(TemperatureSensor1.GetLastTemperatureReading() < 40 && pwmFan1.FanState == true)
             pwmFan1.StopFan();
 
-
-        if(!WIFIManager.IsConnected() && _lastClockUpdate - WIFIManager.LastConnectionTry() > 10000)
-        {
-            if(!WIFIManager.Connect())
-            {
-                WebSerialLogger.println("Could not connect to WIFI network!");
-            }
-        }
-
-        MQTTConnector.Loop();
-
-        if(WiFi.isConnected() && !WebSerialLogger.IsRunning())
-            WebSerialLogger.Begin(WebServer.GetServer());
-
         _clockDisplayText1 = _clock->GetDateTimeString(false);
         ClockDisplay.DisplayText(_clockDisplayText1, 1);
 
-        if(WiFi.isConnected() && MQTTConnector.isActive() && !mqttsetup)
+        if(WiFi.isConnected() && pmCommonLib.MQTTConnector.isActive() && !mqttsetup)
             setupMQTT();
 
         if(mqttsetup && (now - _lastMQTTUpdate > 5000UL))
@@ -543,11 +534,11 @@ void Radio::SecondaryLoop()
             payload["PowerSaveMode"] = String(_powersavemode);
             payload["FanRunning"] = String(pwmFan1.FanState);
            
-            MQTTConnector.PublishMessage(payload, "Radio", true);
+            pmCommonLib.MQTTConnector.PublishMessage(payload, "Radio", true);
 
             JsonDocument payload2; 
             payload2["Preset"] = String(_currentPreset + 1);
-            MQTTConnector.PublishMessage(payload2, "Radio", true, "", "select");
+            pmCommonLib.MQTTConnector.PublishMessage(payload2, "Radio", true, "", SELECT);
 
             _lastMQTTUpdate = now;
 
@@ -560,7 +551,7 @@ void Radio::SwitchInput(uint8_t newinput)
     if(newinput == _currentInput)
         return;
         
-    WebSerialLogger.println("Switch Input to  " + String(newinput));
+    pmLogging.LogLn("Switch Input to  " + String(newinput));
 
     uint8_t new_output = _currentOutput;
     uint8_t new_player = _currentPlayer;
@@ -591,7 +582,7 @@ void Radio::SwitchInput(uint8_t newinput)
 
     if(new_player != _currentPlayer)
     {
-        WebSerialLogger.println("Stopping old player");
+        pmLogging.LogLn("Stopping old player");
         // Stopping the currently running player
         if(_currentPlayer == PLAYER_SI47XX)
             _fmtuner->Stop();
@@ -600,7 +591,7 @@ void Radio::SwitchInput(uint8_t newinput)
         else if(_currentPlayer == PLAYER_WEBRADIO)
             _inetRadio->Stop();
         
-        WebSerialLogger.println("Starting new player");
+        pmLogging.LogLn("Starting new player");
         // Starting the new player
         if(new_player == PLAYER_SI47XX)
         {
@@ -611,10 +602,10 @@ void Radio::SwitchInput(uint8_t newinput)
         //    _bluetoothplayer->Start();
         else if(new_player == PLAYER_WEBRADIO)
         {
-            if(!WIFIManager.IsConnected())
-                if(!WIFIManager.Connect())
+            if(!pmCommonLib.WiFiManager.IsConnected())
+                if(!pmCommonLib.WiFiManager.Connect())
                 {
-                    WebSerialLogger.println("Could not connect to WIFI network!");
+                    pmLogging.LogLn("Could not connect to WIFI network!");
                 }
                     
             _currentPreset = _inetRadio->Start();
@@ -641,7 +632,7 @@ void Radio::SwitchInput(uint8_t newinput)
     _currentPlayer = new_player;
     _currentInput = newinput;
     
-    WebSerialLogger.println("Input switch done!");
+    pmLogging.LogLn("Input switch done!");
 }
 
 Radio _radio;

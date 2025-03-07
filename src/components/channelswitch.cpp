@@ -4,12 +4,12 @@ ChannelSwitch::ChannelSwitch(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire,
 {
     if(!isActive())
     {
-        WebSerialLogger.println("Channel switch not found");
+        pmLogging.LogLn("Channel switch not found");
         _running = false;
         return;
     }
 
-    WebSerialLogger.println("Initializing Channel switcher");
+    pmLogging.LogLn("Initializing Channel switcher");
 
     _relais = new PCF8574(twowire,adr);
     _relais->begin();
@@ -27,7 +27,7 @@ ChannelSwitch::ChannelSwitch(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire,
 
 void ChannelSwitch::TurnAllOff()
 {
-    WebSerialLogger.println("Turn off all input channels");
+    pmLogging.LogLn("Turn off all input channels");
     if(!_running)
         return;
 
@@ -47,11 +47,11 @@ void ChannelSwitch::TurnAllOff()
 
 void ChannelSwitch::SetChannel(uint8_t channel)
 {
-    WebSerialLogger.println("Switching to channel " + String(channel));
+    pmLogging.LogLn("Switching to channel " + String(channel));
 
     if(!_running)
     {
-        WebSerialLogger.println("ERROR: relais module NOT started!");
+        pmLogging.LogLn("ERROR: relais module NOT started!");
         return;
     }
 

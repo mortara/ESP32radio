@@ -7,7 +7,7 @@
 InternetRadio::InternetRadio()
 {
   
-    WebSerialLogger.println("InternetRadio setup ...");
+    pmLogging.LogLn("InternetRadio setup ...");
     
      _http.setConnectTimeout(5000);
     _http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
@@ -23,19 +23,19 @@ void InternetRadio::setupMQTT()
     if(mqttsetup)
         return;
 
-    if(!MQTTConnector.SetupSensor("Station", "Internetradio", "", "", "mdi:radio"))
+    if(!pmCommonLib.MQTTConnector.SetupSensor("Station", "Internetradio", "", "", "mdi:radio"))
     {
-        WebSerialLogger.println("Could not setup Internetradio mqtt!");
+        pmLogging.LogLn("Could not setup Internetradio mqtt!");
         return;
     }
 
-    MQTTConnector.SetupSensor("BytesPlayed", "Internetradio", "data_size", "B", "mdi:radio");
-    MQTTConnector.SetupSensor("URL", "Internetradio", "", "", "");
+    pmCommonLib.MQTTConnector.SetupSensor("BytesPlayed", "Internetradio", "data_size", "B", "mdi:radio");
+    pmCommonLib.MQTTConnector.SetupSensor("URL", "Internetradio", "", "", "");
 
-    MQTTConnector.SetupSelect("Country", "Internetradio", "", "mdi:radio", std::vector<String>(countries));
-    MQTTConnector.SetupSelect("Category", "Internetradio", "", "mdi:radio", std::vector<String>(categories));
+    pmCommonLib.MQTTConnector.SetupSelect("Country", "Internetradio", "", "mdi:radio", std::vector<String>(countries));
+    pmCommonLib.MQTTConnector.SetupSelect("Category", "Internetradio", "", "mdi:radio", std::vector<String>(categories));
 
-    WebSerialLogger.println("Internetradio Sensor mqtt setup done!");
+    pmLogging.LogLn("Internetradio Sensor mqtt setup done!");
 
     mqttsetup = true;
 
@@ -45,7 +45,7 @@ void InternetRadio::SwitchPreset(uint8_t num)
 {
     
 
-    WebSerialLogger.println("InternetRadio::SwitchPreset to " + String(num));
+    pmLogging.LogLn("InternetRadio::SwitchPreset to " + String(num));
     _current_station_preset = num;
 
     if(seekmode)
@@ -58,7 +58,7 @@ void InternetRadio::SwitchPreset(uint8_t num)
 void InternetRadio::StartStream(Station &station)
 {
     _connectiontimer = millis();
-    WebSerialLogger.println("connecting to " + String(station.url));
+    pmLogging.LogLn("connecting to " + String(station.url));
    
     _http.end();
     delay(100);
@@ -69,15 +69,15 @@ void InternetRadio::StartStream(Station &station)
     // Send HTTP GET request
     int httpResponseCode = _http.GET();
     
-    WebSerialLogger.print("return code: " + String(httpResponseCode));
+    pmLogging.Log("return code: " + String(httpResponseCode));
  
     if(httpResponseCode == HTTP_CODE_OK) {
        
         if(_http.getStreamPtr() != nullptr)
-            WebSerialLogger.println("Stream started!");
+            pmLogging.LogLn("Stream started!");
         else
         {
-            WebSerialLogger.println("Stream not started!");
+            pmLogging.LogLn("Stream not started!");
         }
     }
     
@@ -85,7 +85,7 @@ void InternetRadio::StartStream(Station &station)
 
 uint8_t InternetRadio::Start()
 {
-    WebSerialLogger.println("InternetRadio start ...");
+    pmLogging.LogLn("InternetRadio start ...");
     SignalIndicator.SetRange(0, 120);
     MP3Player.Begin();
     LoadPresets();
@@ -99,7 +99,7 @@ uint8_t InternetRadio::Start()
 
 void InternetRadio::Stop()
 {
-    WebSerialLogger.println("InternetRadio stop ...");
+    pmLogging.LogLn("InternetRadio stop ...");
     _http.end();
     MP3Player.End();
 
@@ -108,8 +108,8 @@ void InternetRadio::Stop()
 
 void InternetRadio::DisplayInfo()
 {
-    WebSerialLogger.println("Current stream: " + String(stationlist[_current_station_preset].name));
-    WebSerialLogger.println("Played " + String(bytes_served) + " bytes");
+    pmLogging.LogLn("Current stream: " + String(stationlist[_current_station_preset].name));
+    pmLogging.LogLn("Played " + String(bytes_served) + " bytes");
 }
 
 String InternetRadio::GetFreqDisplayText()
@@ -195,9 +195,9 @@ void InternetRadio::UpdateMQTT()
         payload["URL"] = "-";
         payload["BytesPlayed"] = String(0);
     }
-    //WebSerialLogger.println("Sending internetradio mqtt: " + String(st.name) + "/"+ String(bytes_served));
+    //pmLogging.LogLn("Sending internetradio mqtt: " + String(st.name) + "/"+ String(bytes_served));
 
-    MQTTConnector.PublishMessage(payload, "Internetradio");
+    pmCommonLib.MQTTConnector.PublishMessage(payload, "Internetradio");
 
     JsonDocument payload2;
     payload2["Country"] = String(countries[seek_country]);
@@ -213,7 +213,7 @@ void InternetRadio::UpdateMQTT()
         payload2["SeekStation"] = "No stations";
     }
 
-    MQTTConnector.PublishMessage(payload2, "Internetradio", "", "select");
+    pmCommonLib.MQTTConnector.PublishMessage(payload2, "Internetradio", "", "select");
 }
 
 void InternetRadio::Loop(char ch)
@@ -229,7 +229,7 @@ void InternetRadio::Loop(char ch)
 
         if(mqttsetup)
             UpdateMQTT();
-        else if(MQTTConnector.isActive())
+        else if(pmCommonLib.MQTTConnector.isActive())
             setupMQTT();
     }
 
@@ -257,10 +257,10 @@ void InternetRadio::Loop(char ch)
                 {
                     MP3Player.PlayData(bytesread);
                     /*if(bytesread != MP3buffersize)
-                        WebSerialLogger.println("Data buffer != " + String(MP3buffersize) + " bytes");*/
+                        pmLogging.LogLn("Data buffer != " + String(MP3buffersize) + " bytes");*/
                 }
                 else
-                    WebSerialLogger.println("no data in buffer");
+                    pmLogging.LogLn("no data in buffer");
 
             }
         }  
@@ -268,7 +268,7 @@ void InternetRadio::Loop(char ch)
     } 
     else if(WiFi.status() == WL_CONNECTED && now - _connectiontimer > 10000)
     {
-        WebSerialLogger.println("Try to connect ...");
+        pmLogging.LogLn("Try to connect ...");
         StartStream(stationlist[_current_station_preset]);
     }
 
@@ -305,7 +305,7 @@ void InternetRadio::Loop(char ch)
     {
         case 'o': // small step up
             
-            WebSerialLogger.println("Next category");
+            pmLogging.LogLn("Next category");
             seek_category++;
             
             if(seek_category >= categories.size())
@@ -317,12 +317,12 @@ void InternetRadio::Loop(char ch)
             seek_category--;
             if(seek_category < 0)
                 seek_category = categories.size()-1;
-            WebSerialLogger.println("previous category");
+            pmLogging.LogLn("previous category");
             updatelistrequested = true;
             updatelistmillis = millis();
             break;
         case 'I': // step up
-            WebSerialLogger.println("Next country");
+            pmLogging.LogLn("Next country");
             seek_country++;
             
             if(seek_country >= countries.size())
@@ -334,12 +334,12 @@ void InternetRadio::Loop(char ch)
             seek_country--;
             if(seek_country < 0)
                 seek_country = countries.size()-1;
-            WebSerialLogger.println("previous country");
+            pmLogging.LogLn("previous country");
             updatelistrequested = true;
             updatelistmillis = millis();
             break;
         case 'u': // start seek up
-            WebSerialLogger.println("Next station ...");
+            pmLogging.LogLn("Next station ...");
             stationswitchrequested = true;
             stationswitchmillis = millis();
             seekindex++;
@@ -356,7 +356,7 @@ void InternetRadio::Loop(char ch)
             }
             break;
         case 'z': // start seek down
-            WebSerialLogger.println("previous station ...");
+            pmLogging.LogLn("previous station ...");
             stationswitchrequested = true;
             stationswitchmillis = millis();
             seekindex--;
@@ -371,7 +371,7 @@ void InternetRadio::Loop(char ch)
             }
             break;
         case 't': // stop/start seek
-            WebSerialLogger.println("");
+            pmLogging.LogLn("");
             if(seekmode)
             {
                 updatelistrequested = false;
@@ -437,7 +437,7 @@ void InternetRadio::SetStation(String name)
 
 uint8_t InternetRadio::GetStationList()
 {
-    WebSerialLogger.println("Download internetradio stations!");
+    pmLogging.LogLn("Download internetradio stations!");
 
     if(Stations->size() > 0)
     {
@@ -475,19 +475,19 @@ uint8_t InternetRadio::GetStationList()
     HTTPClient http;
     http.begin(url);
 
-    WebSerialLogger.println("[HTTP] URL... : " + url);
+    pmLogging.LogLn("[HTTP] URL... : " + url);
 
     int httpCode = http.GET();
     if (httpCode > 0) {
       // HTTP header has been send and Server response header has been handled
-      WebSerialLogger.println("[HTTP] GET... code: " +String(httpCode));
+      pmLogging.LogLn("[HTTP] GET... code: " +String(httpCode));
 
       // file found at server
       if (httpCode == HTTP_CODE_OK) {
 
         // get length of document (is -1 when Server sends no Content-Length header)
         int len = http.getSize();
-        WebSerialLogger.println("[HTTP] content length: " +String(len));
+        pmLogging.LogLn("[HTTP] content length: " +String(len));
        
         // get tcp stream
         WiFiClient *stream = http.getStreamPtr();
@@ -497,7 +497,7 @@ uint8_t InternetRadio::GetStationList()
         JsonArray array = doc.as<JsonArray>();
 
         int arraysize = array.size();
-        WebSerialLogger.println("[HTTP] Entries received: " +String(arraysize));
+        pmLogging.LogLn("[HTTP] Entries received: " +String(arraysize));
 
         for(int i = 0; i < arraysize; i++)
         {
@@ -514,38 +514,38 @@ uint8_t InternetRadio::GetStationList()
                 
                 Stations->push_back(s);
                 _names.push_back(*name);
-                WebSerialLogger.println(*name + ":" + *rurl);
+                pmLogging.LogLn(*name + ":" + *rurl);
             }
             
         }
 
       }
     } else {
-        WebSerialLogger.println("[HTTP] GET... failed, error: " + http.errorToString(httpCode));
+        pmLogging.LogLn("[HTTP] GET... failed, error: " + http.errorToString(httpCode));
       
     }
 
     http.end();
 
-    MQTTConnector.SetupSelect("SeekStation", "Internetradio", "", "mdi:radio", _names);
+    pmCommonLib.MQTTConnector.SetupSelect("SeekStation", "Internetradio", "", "mdi:radio", _names);
 
     return Stations->size();
 }
 
 void InternetRadio::LoadPresets()
 {
-    WebSerialLogger.println("Loading internetradio presets");
+    pmLogging.LogLn("Loading internetradio presets");
     _current_station_preset = 0;
    
     Preferences _prefs;
     String prefname = "internetradio";
     if(!_prefs.begin(prefname.c_str(), false)) 
     {
-        WebSerialLogger.println("unable to open preferences");
+        pmLogging.LogLn("unable to open preferences");
     }
     else
     {
-        WebSerialLogger.println("Loading presets from SPIFFS");
+        pmLogging.LogLn("Loading presets from SPIFFS");
 
         for(int i=0;i<8;i++)
         {
@@ -571,14 +571,14 @@ void InternetRadio::LoadPresets()
 
 void InternetRadio::SavePresets()
 {
-    WebSerialLogger.println("Saving internetradio");
+    pmLogging.LogLn("Saving internetradio");
     
     Preferences _prefs;
     String prefname = "internetradio";
-    WebSerialLogger.println(prefname);
+    pmLogging.LogLn(prefname);
     if(!_prefs.begin(prefname.c_str(), false))
     {
-        WebSerialLogger.println("Could not open preset file " + prefname);
+        pmLogging.LogLn("Could not open preset file " + prefname);
         return;
     }
 

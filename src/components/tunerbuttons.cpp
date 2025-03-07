@@ -7,11 +7,11 @@ void TunerButtonsClass::Setup(TwoWire *twowire, uint8_t adr)
 
     if(!isActive())
     {
-        WebSerialLogger.println("Tuner buttons not found!");
+        pmLogging.LogLn("Tuner buttons not found!");
         return;
     }
 
-    WebSerialLogger.println("Initializing tuner buttons switcher");
+    pmLogging.LogLn("Initializing tuner buttons switcher");
 
     _pcf8754 = new PCF8574(twowire,adr);
     _pcf8754->begin();

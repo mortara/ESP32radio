@@ -5,11 +5,11 @@ ClockButtons::ClockButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(twowire, a
 {
     if(!isActive())
     {
-        WebSerialLogger.println("clock buttons not found!");
+        pmLogging.LogLn("clock buttons not found!");
         return;
     }
 
-    WebSerialLogger.println("Initializing clock buttons");
+    pmLogging.LogLn("Initializing clock buttons");
 
     _pcf = new PCF8574(twowire,adr);
     _pcf->pinMode(P0, INPUT);
@@ -32,7 +32,7 @@ void ClockButtons::DisplayInfo()
 
     PCF8574::DigitalInput input = _pcf->digitalReadAll();
 
-    WebSerialLogger.println(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3) +" " + String(input.p4) +" " + String(input.p5) +" " + String(input.p6) +" " + String(input.p7));
+    pmLogging.LogLn(String(input.p0)  +" " + String(input.p1) +" " + String(input.p2) +" " + String(input.p3) +" " + String(input.p4) +" " + String(input.p5) +" " + String(input.p6) +" " + String(input.p7));
 }
 
 int ClockButtons::readInputs()
@@ -85,7 +85,7 @@ int ClockButtons::Loop()
     // Input is read twice for debouncing the switch!
     if(button != 0)
     {
-        WebSerialLogger.println("Clockbutton " + String(button) + " pressed!");
+        pmLogging.LogLn("Clockbutton " + String(button) + " pressed!");
         return button;
     }
 

@@ -5,11 +5,11 @@ PreselectButtons::PreselectButtons(TwoWire* twowire, uint8_t adr) : i2cdevice(tw
 {
     if(!isActive())
     {
-        WebSerialLogger.println("preselect buttons not found!");
+        pmLogging.LogLn("preselect buttons not found!");
         return;
     }
 
-    WebSerialLogger.println("Initializing preselect buttons");
+    pmLogging.LogLn("Initializing preselect buttons");
 
     _pcf8574 = new PCF8574(twowire,adr);
     _pcf8574->begin();

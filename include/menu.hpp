@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "temperature_sensor.hpp"
 #include "power_sensor.hpp"
-
+#include "pmCommonLib.hpp"
 #ifndef MENU_H
 #define MENU_H
 

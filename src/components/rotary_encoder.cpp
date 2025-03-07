@@ -8,7 +8,7 @@ void RotaryEncoderClass::Setup(uint8_t cw, uint8_t ccw, uint8_t sw)
     encoder.setCount(0);
     pinMode(_sw, INPUT);
     _lastread = millis();
-    WebSerialLogger.println("Rotary encoder started");
+    pmLogging.LogLn("Rotary encoder started");
     running = true;
 }
 

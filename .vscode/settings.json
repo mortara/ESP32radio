@@ -69,7 +69,8 @@
         "numbers": "cpp",
         "semaphore": "cpp",
         "span": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "text_encoding": "cpp"
     },
     "idf.portWin": "COM11"
 }

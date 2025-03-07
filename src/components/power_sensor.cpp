@@ -4,10 +4,10 @@ void PowerSensorClass::Begin(uint8_t adr)
 {
     i2cdevice::Setup(&Wire, adr);
 
-    WebSerialLogger.println("Initializing power sensor");
+    pmLogging.LogLn("Initializing power sensor");
     if(!isActive())
     {
-        WebSerialLogger.println("Power sensor not found!");     
+        pmLogging.LogLn("Power sensor not found!");     
         return;   
     }
 
@@ -23,42 +23,42 @@ bool PowerSensorClass::mqttSetup()
     if(setupmqtt)
         return false;
 
-    WebSerialLogger.println("Setting up MQTT client");
+    pmLogging.LogLn("Setting up MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Current", "INA219", "current", "mA", "mdi:current-dc"))
+    if(!pmCommonLib.MQTTConnector.SetupSensor("Current", "INA219", "current", "mA", "mdi:current-dc"))
     {
-        WebSerialLogger.println("Could not setup current sensor!");
+        pmLogging.LogLn("Could not setup current sensor!");
         return false;
     }
 
-    MQTTConnector.SetupSensor("BusVoltage", "INA219", "voltage", "V", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("ShuntVoltage", "INA219", "voltage", "mV", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("LoadVoltage", "INA219", "voltage", "V", "mdi:flash-triangle");
-    MQTTConnector.SetupSensor("Power", "INA219", "power", "W", "mdi:flash-triangle");
+    pmCommonLib.MQTTConnector.SetupSensor("BusVoltage", "INA219", "voltage", "V", "mdi:flash-triangle");
+    pmCommonLib.MQTTConnector.SetupSensor("ShuntVoltage", "INA219", "voltage", "mV", "mdi:flash-triangle");
+    pmCommonLib.MQTTConnector.SetupSensor("LoadVoltage", "INA219", "voltage", "V", "mdi:flash-triangle");
+    pmCommonLib.MQTTConnector.SetupSensor("Power", "INA219", "power", "W", "mdi:flash-triangle");
 
     setupmqtt = true;
 
-    WebSerialLogger.println("Power Sensor mqtt setup done!");
+    pmLogging.LogLn("Power Sensor mqtt setup done!");
     return true;
 }
 
 void PowerSensorClass::DisplayInfo()
 {
-    WebSerialLogger.print("Current = ");
-    WebSerialLogger.print(String(_current));
-    WebSerialLogger.println("mA");
+    pmLogging.Log("Current = ");
+    pmLogging.Log(String(_current));
+    pmLogging.LogLn("mA");
 
-    WebSerialLogger.print("BusVoltage = ");
-    WebSerialLogger.print(String(_busvoltage));
-    WebSerialLogger.println(" V");
+    pmLogging.Log("BusVoltage = ");
+    pmLogging.Log(String(_busvoltage));
+    pmLogging.LogLn(" V");
 
-    WebSerialLogger.print("ShuntVoltage = ");
-    WebSerialLogger.print(String(_shuntvoltage));
-    WebSerialLogger.println(" mV");
+    pmLogging.Log("ShuntVoltage = ");
+    pmLogging.Log(String(_shuntvoltage));
+    pmLogging.LogLn(" mV");
 
-    WebSerialLogger.print("Power = ");
-    WebSerialLogger.print(String(_power));
-    WebSerialLogger.println(" mW");
+    pmLogging.Log("Power = ");
+    pmLogging.Log(String(_power));
+    pmLogging.LogLn(" mW");
 }
 
 float PowerSensorClass::GetLastCurrentReading()
@@ -77,7 +77,7 @@ void PowerSensorClass::Loop() {
 
     _lastRead = now;
 
-    if(!setupmqtt && MQTTConnector.isActive())
+    if(!setupmqtt && pmCommonLib.MQTTConnector.isActive())
         mqttSetup();
 
     _current = _ina.getCurrent_mA();
@@ -95,7 +95,7 @@ void PowerSensorClass::Loop() {
         payload["LoadVoltage"] = String(_loadvoltage);
         payload["Power"] = String(_power);
 
-        MQTTConnector.PublishMessage(payload, "INA219");
+        pmCommonLib.MQTTConnector.PublishMessage(payload, "INA219");
     }
 }
 

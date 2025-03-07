@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_INA219.h>
-#include "MQTT/mqtt.hpp"
-#include "I2C/i2cdevice.hpp"
+#include "pmCommonLib.hpp"
 
 #ifndef POWERSENSOR_H
 #define POWERSENSOR_H

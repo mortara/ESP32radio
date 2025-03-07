@@ -2,8 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "PCF8574.h"
-#include "I2C/i2cdevice.hpp"
-#include "Webserial/webserial.hpp"
+#include "pmCommonLib.hpp"
 
 class ChannelButtons : i2cdevice
 {

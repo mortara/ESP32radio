@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <time.h>
-#include "I2C/i2cdevice.hpp"
+#include "pmCommonLib.hpp"
 #include <DS3232RTC.h>
 #include "Timezone.h"
 

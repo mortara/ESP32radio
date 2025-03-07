@@ -22,7 +22,7 @@ Clock::Clock(TwoWire &wire) : i2cdevice(&wire, 0x68)
 
 bool Clock::SetByNTP()
 {
-    WebSerialLogger.println("Setting time by NTP Server");
+    pmLogging.LogLn("Setting time by NTP Server");
 
     configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "ptbtime1.ptb.de", "ptbtime2.ptb.de", "ptbtime3.ptb.de");
     //configTime(0,0, "ptbtime1.ptb.de");
@@ -32,14 +32,14 @@ bool Clock::SetByNTP()
 
     if(!getLocalTime(&time))
     {
-        WebSerialLogger.println("Could not get local time!");
+        pmLogging.LogLn("Could not get local time!");
         return false;
     }
 
     if(!_active)
         return true;
 
-    WebSerialLogger.println("dst = " + String(time.tm_isdst));
+    pmLogging.LogLn("dst = " + String(time.tm_isdst));
 
     time_t now = mktime(&time);
     
@@ -50,9 +50,9 @@ bool Clock::SetByNTP()
     now = _rtc.get();
     tmElements_t tme;
     _rtc.read(tme);
-    WebSerialLogger.println("tme = " + TimeTToString(tme, true));
-    WebSerialLogger.println("now = " + GetDateTimeString(now));
-    WebSerialLogger.println("timeSinceEpoch = " + GetDateTimeString(timeSinceEpoch));
+    pmLogging.LogLn("tme = " + TimeTToString(tme, true));
+    pmLogging.LogLn("now = " + GetDateTimeString(now));
+    pmLogging.LogLn("timeSinceEpoch = " + GetDateTimeString(timeSinceEpoch));
 
     return true;
 }
@@ -60,17 +60,17 @@ bool Clock::SetByNTP()
 void Clock::DisplayInfo()
 {
     if(_active)
-        WebSerialLogger.println("Clock active = YES");
+        pmLogging.LogLn("Clock active = YES");
     else
-        WebSerialLogger.println("Clock active = NO");
+        pmLogging.LogLn("Clock active = NO");
 
     if(_timeset)
-        WebSerialLogger.println("Clock set by NTP = YES" );
+        pmLogging.LogLn("Clock set by NTP = YES" );
     else
-        WebSerialLogger.println("Clock set by NTP = NO" );
+        pmLogging.LogLn("Clock set by NTP = NO" );
 
-    WebSerialLogger.println("Current date = " + GetDateTimeString());
-    //WebSerialLogger.println("DS3231 time = " + String(_rtc.get()));
+    pmLogging.LogLn("Current date = " + GetDateTimeString());
+    //pmLogging.LogLn("DS3231 time = " + String(_rtc.get()));
 }
 
 String Clock::TimeTToString(tmElements_t time, bool seconds)

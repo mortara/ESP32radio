@@ -2,11 +2,10 @@
 #include <Wire.h>
 #include <SPI.h>
 #include "radio.hpp"
-#include "I2C/i2cscanner.hpp"
-#include "OTA/ota_handler.h"
+#include "pmCommonLib.hpp"
 
 I2CScanner *_i2cscanner;
-ota_handler OTAHandler;
+
 unsigned long _lastLoop;
 
 unsigned long _loopTimeMax = 0;
@@ -79,19 +78,25 @@ void setup()
   /*Serial0.println("Serial0 Hello!");
   Serial1.println("Serial1 Hello!");
   Serial2.println("Serial2 Hello!");*/
-  WebSerialLogger.println("Hello world!");
+  pmLogging.LogLn("Hello world!");
   //ScanI2C();
 
   try
   {
+     pmCommonLib.Setup();
+     pmCommonLib.MQTTConnector.ConfigureDevice(DEVICE_NAME, "RS555", "Patrick Mortara");
+
       _radio.Setup();
+
+      pmCommonLib.Start();
+
       if(_radio.OTAOnly)
-        OTAHandler.OTAOnly = true;
+        pmCommonLib.OTAHandler.OTAOnly = true;
   }
   catch(const std::exception& e)
   {
     crashed = true;
-    WIFIManager.Connect();
+    pmCommonLib.WiFiManager.Connect();
   }
 }
 
@@ -129,13 +134,8 @@ void loop()
 {
   DisplayLoopTime();
    
-  if(OTAHandler.OTAOnly)
-  {
-    WIFIManager.Loop();
-    OTAHandler.Loop();
-    return;
-  }
-  OTAHandler.Loop();
+  if(pmCommonLib.OTAHandler.OTAOnly)
+    pmCommonLib.Loop();
 
   if(mode == 0)
   {
@@ -158,7 +158,7 @@ void loop()
           break;
         case 'L':
           Serial.printf("Looptime: Avg: %f   Min: %u  Max: %u \r\n", _loopTimeAverage, _loopTimeMin, _loopTimeMax);
-          WebSerialLogger.println("loop: Avg. " + String(_loopTimeAverage));
+          pmLogging.LogLn("loop: Avg. " + String(_loopTimeAverage));
           break;
       }
     }

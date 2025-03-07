@@ -7,11 +7,11 @@ void TemperatureSensorClass::Begin(uint8_t adr)
 
     if(!isActive())
     {
-        WebSerialLogger.println("temperature sensor not found!");     
+        pmLogging.LogLn("temperature sensor not found!");     
         return;   
     }
 
-    WebSerialLogger.println("Initializing temperature sensor");
+    pmLogging.LogLn("Initializing temperature sensor");
 
     if(_bmp.begin())
         _active = true;
@@ -24,33 +24,33 @@ bool TemperatureSensorClass::mqttSetup()
     if(setupmqtt)
         return false;
 
-    WebSerialLogger.println("Setting up MQTT client");
+    pmLogging.LogLn("Setting up MQTT client");
 
-    if(!MQTTConnector.SetupSensor("Temperature", "BMP180", "temperature", "°C", "mdi:temperature-celsius"))
+    if(!pmCommonLib.MQTTConnector.SetupSensor("Temperature", "BMP180", "temperature", "°C", "mdi:temperature-celsius"))
     {
-        WebSerialLogger.println("Could not setup temperature sensor!");
+        pmLogging.LogLn("Could not setup temperature sensor!");
         return false;
     }
 
-    MQTTConnector.SetupSensor("Pressure", "BMP180", "pressure", "Pa", "mdi:air-filter");
-    MQTTConnector.SetupSensor("Altitude", "BMP180", "", "m", "");
+    pmCommonLib.MQTTConnector.SetupSensor("Pressure", "BMP180", "pressure", "Pa", "mdi:air-filter");
+    pmCommonLib.MQTTConnector.SetupSensor("Altitude", "BMP180", "", "m", "");
     setupmqtt = true;
 
-    WebSerialLogger.println("Temperature Sensor mqtt setup done!");
+    pmLogging.LogLn("Temperature Sensor mqtt setup done!");
     return true;
 }
 
 void TemperatureSensorClass::DisplayInfo()
 {
-    WebSerialLogger.print("Temperature = ");
-    WebSerialLogger.print(String(_temperature));
-    WebSerialLogger.println(" *C");
-    WebSerialLogger.print("Pressure = ");
-    WebSerialLogger.print(String(_pressure));
-    WebSerialLogger.println(" Pa");
-    WebSerialLogger.print("Altitude = ");
-    WebSerialLogger.print(String(_altitude));
-    WebSerialLogger.println("m");
+    pmLogging.Log("Temperature = ");
+    pmLogging.Log(String(_temperature));
+    pmLogging.LogLn(" *C");
+    pmLogging.Log("Pressure = ");
+    pmLogging.Log(String(_pressure));
+    pmLogging.LogLn(" Pa");
+    pmLogging.Log("Altitude = ");
+    pmLogging.Log(String(_altitude));
+    pmLogging.LogLn("m");
 }
 
 float TemperatureSensorClass::GetLastTemperatureReading()
@@ -69,7 +69,7 @@ void TemperatureSensorClass::Loop() {
 
     _lastRead = now;
 
-    if(MQTTConnector.isActive() && !setupmqtt)
+    if(pmCommonLib.MQTTConnector.isActive() && !setupmqtt)
         mqttSetup();
 
     _temperature = _bmp.readTemperature();
@@ -83,7 +83,7 @@ void TemperatureSensorClass::Loop() {
         payload["Pressure"] = String(_pressure);
         payload["Altitude"] = String(_altitude);
         
-        MQTTConnector.PublishMessage(payload, "BMP180");
+        pmCommonLib.MQTTConnector.PublishMessage(payload, "BMP180");
 
     }
 }
