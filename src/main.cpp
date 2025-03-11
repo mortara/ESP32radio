@@ -84,11 +84,9 @@ void setup()
   try
   {
      pmCommonLib.Setup();
-     pmCommonLib.MQTTConnector.ConfigureDevice(DEVICE_NAME, "RS555", "Patrick Mortara");
+     pmCommonLib.MQTTConnector.ConfigureDevice("ESP32Radio", "RS555", "Patrick Mortara");
 
       _radio.Setup();
-
-      pmCommonLib.Start();
 
       if(_radio.OTAOnly)
         pmCommonLib.OTAHandler.OTAOnly = true;
@@ -96,7 +94,6 @@ void setup()
   catch(const std::exception& e)
   {
     crashed = true;
-    pmCommonLib.WiFiManager.Connect();
   }
 }
 

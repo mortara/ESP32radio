@@ -9,7 +9,6 @@
 #include "pmCommonLib.hpp"
 #include "clock.hpp"
 #include "SPIFFS.h"
-#include "secrets.h"
 #include "speaker.hpp"
 #include "fmtuner4735.hpp"
 #include "internetradio.hpp"
