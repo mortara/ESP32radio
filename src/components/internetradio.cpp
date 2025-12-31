@@ -288,15 +288,11 @@ void InternetRadio::Loop(char ch)
 
             if(TunerButtons.SavePresetButtonPressed)
             {
-                Station ps;
-                
-                String *name = new String(s->name);
-                String *url = new String(s->url);
-
-                ps.name = name->c_str();
-                ps.url = url->c_str();
-
-                stationlist[_current_station_preset] = ps;
+                // Known limitation: Overwrites stationlist pointers without freeing
+                // This causes a small memory leak if saving the same preset multiple times
+                // Proper fix would require tracking allocation state or using String objects
+                stationlist[_current_station_preset].name = strdup(s->name);
+                stationlist[_current_station_preset].url = strdup(s->url);
             }
         }
     }
@@ -343,7 +339,7 @@ void InternetRadio::Loop(char ch)
             stationswitchrequested = true;
             stationswitchmillis = millis();
             seekindex++;
-            if(seekindex >= Stations->size());
+            if(seekindex >= Stations->size())
             {               
                 seekpage++;
                 uint8_t nstations = GetStationList();
@@ -359,8 +355,7 @@ void InternetRadio::Loop(char ch)
             pmLogging.LogLn("previous station ...");
             stationswitchrequested = true;
             stationswitchmillis = millis();
-            seekindex--;
-            if(seekindex < 0)
+            if(seekindex == 0)
             {
                 if(seekpage>0)
                     seekpage--;
@@ -368,6 +363,10 @@ void InternetRadio::Loop(char ch)
                 GetStationList();
 
                 seekindex = Stations->size()-1;
+            }
+            else
+            {
+                seekindex--;
             }
             break;
         case 't': // stop/start seek
@@ -444,6 +443,8 @@ uint8_t InternetRadio::GetStationList()
         for(int i = 0; i<Stations->size(); i++)
         {
             Station *s = Stations->at(i);
+            free(s->name);
+            free(s->url);
             delete s;
         }
            
@@ -503,18 +504,18 @@ uint8_t InternetRadio::GetStationList()
         {
             JsonVariant item = array[i];
 
-            String *name = new String(item["name"].as<String>());
-            String *rurl = new String(item["url"].as<String>());
+            String name = item["name"].as<String>();
+            String rurl = item["url"].as<String>();
 
-            if(*name != "" && rurl->startsWith("http"))
+            if(name != "" && rurl.startsWith("http"))
             {
                 Station *s = new Station();
-                s->name = name->c_str();
-                s->url =  rurl->c_str();
+                s->name = strdup(name.c_str());
+                s->url = strdup(rurl.c_str());
                 
                 Stations->push_back(s);
-                _names.push_back(*name);
-                pmLogging.LogLn(*name + ":" + *rurl);
+                _names.push_back(name);
+                pmLogging.LogLn(name + ":" + rurl);
             }
             
         }
@@ -547,18 +548,17 @@ void InternetRadio::LoadPresets()
     {
         pmLogging.LogLn("Loading presets from SPIFFS");
 
+        // Note: This assumes LoadPresets is only called once during initialization
+        // If called multiple times, it will leak the previously allocated strings
         for(int i=0;i<8;i++)
         {
-            String *name = new String(_prefs.getString(String("STATIONNAME_" + String(i)).c_str(), ""));
-            String *url = new String(_prefs.getString(String("STATIONURL_" + String(i)).c_str(), ""));
+            String name = _prefs.getString(String("STATIONNAME_" + String(i)).c_str(), "");
+            String url = _prefs.getString(String("STATIONURL_" + String(i)).c_str(), "");
 
-            if(*name != "")
+            if(name != "")
             {
-                Station s;
-
-                s.name = name->c_str();
-                s.url = url->c_str();
-                stationlist[i] = s;
+                stationlist[i].name = strdup(name.c_str());
+                stationlist[i].url = strdup(url.c_str());
             }
         }
 
