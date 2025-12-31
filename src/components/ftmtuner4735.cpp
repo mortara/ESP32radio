@@ -82,9 +82,9 @@ void FMTuner4735::sendMQTTState()
 
     char str[200];
     if (b.bandType == FM_BAND_TYPE)
-        sprintf(str,"Smallstep %2.2d | Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabFmStep[0], tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+        snprintf(str, sizeof(str), "Smallstep %2.2d | Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabFmStep[0], tabFmStep[b.currentStepIdx], bandwidthFM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
     else
-        sprintf(str,"Smallstep %2.2d | Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabAmStep[0], tabAmStep[b.currentStepIdx], bandwidthAM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
+        snprintf(str, sizeof(str), "Smallstep %2.2d | Step %2.2d | Bw %2.2d | disableAgc %2.2d  | agcIdx %2.2d | agcNdx %2.2d | avcIdx %2.2d", tabAmStep[0], tabAmStep[b.currentStepIdx], bandwidthAM[b.bandwidthIdx].idx, b.disableAgc, b.agcIdx, b.agcNdx, b.avcIdx );
 
     payload["BandData"] = String(str);
 
@@ -519,7 +519,7 @@ void FMTuner4735::Loop(char ch)
         {
             ch = _seekmode;
             char str[100];
-            sprintf(str,"Seeking .... Freq: %2.2d | RSSI: %2.2d | SNR: %2.2d", currentFrequency, rssi, snr);
+            snprintf(str, sizeof(str), "Seeking .... Freq: %2.2d | RSSI: %2.2d | SNR: %2.2d", currentFrequency, rssi, snr);
             pmLogging.LogLn(str);
         }
 

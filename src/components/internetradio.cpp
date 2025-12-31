@@ -288,15 +288,8 @@ void InternetRadio::Loop(char ch)
 
             if(TunerButtons.SavePresetButtonPressed)
             {
-                Station ps;
-                
-                String *name = new String(s->name);
-                String *url = new String(s->url);
-
-                ps.name = name->c_str();
-                ps.url = url->c_str();
-
-                stationlist[_current_station_preset] = ps;
+                stationlist[_current_station_preset].name = strdup(s->name);
+                stationlist[_current_station_preset].url = strdup(s->url);
             }
         }
     }
@@ -444,6 +437,8 @@ uint8_t InternetRadio::GetStationList()
         for(int i = 0; i<Stations->size(); i++)
         {
             Station *s = Stations->at(i);
+            free((void*)s->name);
+            free((void*)s->url);
             delete s;
         }
            
@@ -503,18 +498,18 @@ uint8_t InternetRadio::GetStationList()
         {
             JsonVariant item = array[i];
 
-            String *name = new String(item["name"].as<String>());
-            String *rurl = new String(item["url"].as<String>());
+            String name = item["name"].as<String>();
+            String rurl = item["url"].as<String>();
 
-            if(*name != "" && rurl->startsWith("http"))
+            if(name != "" && rurl.startsWith("http"))
             {
                 Station *s = new Station();
-                s->name = name->c_str();
-                s->url =  rurl->c_str();
+                s->name = strdup(name.c_str());
+                s->url = strdup(rurl.c_str());
                 
                 Stations->push_back(s);
-                _names.push_back(*name);
-                pmLogging.LogLn(*name + ":" + *rurl);
+                _names.push_back(name);
+                pmLogging.LogLn(name + ":" + rurl);
             }
             
         }
@@ -549,16 +544,13 @@ void InternetRadio::LoadPresets()
 
         for(int i=0;i<8;i++)
         {
-            String *name = new String(_prefs.getString(String("STATIONNAME_" + String(i)).c_str(), ""));
-            String *url = new String(_prefs.getString(String("STATIONURL_" + String(i)).c_str(), ""));
+            String name = _prefs.getString(String("STATIONNAME_" + String(i)).c_str(), "");
+            String url = _prefs.getString(String("STATIONURL_" + String(i)).c_str(), "");
 
-            if(*name != "")
+            if(name != "")
             {
-                Station s;
-
-                s.name = name->c_str();
-                s.url = url->c_str();
-                stationlist[i] = s;
+                stationlist[i].name = strdup(name.c_str());
+                stationlist[i].url = strdup(url.c_str());
             }
         }
 

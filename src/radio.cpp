@@ -574,6 +574,7 @@ void Radio::SwitchInput(uint8_t newinput)
         case INPUT_BT:
             new_player = PLAYER_BT;
             new_output = OUTPUT_VS1053;
+            break;
         case INPUT_INET:
             new_player = PLAYER_WEBRADIO;
             new_output = OUTPUT_VS1053;

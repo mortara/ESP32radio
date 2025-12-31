@@ -4,7 +4,7 @@
 #include "radio.hpp"
 #include "pmCommonLib.hpp"
 
-I2CScanner *_i2cscanner;
+I2CScanner *_i2cscanner = nullptr;
 
 unsigned long _lastLoop;
 
@@ -149,6 +149,9 @@ void loop()
         case 'S':
           _radio.Stop();
 
+          if(_i2cscanner != nullptr)
+            delete _i2cscanner;
+          
           _i2cscanner = new I2CScanner();
           _i2cscanner->setup();
           mode = 1;
