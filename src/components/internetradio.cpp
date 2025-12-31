@@ -288,6 +288,9 @@ void InternetRadio::Loop(char ch)
 
             if(TunerButtons.SavePresetButtonPressed)
             {
+                // Known limitation: Overwrites stationlist pointers without freeing
+                // This causes a small memory leak if saving the same preset multiple times
+                // Proper fix would require tracking allocation state or using String objects
                 stationlist[_current_station_preset].name = strdup(s->name);
                 stationlist[_current_station_preset].url = strdup(s->url);
             }
@@ -440,8 +443,8 @@ uint8_t InternetRadio::GetStationList()
         for(int i = 0; i<Stations->size(); i++)
         {
             Station *s = Stations->at(i);
-            free((void*)s->name);
-            free((void*)s->url);
+            free(s->name);
+            free(s->url);
             delete s;
         }
            
@@ -545,6 +548,8 @@ void InternetRadio::LoadPresets()
     {
         pmLogging.LogLn("Loading presets from SPIFFS");
 
+        // Note: This assumes LoadPresets is only called once during initialization
+        // If called multiple times, it will leak the previously allocated strings
         for(int i=0;i<8;i++)
         {
             String name = _prefs.getString(String("STATIONNAME_" + String(i)).c_str(), "");
