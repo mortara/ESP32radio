@@ -336,7 +336,7 @@ void InternetRadio::Loop(char ch)
             stationswitchrequested = true;
             stationswitchmillis = millis();
             seekindex++;
-            if(seekindex >= Stations->size());
+            if(seekindex >= Stations->size())
             {               
                 seekpage++;
                 uint8_t nstations = GetStationList();
@@ -352,8 +352,7 @@ void InternetRadio::Loop(char ch)
             pmLogging.LogLn("previous station ...");
             stationswitchrequested = true;
             stationswitchmillis = millis();
-            seekindex--;
-            if(seekindex < 0)
+            if(seekindex == 0)
             {
                 if(seekpage>0)
                     seekpage--;
@@ -361,6 +360,10 @@ void InternetRadio::Loop(char ch)
                 GetStationList();
 
                 seekindex = Stations->size()-1;
+            }
+            else
+            {
+                seekindex--;
             }
             break;
         case 't': // stop/start seek

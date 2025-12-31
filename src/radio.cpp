@@ -23,7 +23,8 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 
     if(topicstr == "homeassistant/select/ESP32Radio_Radio/Preset")
     {
-        _radio.ExecuteCommand(msg[0]);
+        if(msg.length() > 0)
+            _radio.ExecuteCommand(msg[0]);
     }
 
     if(topicstr == "homeassistant/select/ESP32Radio_Internetradio/Country")
