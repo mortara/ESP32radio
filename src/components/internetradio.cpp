@@ -443,8 +443,8 @@ uint8_t InternetRadio::GetStationList()
         for(int i = 0; i<Stations->size(); i++)
         {
             Station *s = Stations->at(i);
-            free(s->name);
-            free(s->url);
+            free((void*)s->name);
+            free((void*)s->url);
             delete s;
         }
            

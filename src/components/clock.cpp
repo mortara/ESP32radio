@@ -5,7 +5,7 @@ Clock::Clock(TwoWire &wire) : i2cdevice(&wire, 0x68)
 {
     _rtc.begin();
 
-    setSyncProvider(_rtc.get);   // the function to get the time from the RTC
+    //setSyncProvider([&](){return this->_rtc.get();});
 
     setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
     tzset();

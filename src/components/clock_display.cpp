@@ -23,31 +23,24 @@ void ClockDisplayClass::DisplayText(String text, uint8_t row)
     if(text == _texts[row])
         return;
 
-    _texts[row] = String(text);
-    
+    _texts[row] = text;
+
     if(!_active || _lcd == nullptr)
     {
         pmLogging.LogLn(String(row) + ": " + text);
         return;
     }
 
-    //Serial.println("Clock display: " + text);
-    //_lcd->clear();
-
-    String t1 = text;
-    while(t1.length() < 16)
-        t1 += " ";
+    // Feste Länge, keine String-Kopien
+    char buf[17];
+    size_t len = text.length();
+    if(len > 16) len = 16;
+    text.toCharArray(buf, len + 1);
+    for(size_t i = len; i < 16; ++i) buf[i] = ' ';
+    buf[16] = '\0';
 
     _lcd->setCursor(0,row);
-
-    if(t1.length() <= 16)
-    {
-        _lcd->print(t1);
-    }
-    else
-    {
-        _lcd->print(t1.substring(0,15));
-    }
+    _lcd->print(buf);
 }
 
 void ClockDisplayClass::Loop()
@@ -57,14 +50,24 @@ void ClockDisplayClass::Loop()
         unsigned long _now = millis();
         if(_now - _scroll_row1_timer > 500UL)
         {
-            String t1 = _texts[0] + "   " + _texts[0];
-            String t2 = t1.substring(_scroll_row1_offset, _scroll_row1_offset + 16);
+            // Erzeuge den Scroll-Text als char-Array
+            String scrollText = _texts[0] + "   " + _texts[0];
+            size_t scrollLen = scrollText.length();
+            char buf[17];
+            for(size_t i = 0; i < 16; ++i)
+            {
+                if(i + _scroll_row1_offset < scrollLen)
+                    buf[i] = scrollText[i + _scroll_row1_offset];
+                else
+                    buf[i] = ' ';
+            }
+            buf[16] = '\0';
             _lcd->setCursor(0,0);
-            _lcd->print(t2);
+            _lcd->print(buf);
 
             _scroll_row1_timer = _now;
             _scroll_row1_offset++;
-            if(_scroll_row1_offset == 17)
+            if(_scroll_row1_offset >= scrollLen - 15)
                 _scroll_row1_offset = 0;
         }
     }
